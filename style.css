@@ -1,0 +1,506 @@
+/* ============ VARIABLES DE COLOR Y TIPOGRAFÍA ============ */
+:root{
+    --bg:#07050a;
+    --bg-soft:#100a14;
+    --panel:#160f1b;
+    --panel-border:rgba(255,182,206,0.18);
+    --rose:#f7a8c4;
+    --rose-strong:#ff6f9c;
+    --rose-glow: rgba(255,120,160,0.55);
+    --text:#f2e9ee;
+    --text-dim:#a99aa6;
+    --serif: 'Fraunces', Georgia, serif;
+    --sans: 'Inter', system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#07050a; --text:#f2e9ee;
+    }
+  }
+
+  /* ============ RESET BÁSICO ============ */
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--sans);overflow-x:hidden;}
+
+  /* ============ VIDEO DE FONDO ============ */
+  .bg-video{
+    position:absolute; inset:0;
+    width:100%; height:100%;
+    object-fit:cover;
+    z-index:0;
+  }
+  #intro .bg-video{
+  width:120%;
+  height:120%;
+  left:-10%;
+  top:-10%;
+  transform: translateX(4%) translateY(5%);
+  /* Arranca invisible: la intro empieza mostrando solo el botón de audio.
+     El video ya se está reproduciendo de fondo (autoplay+muted), pero
+     JS recién le agrega ".visible" a los 10s (ver script.js), momento
+     en el que aparece con este fade. */
+  opacity:0;
+  transition:opacity 1.6s ease;
+  }
+  #intro .bg-video.visible{ opacity:1; }
+
+  /* ---------- INTRO ---------- */
+  #intro{
+    position:fixed; inset:0; z-index:50;
+    display:flex; flex-direction:column; align-items:center;
+    justify-content:flex-end;
+    padding-bottom:3vh;
+    overflow:hidden;
+    background:#07050a;
+    transition:opacity 1.1s ease, visibility 1.1s ease;
+  }
+  #intro.hidden{opacity:0; visibility:hidden; pointer-events:none;}
+
+  /* Todo lo que esté dentro de #intro, menos el video, queda por encima
+     de él (el video tiene z-index:0 via .bg-video). */
+  #intro > *:not(.bg-video){position:relative; z-index:1;}
+
+  .audio-btn{
+    position:static; transform:none; margin-bottom:1.2rem;
+    background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.25);
+    color:var(--text); padding:10px 20px; border-radius:30px; font-family:var(--sans);
+    font-size:0.9rem; cursor:pointer; display:flex; align-items:center; gap:8px;
+    backdrop-filter:blur(4px);
+  }
+  .audio-btn:hover{border-color:var(--rose);}
+
+  .intro-title{font-family:var(--serif); font-size:clamp(2.2rem,6vw,4.2rem); font-weight:500;
+    color:var(--rose); text-align:center; margin:2.4rem 0 0.4rem; text-shadow:0 0 30px var(--rose-glow);}
+  .intro-sub{font-size:clamp(1rem,2.2vw,1.4rem); color:var(--text); text-align:center; margin:0;}
+  .intro-note{font-size:0.95rem; color:var(--text-dim); text-align:center; margin-top:0.6rem;}
+
+  /* ---------- MAIN EXPERIENCE ---------- */
+  #experience{min-height:100vh; padding:0; position:relative;}
+  .chapter-bg{
+    position:fixed; inset:0; z-index:0;
+    background:
+      radial-gradient(ellipse at 15% 20%, rgba(255,110,150,0.05) 0%, transparent 45%),
+      var(--bg);
+  }
+
+  /* Grid de 4 columnas:
+     - col 1 y 2 (1fr 1fr): contenido de texto/gráficos -> .main-col
+       ocupa las dos juntas (grid-column:1/3), o sea 2/4 = la mitad del
+       ancho flexible total.
+     - col 3 (1fr): la vela del capítulo activo -> .chapter-media
+     - col 4 (200px, fija): menú lateral de navegación -> .side-nav
+     Antes era solo "1fr 200px" (contenido + nav), con el video como
+     fondo absoluto de cada .chapter en vez de columna propia. */
+  .layout{
+    position:relative; z-index:1;
+    display:grid; grid-template-columns: 1fr 1fr 1fr 200px;
+    min-height:100vh; max-width:1400px; margin:0 auto;
+    padding: 22px 32px; /* menos aire arriba/abajo todavía, para ganar los últimos px y evitar el scroll */
+    gap:24px;
+  }
+
+  /* .main-col ocupa las primeras 2 de las 4 columnas del grid (columnas 1 y 2) */
+  .main-col{ grid-column: 1 / 3; min-width:0; }
+
+  .chapter-header{position:relative; z-index:1; margin-bottom:8px;}
+  .chapter-eyebrow{
+    font-family:var(--sans);
+    font-size:1rem;
+    color:var(--rose); opacity:0.75; margin:0 0 4px;
+  }
+
+  /* Título de cada capítulo. position:relative + display:inline-block son
+     necesarios para que .title-dots (los puntitos) se puedan posicionar
+     "alrededor" del texto usando position:absolute con inset negativo. */
+  .chapter-title{
+    position:relative;
+    display:inline-block;
+    font-family:var(--serif); font-weight:500;
+    font-size:clamp(2.2rem,4.5vw,3.4rem);
+    margin:0 0 28px; color:var(--text);
+  }
+
+  /* ---------- PUNTITOS ROSA ALREDEDOR DEL TÍTULO ---------- */
+  /* Capa invisible, un poco más grande que el título, que aloja los puntos */
+  .title-dots{
+    position:absolute;
+    inset:-14px -20px;
+    pointer-events:none; /* no deben interferir con clicks */
+  }
+
+  .dot{
+    position:absolute;
+    width:6px; height:6px;
+    border-radius:50%;
+    background:var(--rose-strong);
+    box-shadow:0 0 8px var(--rose-glow);
+    opacity:0;
+    transform:scale(0);
+  }
+
+  /* Posición de cada uno de los 6 puntos alrededor del título */
+  .dot:nth-child(1){ top:0%;   left:5%;  }
+  .dot:nth-child(2){ top:10%;  left:95%; }
+  .dot:nth-child(3){ top:50%;  left:-3%; }
+  .dot:nth-child(4){ top:55%;  left:102%;}
+  .dot:nth-child(5){ top:100%; left:20%; }
+  .dot:nth-child(6){ top:95%;  left:80%; }
+
+  /* Animación: pop de entrada, sube flotando, se desvanece */
+  @keyframes dotPop{
+    0%   { opacity:0; transform:scale(0) translateY(0); }
+    25%  { opacity:1; transform:scale(1.2) translateY(-4px); }
+    60%  { opacity:1; transform:scale(1) translateY(-10px); }
+    100% { opacity:0; transform:scale(0.6) translateY(-18px); }
+  }
+
+  /* Se dispara solo dentro del capítulo activo. El JS fuerza el reinicio
+     de esta animación cada vez que se cambia de módulo (ver script.js) */
+  .chapter.active .dot{
+    animation:dotPop 1.3s ease forwards;
+  }
+  .chapter.active .dot:nth-child(1){ animation-delay:0s; }
+  .chapter.active .dot:nth-child(2){ animation-delay:0.08s; }
+  .chapter.active .dot:nth-child(3){ animation-delay:0.16s; }
+  .chapter.active .dot:nth-child(4){ animation-delay:0.24s; }
+  .chapter.active .dot:nth-child(5){ animation-delay:0.32s; }
+  .chapter.active .dot:nth-child(6){ animation-delay:0.4s; }
+
+  /* ============ COLUMNA DE VIDEOS (3ra de 4) ============
+     Reemplaza el viejo esquema de "un <video class=bg-video> adentro de
+     cada .chapter, a pantalla completa detrás del texto". Ahora los 3
+     videos (uno por capítulo) están juntos acá, apilados uno sobre el
+     otro dentro de esta caja angosta; solo se ve el que tiene .active
+     (JS decide cuál, según el capítulo abierto). El fade entre uno y
+     otro es con opacity+transition, no con display:none, para que el
+     cambio sea suave en vez de un salto brusco. */
+  .chapter-media{
+    grid-column: 3 / 4;
+    position:relative;
+    border-radius:16px;
+    overflow:hidden; /* recorta las esquinas redondeadas del video */
+    min-height:420px;
+    background:var(--bg-soft); /* se ve un instante mientras carga el 1er video */
+  }
+  .chapter-video{
+    position:absolute; inset:0;
+    width:100%; height:100%;
+    object-fit:cover;
+    opacity:0;
+    transition:opacity .6s ease;
+  }
+  .chapter-video.active{ opacity:1; }
+
+  /* side nav: ahora ocupa explícitamente la 4ta columna del grid
+     (antes era automático porque era la 2da y última columna) */
+  .side-nav{
+    grid-column: 4 / 5;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    position:sticky;
+    top:50%;
+    transform:translateY(-50%);
+    height:fit-content;
+  }
+  .nav-item{
+    background:var(--panel); border:1px solid rgba(255,255,255,0.1);
+    border-radius:12px; padding:16px 10px; text-align:center; cursor:pointer;
+    transition:all .25s; color:var(--text-dim);
+  }
+  .nav-item .num{
+    width:34px; height:34px; border-radius:50%; background:rgba(255,255,255,0.08);
+    display:flex; align-items:center; justify-content:center; margin:0 auto 8px;
+    font-family:var(--serif); font-size:1rem; color:var(--text-dim);
+  }
+  .nav-item .label{font-size:0.82rem; line-height:1.3;}
+  .nav-item.active{border-color:var(--rose-strong); box-shadow:0 0 22px rgba(255,111,156,0.25);}
+  .nav-item.active .num{background:var(--rose-strong); color:#1a0510;}
+  .nav-item.active .label{color:var(--rose);}
+  .nav-item:not(.active):hover{border-color:rgba(255,255,255,0.25); color:var(--text);}
+
+  .chapter{display:none; position:relative; overflow:hidden; min-height:500px; border-radius:6px; animation:fadeIn .5s ease;}  .chapter.active{display:block;}
+  @keyframes fadeIn{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+
+  @media (max-width:900px){
+    .layout{grid-template-columns:1fr; padding:28px 18px;}
+    /* En 1 sola columna, "grid-column" ya no aplica: volvemos todo a
+       flujo normal (auto) y usamos "order" para que la vela quede
+       arriba del texto, aunque en el HTML esté después del .main-col. */
+    .main-col{ grid-column:auto; }
+    .chapter-media{ grid-column:auto; order:-1; min-height:220px; }
+    .side-nav{flex-direction:row; position:static; overflow-x:auto; grid-column:auto;}
+    .nav-item{min-width:110px;}
+  }
+
+  :focus-visible{outline:2px solid var(--rose); outline-offset:2px;}
+  @media (prefers-reduced-motion: reduce){
+    .chapter{animation:none;}
+    .dot{ animation:none !important; opacity:0; }
+  }
+
+  /* ============================================================
+     Ajuste SOLO para el capítulo 3: como este capítulo tiene
+     contenido extra (el módulo fv-*), le achicamos el margen
+     inferior del título para ganar altura y que todo entre en
+     una pantalla. Al usar el selector "#chapter-3 .chapter-title"
+     (en vez de tocar .chapter-title en general), los capítulos
+     1 y 2 quedan exactamente como estaban.
+     ============================================================ */
+  #chapter-3 .chapter-title{ margin-bottom:4px; }
+  #chapter-3 .chapter-header{ margin-bottom:2px; }
+  #chapter-3 .chapter-eyebrow{ margin-bottom:2px; }
+
+  /* ============================================================
+     MÓDULO "EL FUTURO" — visualización IA (capítulo 3)
+     Todo prefijado con fv- para no chocar con .dot, section, h2, etc.
+     que ya usa el resto del sitio.
+
+     Objetivo de este bloque: que el capítulo 3 entre completo en
+     una sola pantalla (sin que el usuario tenga que scrollear la
+     página), y que el video de fondo (la vela) se siga viendo
+     detrás, porque el panel usa fondo semitransparente + blur en
+     vez de un fondo sólido.
+     ============================================================ */
+
+  /* Antes: max-width:460px + margin-right:auto, para dejar libre la mitad
+     derecha de la columna (ahí vivía el video de fondo del capítulo).
+     Ahora el video tiene su propia columna en el grid (.chapter-media),
+     así que este módulo puede ocupar el ancho completo de .main-col. */
+  .fv-wrap{
+    position:relative; z-index:1;
+    margin-top:2px;
+    width:100%;
+    --fv-dot:rgba(255,255,255,0.16); /* color de los puntos "apagados" */
+    --fv-flame:#ffb35c;              /* color del cáncer detectado (ámbar) */
+    --fv-pink:var(--rose-strong);    /* color de "detectado gracias a la IA" */
+  }
+
+  /* Bajada corta arriba de las pestañas. Margen chico a propósito
+     para no consumir alto de pantalla. */
+  .fv-lede{color:var(--text-dim); max-width:68ch; margin:0 0 6px; font-size:0.85rem; line-height:1.28;}
+
+  /* ---- Pestañas para elegir qué visualización ver ----
+     En vez de mostrar las dos tablas una al lado de la otra (lo que
+     hacía la página altísima), ahora solo se muestra una a la vez:
+     estos botones cambian cuál .fv-tabpanel tiene la clase .active
+     (ver la lógica en script.js). */
+  .fv-tabs{display:flex; gap:6px; margin-bottom:6px; flex-wrap:wrap;}
+  .fv-tab{
+    font:inherit; font-size:0.8rem; font-family:var(--sans); text-align:left;
+    border:1px solid var(--panel-border); background:rgba(255,255,255,0.04);
+    color:var(--text-dim); padding:5px 12px; border-radius:10px; cursor:pointer;
+    transition:all .2s; flex:1 1 auto; min-width:140px;
+  }
+  .fv-tab:hover{border-color:rgba(255,255,255,0.3); color:var(--text);}
+  /* Pestaña activa: la marca script.js poniendo aria-selected="true" */
+  .fv-tab[aria-selected="true"]{
+    background:var(--rose-strong); border-color:var(--rose-strong); color:#1a0510; font-weight:600;
+  }
+
+  /* ============================================================
+     NUEVO: .fv-panels envuelve los 2 .fv-tabpanel (ver index.html).
+
+     Antes, cada .fv-tabpanel tenía display:none / display:block, así
+     que en cualquier momento solo UNO de los dos "existía" para el
+     cálculo de alto del layout -> el rectángulo se agrandaba o
+     achicaba según la pestaña, porque panel 1 y panel 2 tienen
+     contenido de distinta altura.
+
+     Solución ("grid stack"): .fv-panels es un grid de una sola celda,
+     y los 2 .fv-tabpanel comparten esa misma celda (grid-area:1/1).
+     Como ninguno usa display:none, LOS DOS cuentan al mismo tiempo
+     para medir el alto de la celda -> el grid siempre usa el alto
+     del más alto de los dos, sin importar cuál esté visible. El panel
+     inactivo se tapa con opacity:0 + visibility:hidden (en vez de
+     display:none), así sigue "ocupando lugar" para la medición pero
+     no se ve ni se puede clickear.
+     ============================================================ */
+  .fv-panels{
+    display:grid;
+  }
+  .fv-tabpanel{
+    grid-area: 1 / 1;
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+    transition:opacity .35s ease;
+  }
+  .fv-tabpanel.active{
+    opacity:1;
+    visibility:visible;
+    pointer-events:auto;
+  }
+
+  /* Tarjeta con fondo semitransparente + blur (backdrop-filter):
+     esto es clave para que la vela del video de fondo del capítulo
+     siga viéndose "a través" del panel en vez de quedar tapada por
+     un fondo sólido. */
+  .fv-panel{
+    position:relative; /* contexto para que el popover de "Fuente" se ubique bien */
+    background:rgba(22,15,27,0.66);
+    border:1px solid var(--panel-border);
+    border-radius:16px;
+    padding:14px 20px; /* achicado de nuevo para ganar más alto */
+    backdrop-filter:blur(6px);
+    /* height:100%: dentro de la celda del grid (que ahora tiene un alto
+       fijo, igual al panel más alto de los dos), esta tarjeta se estira
+       para llenar ese alto en vez de quedar más baja con hueco vacío
+       debajo. */
+    height:100%;
+    display:flex;
+    flex-direction:column;
+  }
+  .fv-sub{color:var(--text-dim); margin:0 0 6px; font-size:0.84rem; line-height:1.28; max-width:64ch;}
+
+  .fv-seg{display:inline-flex; justify-content:center; flex-wrap:wrap; border:1px solid var(--panel-border); border-radius:999px; padding:3px; gap:2px; margin-bottom:6px;}
+  .fv-seg button{font:inherit; font-size:0.82rem; border:0; background:transparent; color:var(--text-dim); padding:5px 11px; border-radius:999px; cursor:pointer;}
+  .fv-seg button[aria-pressed="true"]{background:var(--rose-strong); color:#1a0510;}
+
+  /* .fv-view: antes eran 2 vistas que se alternaban (grilla ó escala,
+     nunca las dos juntas). Ahora las 2 quedan siempre visibles, apiladas
+     -- la de escala ("Llevalo a más mujeres") ya no depende de tocar
+     ningún botón. El "+" separa la segunda de la primera con una línea
+     sutil, para que se lea como una sección aparte y no como un batido
+     continuo de contenido. */
+  .fv-view{display:block;}
+  .fv-view + .fv-view{
+    margin-top:10px;
+    padding-top:10px;
+    border-top:1px solid var(--panel-border);
+  }
+
+  /* .fv-field envuelve el <svg>. El svg no tiene un tamaño fijo en
+     píxeles: usa viewBox + width:100% para escalar solo, así que
+     angostar el ancho asignado a esta columna (ver flex:0 0 42% más
+     abajo) alcanza para bajarle también el alto, porque escala en
+     proporción al ancho. */
+  .fv-field{position:relative; border-radius:12px; overflow-x:auto;}
+  .fv-field svg{display:block; width:100%; height:auto;}
+
+  /* .fv-visual agrupa la grilla de puntos (.fv-field) con la leyenda y
+     los números (.fv-stats). Por defecto van apilados (mobile / panel
+     angosto). Desde 680px de ancho de panel, se acomodan en fila: la
+     grilla queda como elemento protagonista a la izquierda y .fv-stats
+     como una columna angosta de lectura a la derecha, vertical-centrada
+     contra la grilla -- así el ancho extra se usa como una separación
+     "ver / leer" en vez de agrandar todo por igual. */
+  .fv-visual{display:flex; flex-direction:column; gap:10px;}
+  .fv-stats{display:flex; flex-direction:column; gap:8px;}
+  .fv-stats .fv-legend, .fv-stats .fv-readout{margin-top:0;} /* el gap del flex ya separa, no hace falta el margin-top original */
+
+  @media (min-width:680px){
+    .fv-visual{flex-direction:row; align-items:center; gap:28px;}
+    .fv-visual .fv-field{flex:0 0 42%; min-width:0;} /* más angosta que antes (56%) => también más baja, porque el svg escala en proporción al ancho */
+    .fv-visual .fv-stats{flex:1 1 auto; max-width:320px;}
+  }
+
+  /* ---- Pestaña "Las que se escapaban" (panel 2): la visual ocupa el
+     alto libre del panel ----
+     .fv-panel está forzado al alto del panel más alto de los dos (ver
+     comentario de .fv-panels, arriba): como el panel 2 tiene menos
+     contenido que el panel 1 (que además tiene la barra "Llevalo a más
+     mujeres"), sin esto quedaba un hueco vacío debajo de "Fuente".
+     Con flex:1 en .fv-visual y .fv-field, la grilla de 100 puntos crece
+     para llenar ese espacio libre.
+     OJO: esto da por sentado que la grilla del panel 2 (ver su viewBox
+     en el HTML) es, de por sí, más baja que la del panel 1 -- si no,
+     es ELLA la que termina fijando el alto compartido de los dos
+     paneles, y el hueco vacío reaparece (pero en el panel 1). Por eso
+     el viewBox de #fv-g2 tiene que seguir siendo más panorámico/achatado
+     que el de #fv-g1. */
+  #fv-tabpanel-2 .fv-visual{flex:1 1 auto;}
+  #fv-tabpanel-2 .fv-field{flex:1 1 auto; display:flex;}
+  #fv-tabpanel-2 .fv-field svg{width:100%; height:100%;}
+  #fv-tabpanel-2 .fv-src{margin-top:auto; padding-top:8px;}
+
+  @media (min-width:680px){
+    #fv-tabpanel-2 .fv-visual{align-items:stretch;}
+    #fv-tabpanel-2 .fv-stats{justify-content:center;}
+  }
+
+  .fv-dot{fill:var(--fv-dot); transition:fill .5s;}
+  .fv-dot.fv-lit{fill:var(--fv-flame);}
+  .fv-dot.fv-new{fill:var(--fv-pink);}
+  .fv-glow{opacity:0; transition:opacity .6s;}
+  .fv-glow.fv-on{opacity:1;}
+
+  .fv-readout{display:flex; gap:12px; flex-wrap:wrap; margin-top:4px; align-items:flex-end;}
+  .fv-big{font-family:var(--serif); font-size:1.4rem; line-height:1; color:var(--text); font-variant-numeric:tabular-nums;}
+  .fv-big.fv-pinktext{color:var(--rose-strong);}
+  .fv-lab{color:var(--text-dim); font-size:0.8rem;}
+
+  /* Antes .fv-scale iba pegada debajo de .fv-readout con un borde
+     arriba para separarla visualmente. Ahora es su propia vista
+     (.fv-view), así que no necesita ni el borde ni el margen superior. */
+  .fv-scale{margin-top:0; padding-top:0;}
+  .fv-scale label{display:block; font-size:0.82rem; margin-bottom:4px; color:var(--text-dim);}
+  .fv-scale input[type=range]{width:100%; accent-color:var(--rose-strong);}
+  .fv-scale-out{display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:4px;}
+  .fv-scale-out .fv-big{font-size:1.1rem;}
+
+  /* .fv-src ahora es un <details>: por defecto el navegador solo
+     muestra el <summary> ("Fuente"), así que ahorra todo el alto
+     que antes ocupaba el párrafo completo. text-align:right lo
+     pega a la esquina derecha, como una etiqueta discreta. */
+  /* position:relative -> este es el punto de referencia para el
+     popover (el <p> de abajo) que se posiciona con position:absolute
+     "sobre" este elemento. margin-top más chico (4px, antes 8px) para
+     subir un poco la etiqueta y ganar los últimos pixeles de alto. */
+  .fv-src{position:relative; margin-top:4px; text-align:right;}
+
+  /* El <summary> es la "etiqueta" clickeable. Le sacamos la flechita
+     que pone el navegador por default (::marker / ::-webkit-details-marker)
+     y ponemos un ícono propio (▸) que rotamos 90° cuando el <details>
+     está abierto, para que se note que es desplegable. */
+  .fv-src summary{
+    display:inline-flex; align-items:center; gap:4px;
+    list-style:none; cursor:pointer; user-select:none;
+    font-size:0.72rem; color:var(--text-dim);
+    border:1px solid var(--panel-border); border-radius:999px;
+    padding:3px 10px; background:rgba(255,255,255,0.03);
+    transition:color .2s, border-color .2s;
+  }
+  .fv-src summary::-webkit-details-marker{ display:none; } /* Chrome/Safari */
+  .fv-src summary::marker{ content:""; }                   /* Firefox */
+  .fv-src summary::before{
+    content:"▸"; font-size:0.65rem; transition:transform .2s;
+  }
+  .fv-src[open] summary::before{ transform:rotate(90deg); }
+  .fv-src summary:hover{ color:var(--text); border-color:rgba(255,255,255,0.3); }
+
+  /* El texto de la fuente ahora es un "popover" flotante:
+     position:absolute lo saca del flujo normal, así que aunque el
+     texto sea largo NO empuja nada hacia abajo ni agranda el panel
+     (por eso "no ocupa lugar"). bottom:100% lo apoya justo arriba de
+     la etiqueta (que es el elemento con position:relative, .fv-src),
+     y right:0 lo alinea con el borde derecho, donde está la etiqueta. */
+  .fv-src p{
+    position:absolute;
+    right:0;
+    bottom:calc(100% + 10px); /* 10px de separación respecto a la etiqueta */
+    margin:0;
+    width:max(220px, 85%);   /* nunca más angosto que 220px, pero se adapta al panel */
+    max-width:320px;
+    text-align:left;
+    background:var(--panel);
+    border:1px solid var(--panel-border);
+    border-radius:12px;
+    padding:12px 14px;
+    box-shadow:0 12px 32px rgba(0,0,0,0.55);
+    color:var(--text-dim); font-size:0.72rem; line-height:1.35;
+    z-index:20; /* por encima de la grilla y del resto del panel */
+  }
+  /* Triangulito que apunta hacia la etiqueta, como un globo de diálogo */
+  .fv-src p::after{
+    content:"";
+    position:absolute; top:100%; right:14px;
+    border:6px solid transparent;
+    border-top-color:var(--panel);
+  }
+  .fv-legend{display:flex; gap:14px; flex-wrap:wrap; font-size:0.76rem; color:var(--text-dim); margin-top:4px;}
+  .fv-legend i{display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:5px; vertical-align:-1px;}
+
+  @media (prefers-reduced-motion: reduce){
+    .fv-dot, .fv-glow{transition:none;}
+  }

@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cáncer de mama en Argentina</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ================= INTRO ================= -->
+<!-- Pantalla de bienvenida a pantalla completa. Se oculta (clase "hidden")
+     cuando termina el audio y el usuario toca "deslizá para comenzar". -->
+<div id="intro">
+  <!-- Video de fondo de la intro (la vela). Arranca oculto (opacity:0 en
+       CSS, ver #intro .bg-video) y SIN reproducirse (sin "autoplay"):
+       script.js lo pone en el frame 0 y recién ahí lo hace play() a los
+       10s, junto con el fade-in, para que arranque siempre desde el
+       principio en el mismo momento en que se hace visible. -->
+  <video id="introVideo" class="bg-video" muted loop playsinline>
+    <source src="800 A.mp4" type="video/mp4">
+  </video>
+
+  <!-- Audio de fondo. Sin "loop": necesitamos que dispare el evento 'ended'
+       para que el JS oculte este botón y muestre "deslizá para comenzar". -->
+  <audio id="bgAudio" preload="auto">
+    <source src="audio.mp3" type="audio/mpeg">
+  </audio>
+
+  <!-- Botón para activar/pausar el audio. Cuando el audio termina (evento
+       'ended'), script.js reconvierte ESTE MISMO botón en el "Tocá para
+       comenzar ↓" que entra a la experiencia: no hace falta un segundo
+       elemento aparte. -->
+  <button class="audio-btn" id="audioBtn">🔊 Activar audio ▶</button>
+
+  <h1 class="intro-title">Cáncer de mama en Argentina</h1>
+  <p class="intro-sub">Presente, pasado y futuro de su detección</p>
+  <p class="intro-note">Una historia contada a través de los datos.</p>
+</div>
+
+<!-- ================= EXPERIENCE ================= -->
+<!-- Contenedor principal: los 3 capítulos + el menú lateral de navegación. -->
+<div id="experience">
+  <div class="chapter-bg"></div>
+  <div class="layout">
+    <div class="main-col">
+
+      <!-- CAPÍTULO 1 -->
+      <!-- El video de este capítulo (801.mp4) ya NO va acá adentro:
+           ahora vive en la columna .chapter-media, junto a los videos
+           de los otros 2 capítulos (ver más abajo, antes de .side-nav).
+           script.js decide cuál de los 3 se ve según el capítulo activo. -->
+      <section class="chapter active" id="chapter-1">
+        <div class="chapter-header">
+          <p class="chapter-eyebrow">Capítulo 1</p>
+          <h2 class="chapter-title">
+            Argentina hoy
+            <!-- Puntitos rosa animados alrededor del título.
+                 aria-hidden="true" porque son puramente decorativos,
+                 no deben ser leídos por lectores de pantalla. -->
+            <span class="title-dots" aria-hidden="true">
+              <span class="dot"></span>
+              <span class="dot"></span>
+              <span class="dot"></span>
+              <span class="dot"></span>
+              <span class="dot"></span>
+              <span class="dot"></span>
+            </span>
+          </h2>
+        </div>
+      </section>
+
+      <!-- CAPÍTULO 2 -->
+      <section class="chapter" id="chapter-2">
+        <div class="chapter-header">
+          <p class="chapter-eyebrow">Capítulo 2</p>
+          <h2 class="chapter-title">
+            El tiempo
+            <span class="title-dots" aria-hidden="true">
+              <span class="dot"></span>
+              <span class="dot"></span>
+              <span class="dot"></span>
+              <span class="dot"></span>
+              <span class="dot"></span>
+              <span class="dot"></span>
+            </span>
+          </h2>
+        </div>
+      </section>
+
+      <!-- CAPÍTULO 3 -->
+      <section class="chapter" id="chapter-3">
+        <div class="chapter-header">
+          <p class="chapter-eyebrow">Capítulo 3</p>
+          <h2 class="chapter-title">
+            El futuro
+            <span class="title-dots" aria-hidden="true">
+              <span class="dot"></span>
+              <span class="dot"></span>
+              <span class="dot"></span>
+              <span class="dot"></span>
+              <span class="dot"></span>
+              <span class="dot"></span>
+            </span>
+          </h2>
+        </div>
+
+        <!-- ============================================================
+             Módulo "El futuro": visualización de puntos que representan
+             mujeres, con IA activable.
+
+             Estructura:
+               .fv-wrap            -> ocupa el ancho de .main-col
+                 .fv-lede          -> bajada corta
+                 .fv-tabs          -> 2 botones para elegir qué tabla ver
+                 .fv-panels        -> "grid stack": los 2 .fv-tabpanel
+                                      comparten la misma celda del grid,
+                                      así el rectángulo siempre mide el
+                                      alto del panel más alto de los 2
+                                      (no cambia de tamaño al cambiar de
+                                      pestaña). Solo el que tiene .active
+                                      se ve (opacity, no display:none).
+                   .fv-tabpanel (x2) -> una por cada visualización
+                     .fv-panel       -> tarjeta con fondo semitransparente
+                       svg#fv-g1/g2  -> los puntos, dibujados por JS
+                                        (ver script.js) usando las coordenadas
+                                        del viewBox de abajo.
+
+             Nota: le saqué el título repetido adentro de cada tarjeta
+             (antes decía dos veces "1.000 mujeres en control": una en
+             la pestaña rosa y otra abajo en blanco) para ahorrar alto.
+             Ahora aria-labelledby apunta directo al botón de la pestaña,
+             así los lectores de pantalla igual anuncian el título.
+             ============================================================ -->
+        <div class="fv-wrap">
+          <p class="fv-lede">Cada punto es una mujer. Encendé la inteligencia artificial y mirá cuántas llamas nuevas aparecen.</p>
+
+          <div class="fv-tabs" role="tablist" aria-label="Elegí una visualización">
+            <button class="fv-tab" id="fv-tabbtn-1" type="button" role="tab" aria-selected="true" aria-controls="fv-tabpanel-1">1.000 mujeres en control</button>
+            <button class="fv-tab" id="fv-tabbtn-2" type="button" role="tab" aria-selected="false" aria-controls="fv-tabpanel-2">Las que se escapaban</button>
+          </div>
+
+          <!-- .fv-panels: envuelve los 2 paneles (grid-stack, ver CSS)
+               para que el rectángulo mida siempre el alto del panel
+               más alto de los dos, y no cambie de tamaño al cambiar
+               de pestaña. -->
+          <div class="fv-panels">
+
+          <!-- Panel 1: arranca visible (clase .active) -->
+          <div class="fv-tabpanel active" id="fv-tabpanel-1" role="tabpanel" aria-labelledby="fv-tabbtn-1">
+            <div class="fv-panel">
+              <p class="fv-sub">En el estudio MASAI (Suecia, 80.020 mujeres), leer las mamografías con apoyo de IA encontró un cáncer más cada 1.000 mujeres.</p>
+
+              <!-- Grupo de 2 botones: cambian qué puntos están encendidos
+                   en la grilla. "Llevalo a más mujeres" ya no es un botón:
+                   ver más abajo, siempre desplegado. -->
+              <div class="fv-seg" role="group" aria-label="Modo de lectura">
+                <button id="fv-m-sin" type="button" aria-pressed="true">Sin IA</button>
+                <button id="fv-m-con" type="button" aria-pressed="false">Con IA</button>
+              </div>
+
+              <!-- Vista 1: la grilla de 1.000 puntos + leyenda + números.
+                   Ya no se alterna con la de abajo: las dos están
+                   siempre visibles, una debajo de la otra. -->
+              <div class="fv-view" id="fv-view-grid">
+                <!-- viewBox "panorámico" (más ancho que alto: 765x315) en vez
+                     del original casi cuadrado (600x375). Misma cantidad de
+                     puntos (1.000 = 50 columnas x 20 filas), pero al ser más
+                     "achatada" la figura, ocupa menos alto en pantalla.
+                     Las coordenadas de cada punto las calcula script.js. -->
+                <!-- .fv-visual: en pantallas angostas, el campo (grilla) y las
+                     estadísticas (.fv-stats) se apilan como antes. Desde 680px
+                     de ancho, CSS los pone lado a lado: la grilla ocupa el
+                     espacio "protagonista" a la izquierda y .fv-stats queda
+                     como una columna angosta de lectura a la derecha, en vez
+                     de que todo se estire fino y parejo. -->
+                <div class="fv-visual">
+                  <div class="fv-field"><svg id="fv-g1" viewBox="0 0 765 315" role="img" aria-label="Grilla de 1.000 mujeres"></svg></div>
+                  <div class="fv-stats">
+                    <div class="fv-legend"><span><i style="background:var(--fv-flame)"></i>Cáncer detectado</span><span><i style="background:var(--rose-strong)"></i>Detectado gracias a la IA</span></div>
+                    <div class="fv-readout">
+                      <div><div class="fv-big" id="fv-r1">5,1</div><div class="fv-lab">cánceres cada 1.000 mujeres</div></div>
+                      <div><div class="fv-big fv-pinktext" id="fv-r1d">&nbsp;</div><div class="fv-lab" id="fv-r1dl">&nbsp;</div></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Vista 2: la barra deslizadora + resultados de la escala.
+                   Ya no hace falta tocar ningún botón para verla: queda
+                   siempre desplegada debajo de la grilla / Sin IA-Con IA
+                   (separada por una línea sutil, ver CSS ".fv-view + .fv-view"). -->
+              <div class="fv-view" id="fv-view-scale">
+                <div class="fv-scale">
+                  <label for="fv-n">Llevalo a más mujeres: <strong id="fv-nlab">40.000</strong></label>
+                  <input id="fv-n" type="range" min="1000" max="1000000" step="1000" value="40000">
+                  <div class="fv-scale-out">
+                    <div><div class="fv-big" id="fv-s-sin">204</div><div class="fv-lab">detectados sin IA</div></div>
+                    <div><div class="fv-big" id="fv-s-con">244</div><div class="fv-lab">detectados con IA</div></div>
+                    <div><div class="fv-big fv-pinktext" id="fv-s-dif">+40</div><div class="fv-lab">cánceres más encontrados</div></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- <details>/<summary> es un acordeón nativo del navegador:
+                   no hace falta JS. "Fuente" (el <summary>) es lo único
+                   que se ve por defecto, alineado a la esquina derecha
+                   del panel; al hacer click se despliega el texto completo. -->
+              <details class="fv-src">
+                <summary>Fuente</summary>
+                <p>Lång et al., MASAI, The Lancet Oncology (2023): 244 cánceres en 39.996 mujeres con IA (6,1‰) y 203 en 40.024 sin IA (5,1‰). La escala es una proyección con esas tasas. Detectar más no equivale todavía a salvar más vidas: el estudio sigue midiendo ese resultado.</p>
+              </details>
+            </div>
+          </div>
+
+          <!-- Panel 2: arranca oculto, sin clase .active -->
+          <div class="fv-tabpanel" id="fv-tabpanel-2" role="tabpanel" aria-labelledby="fv-tabbtn-2">
+            <div class="fv-panel">
+              <p class="fv-sub">Cada punto es una mujer con cáncer de mama. Con IA, los falsos negativos (cánceres que la lectura no detectó) bajaron.</p>
+              <div class="fv-seg" role="group" aria-label="País">
+                <button id="fv-c-us" type="button" aria-pressed="true">Estados Unidos</button>
+                <button id="fv-c-uk" type="button" aria-pressed="false">Reino Unido</button>
+              </div>
+              <div class="fv-seg" role="group" aria-label="IA" style="margin-left:6px">
+                <button id="fv-f-off" type="button" aria-pressed="true">Sin IA</button>
+                <button id="fv-f-on" type="button" aria-pressed="false">Con IA</button>
+              </div>
+              <!-- Grilla panorámica: 20 columnas x 5 filas (100 puntos),
+                   viewBox 800x200. Tiene que ser más achatada que la del
+                   panel 1 (765x315): si no, esta grilla termina siendo
+                   intrínsecamente más alta que el panel 1 y ESO es lo que
+                   fija el alto compartido de los dos paneles (ver
+                   .fv-panels más abajo), dejando un hueco vacío en el
+                   panel 1 -- que es justo el bug que había con la grilla
+                   cuadrada (10x10). Con esta forma más baja, el CSS
+                   ("#fv-tabpanel-2 .fv-field") puede hacerla crecer hasta
+                   el alto del panel 1 con seguridad, sin volver a
+                   provocar ese hueco. -->
+              <div class="fv-visual">
+                <div class="fv-field"><svg id="fv-g2" viewBox="0 0 800 200" role="img" aria-label="100 mujeres con cáncer"></svg></div>
+                <div class="fv-stats">
+                  <div class="fv-readout">
+                    <div><div class="fv-big fv-pinktext" id="fv-r2">0</div><div class="fv-lab" id="fv-r2l">de cada 100 recuperadas por la IA</div></div>
+                  </div>
+                </div>
+              </div>
+              <details class="fv-src">
+                <summary>Fuente</summary>
+                <p>McKinney et al., Nature (2020). Reducción absoluta de falsos negativos: 9,4 puntos en EE. UU. y 2,7 en Reino Unido (redondeado a puntos enteros en la grilla). Estudio retrospectivo sobre mamografías ya realizadas.</p>
+              </details>
+            </div>
+          </div>
+
+          </div><!-- /.fv-panels -->
+        </div>
+
+      </section>
+
+    </div>
+
+    <!-- ================= CHAPTER MEDIA (columna 3 de 4) =================
+         Antes cada <video> vivía DENTRO de su .chapter, como fondo a pantalla
+         completa detrás del texto. Ahora es su propia columna, angosta, al
+         lado del contenido: por eso los 3 videos están acá juntos, uno por
+         capítulo, y JS le pone/saca la clase "active" al que corresponde
+         (ver script.js) para mostrar solo el del capítulo que se está viendo.
+         data-chapter coincide con el número final de cada id="chapter-X".
+         Los 3 videos ya NO tienen "autoplay": script.js es el único que
+         decide cuándo arranca cada uno (recién al entrar a ese módulo),
+         para que no se vean ya reproduciéndose al cargar o al navegar. -->
+    <div class="chapter-media" aria-hidden="true">
+      <video class="chapter-video active" data-chapter="1" muted loop playsinline>
+        <source src="801.mp4" type="video/mp4">
+      </video>
+      <video class="chapter-video" data-chapter="2" muted loop playsinline>
+        <source src="802.mp4" type="video/mp4">
+      </video>
+      <video class="chapter-video" data-chapter="3" muted loop playsinline>
+        <source src="803 B.mp4" type="video/mp4">
+      </video>
+    </div>
+
+    <!-- SIDE NAV (columna 4 de 4): menú lateral para saltar directamente a
+         cada capítulo. data-target coincide con el número al final de cada
+         id="chapter-X" -->
+    <nav class="side-nav" aria-label="Capítulos">
+      <div class="nav-item active" data-target="1">
+        <div class="num">1</div>
+        <div class="label">Argentina hoy</div>
+      </div>
+      <div class="nav-item" data-target="2">
+        <div class="num">2</div>
+        <div class="label">El tiempo</div>
+      </div>
+      <div class="nav-item" data-target="3">
+        <div class="num">3</div>
+        <div class="label">El futuro</div>
+      </div>
+    </nav>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
