@@ -25,11 +25,6 @@
     --flame:#ffb35c;                  /* cáncer detectado (ámbar) */
     --dot-pink:var(--rose-strong);    /* detectado gracias a la IA */
   }
-  @media (prefers-color-scheme: light){
-    :root:not([data-theme="dark"]){
-      --bg:#07050a; --text:#f2e9ee;
-    }
-  }
 
   /* ============ RESET BÁSICO ============ */
   *{box-sizing:border-box;}
@@ -88,12 +83,10 @@
   .intro-note{font-size:0.95rem; color:var(--text-dim); text-align:center; margin-top:0.6rem;}
 
   /* ---------- MAIN EXPERIENCE ---------- */
-  #experience{min-height:100vh; padding:0; position:relative;}
+  #experience{min-height:100vh; min-height:100dvh; padding:0; position:relative;}
   .chapter-bg{
     position:fixed; inset:0; z-index:0;
-    background:
-      radial-gradient(ellipse at 15% 20%, rgba(255,110,150,0.05) 0%, transparent 45%),
-      var(--bg);
+    background:var(--bg);
   }
 
   /* Grid de 4 columnas:
@@ -107,7 +100,7 @@
   .layout{
     position:relative; z-index:1;
     display:grid; grid-template-columns: 1fr 1fr 1fr 200px;
-    min-height:100vh; max-width:1400px; margin:0 auto;
+    min-height:100vh; min-height:100dvh; max-width:1400px; margin:0 auto;
     padding: 22px 32px; /* menos aire arriba/abajo todavía, para ganar los últimos px y evitar el scroll */
     gap:24px;
   }
@@ -217,6 +210,7 @@
     height:fit-content;
   }
   .nav-item{
+    font:inherit; display:block; width:100%;
     background:var(--panel); border:1px solid rgba(255,255,255,0.1);
     border-radius:12px; padding:16px 10px; text-align:center; cursor:pointer;
     transition:all .25s; color:var(--text-dim);
@@ -360,10 +354,10 @@
   .ui-seg button{font:inherit; font-size:0.82rem; border:0; background:transparent; color:var(--text-dim); padding:5px 11px; border-radius:999px; cursor:pointer;}
   .ui-seg button[aria-pressed="true"]{background:var(--rose-strong); color:#1a0510;}
 
-  /* .me-view: antes eran 2 vistas que se alternaban (grilla ó escala,
-     nunca las dos juntas). Ahora las 2 quedan siempre visibles, apiladas
-     -- la de escala ("Llevalo a más mujeres") ya no depende de tocar
-     ningún botónrle también el alto, porque escala en
+  /* .ui-field envuelve el <svg>. El svg no tiene un tamaño fijo en
+     píxeles: usa viewBox + width:100% para escalar solo, así que
+     angostar el ancho asignado a esta columna (ver flex:0 0 42% más
+     abajo) alcanza para bajarle también el alto, porque escala en
      proporción al ancho. */
   .ui-field{position:relative; border-radius:12px; overflow-x:auto;}
   .ui-field svg{display:block; width:100%; height:auto;}
@@ -385,16 +379,15 @@
     .ui-visual .ui-stats{flex:1 1 auto; max-width:320px;}
   }
 
-  /* ---- Pestaña "Las que se escapaban" (panel 2): la visual ocupa el
-     alto libre del panel ----
-     .ui-panel está forzado al alto del panel más alto de los dos (ver
-     comentario de .ui-panels, arriba): como el panel 2 tienktext{color:var(--rose-strong);}
+  .ui-readout{display:flex; gap:12px; flex-wrap:wrap; margin-top:4px; align-items:flex-end;}
+  .ui-big{font-family:var(--serif); font-size:1.4rem; line-height:1; color:var(--text); font-variant-numeric:tabular-nums;}
+  .ui-pinktext{color:var(--rose-strong);}
   .ui-lab{color:var(--text-dim); font-size:0.8rem;}
 
-  /* Antes .me-scale iba pegada debajo de .ui-readout con un borde
-     arriba para separarla visualmente. Ahora es su propia vista
-     (.me-view), así que no necesita ni el borde ni el margen superior. */
-  .me-scale{margin-top:0; una etiqueta discreta. */
+  /* .ui-src ahora es un <details>: por defecto el navegador solo
+     muestra el <summary> ("Fuente"), así que ahorra todo el alto
+     que antes ocupaba el párrafo completo. text-align:right lo
+     pega a la esquina derecha, como una etiqueta discreta. */
   /* position:relative -> este es el punto de referencia para el
      popover (el <p> de abajo) que se posiciona con position:absolute
      "sobre" este elemento. margin-top más chico (4px, antes 8px) para
@@ -455,4 +448,32 @@
 
   @media (prefers-reduced-motion: reduce){
     .me-dot, .me-glow{transition:none;}
+  }
+
+  /* ============ BOTONES NUEVOS Y ACCESIBILIDAD ============ */
+  .nav-item .label{display:block;}
+  .nav-item:focus-visible, .audio-btn:focus-visible, .ui-tab:focus-visible,
+  .ui-seg button:focus-visible, .ui-src summary:focus-visible{outline:2px solid var(--rose-strong); outline-offset:3px;}
+
+  /* ============ OTROS DISPOSITIVOS (celular, tablet) ============ */
+  .layout{padding-left:max(32px, env(safe-area-inset-left)); padding-right:max(32px, env(safe-area-inset-right));
+    padding-bottom:max(22px, env(safe-area-inset-bottom));}
+  @media (max-width:900px){
+    .layout{padding-left:max(18px, env(safe-area-inset-left)); padding-right:max(18px, env(safe-area-inset-right));}
+    /* menú de capítulos fijo abajo, a mano del pulgar */
+    .side-nav{position:sticky; bottom:max(8px, env(safe-area-inset-bottom)); top:auto; transform:none; z-index:5;
+      order:2; padding:6px; border-radius:16px; background:rgba(16,10,20,.82); backdrop-filter:blur(8px);
+      border:1px solid var(--panel-border); gap:8px;}
+    .nav-item{flex:1 0 auto; padding:10px 8px;}
+    .nav-item .num{margin-bottom:4px;}
+  }
+  @media (max-width:600px){
+    .layout{gap:14px; padding-top:16px;}
+    .chapter-media{min-height:170px;}
+    .chapter{min-height:0;}
+    .nav-item{min-width:88px;}
+    .nav-item .label{font-size:.74rem;}
+  }
+  @media (hover:none){ /* pantallas táctiles: botones de al menos 44px */
+    .nav-item, .ui-tab, .ui-seg button, .audio-btn{min-height:44px;}
   }

@@ -17,7 +17,10 @@
   #chapter-3 .chapter-header{ margin-bottom:2px; }
   #chapter-3 .chapter-eyebrow{ margin-bottom:2px; }
 
-. El "+" separa la segunda de la primera con una línea
+  /* .me-view: antes eran 2 vistas que se alternaban (grilla ó escala,
+     nunca las dos juntas). Ahora las 2 quedan siempre visibles, apiladas
+     -- la de escala ("Llevalo a más mujeres") ya no depende de tocar
+     ningún botón. El "+" separa la segunda de la primera con una línea
      sutil, para que se lea como una sección aparte y no como un batido
      continuo de contenido. */
   .me-view{display:block;}
@@ -27,10 +30,10 @@
     border-top:1px solid var(--panel-border);
   }
 
-  /* .ui-field envuelve el <svg>. El svg no tiene un tamaño fijo en
-     píxeles: usa viewBox + width:100% para escalar solo, así que
-     angostar el ancho asignado a esta columna (ver flex:0 0 42% más
-     abajo) alcanza para bajane menos
+  /* ---- Pestaña "Las que se escapaban" (panel 2): la visual ocupa el
+     alto libre del panel ----
+     .ui-panel está forzado al alto del panel más alto de los dos (ver
+     comentario de .ui-panels, arriba): como el panel 2 tiene menos
      contenido que el panel 1 (que además tiene la barra "Llevalo a más
      mujeres"), sin esto quedaba un hueco vacío debajo de "Fuente".
      Con flex:1 en .ui-visual y .ui-field, la grilla de 100 puntos crece
@@ -57,15 +60,11 @@
   .me-glow{opacity:0; transition:opacity .6s;}
   .me-glow.me-on{opacity:1;}
 
-  .ui-readout{display:flex; gap:12px; flex-wrap:wrap; margin-top:4px; align-items:flex-end;}
-  .ui-big{font-family:var(--serif); font-size:1.4rem; line-height:1; color:var(--text); font-variant-numeric:tabular-nums;}
-  .ui-big.me-pi padding-top:0;}
+  /* Antes .me-scale iba pegada debajo de .ui-readout con un borde
+     arriba para separarla visualmente. Ahora es su propia vista
+     (.me-view), así que no necesita ni el borde ni el margen superior. */
+  .me-scale{margin-top:0; padding-top:0;}
   .me-scale label{display:block; font-size:0.82rem; margin-bottom:4px; color:var(--text-dim);}
   .me-scale input[type=range]{width:100%; accent-color:var(--rose-strong);}
   .me-scale-out{display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:4px;}
   .me-scale-out .ui-big{font-size:1.1rem;}
-
-  /* .ui-src ahora es un <details>: por defecto el navegador solo
-     muestra el <summary> ("Fuente"), así que ahorra todo el alto
-     que antes ocupaba el párrafo completo. text-align:right lo
-     pega a la esquina derecha, como
