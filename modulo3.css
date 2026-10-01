@@ -1,0 +1,71 @@
+/* ============================================================
+   MODULO3.CSS — Capítulo 3 "El futuro" — Meli — prefijo: me-
+   Solo estilos de este módulo, todos con prefijo "me-" (o con el id
+   del capítulo). Para tarjetas, pestañas, botones, etc. usá las clases
+   compartidas "ui-*" de style.css y las variables de :root.
+   ============================================================ */
+
+/* ============================================================
+     Ajuste SOLO para el capítulo 3: como este capítulo tiene
+     contenido extra (el módulo me-*), le achicamos el margen
+     inferior del título para ganar altura y que todo entre en
+     una pantalla. Al usar el selector "#chapter-3 .chapter-title"
+     (en vez de tocar .chapter-title en general), los capítulos
+     1 y 2 quedan exactamente como estaban.
+     ============================================================ */
+  #chapter-3 .chapter-title{ margin-bottom:4px; }
+  #chapter-3 .chapter-header{ margin-bottom:2px; }
+  #chapter-3 .chapter-eyebrow{ margin-bottom:2px; }
+
+. El "+" separa la segunda de la primera con una línea
+     sutil, para que se lea como una sección aparte y no como un batido
+     continuo de contenido. */
+  .me-view{display:block;}
+  .me-view + .me-view{
+    margin-top:10px;
+    padding-top:10px;
+    border-top:1px solid var(--panel-border);
+  }
+
+  /* .ui-field envuelve el <svg>. El svg no tiene un tamaño fijo en
+     píxeles: usa viewBox + width:100% para escalar solo, así que
+     angostar el ancho asignado a esta columna (ver flex:0 0 42% más
+     abajo) alcanza para bajane menos
+     contenido que el panel 1 (que además tiene la barra "Llevalo a más
+     mujeres"), sin esto quedaba un hueco vacío debajo de "Fuente".
+     Con flex:1 en .ui-visual y .ui-field, la grilla de 100 puntos crece
+     para llenar ese espacio libre.
+     OJO: esto da por sentado que la grilla del panel 2 (ver su viewBox
+     en el HTML) es, de por sí, más baja que la del panel 1 -- si no,
+     es ELLA la que termina fijando el alto compartido de los dos
+     paneles, y el hueco vacío reaparece (pero en el panel 1). Por eso
+     el viewBox de #me-g2 tiene que seguir siendo más panorámico/achatado
+     que el de #me-g1. */
+  #me-tabpanel-2 .ui-visual{flex:1 1 auto;}
+  #me-tabpanel-2 .ui-field{flex:1 1 auto; display:flex;}
+  #me-tabpanel-2 .ui-field svg{width:100%; height:100%;}
+  #me-tabpanel-2 .ui-src{margin-top:auto; padding-top:8px;}
+
+  @media (min-width:680px){
+    #me-tabpanel-2 .ui-visual{align-items:stretch;}
+    #me-tabpanel-2 .ui-stats{justify-content:center;}
+  }
+
+  .me-dot{fill:var(--dot-off); transition:fill .5s;}
+  .me-dot.me-lit{fill:var(--flame);}
+  .me-dot.me-new{fill:var(--dot-pink);}
+  .me-glow{opacity:0; transition:opacity .6s;}
+  .me-glow.me-on{opacity:1;}
+
+  .ui-readout{display:flex; gap:12px; flex-wrap:wrap; margin-top:4px; align-items:flex-end;}
+  .ui-big{font-family:var(--serif); font-size:1.4rem; line-height:1; color:var(--text); font-variant-numeric:tabular-nums;}
+  .ui-big.me-pi padding-top:0;}
+  .me-scale label{display:block; font-size:0.82rem; margin-bottom:4px; color:var(--text-dim);}
+  .me-scale input[type=range]{width:100%; accent-color:var(--rose-strong);}
+  .me-scale-out{display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:4px;}
+  .me-scale-out .ui-big{font-size:1.1rem;}
+
+  /* .ui-src ahora es un <details>: por defecto el navegador solo
+     muestra el <summary> ("Fuente"), así que ahorra todo el alto
+     que antes ocupaba el párrafo completo. text-align:right lo
+     pega a la esquina derecha, como

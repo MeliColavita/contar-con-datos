@@ -8,6 +8,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="modulo1.css">
+<link rel="stylesheet" href="modulo2.css">
+<link rel="stylesheet" href="modulo3.css">
 </head>
 <body>
 
@@ -71,6 +74,14 @@
             </span>
           </h2>
         </div>
+
+        <!-- ============ MÓDULO 1 — Emi (prefijo em-) ============
+             Todo el contenido de este capítulo va dentro de este div.
+             Estilos en modulo1.css, lógica en modulo1.js.
+             Usá las clases compartidas ui-* (ui-panel, ui-tabs, ui-seg,
+             ui-big, ui-lab, ui-src...): mirá el módulo 3 como ejemplo. -->
+        <div class="ui-wrap em-wrap">
+        </div>
       </section>
 
       <!-- CAPÍTULO 2 -->
@@ -88,6 +99,14 @@
               <span class="dot"></span>
             </span>
           </h2>
+        </div>
+
+        <!-- ============ MÓDULO 2 — Brenda (prefijo br-) ============
+             Todo el contenido de este capítulo va dentro de este div.
+             Estilos en modulo2.css, lógica en modulo2.js.
+             Usá las clases compartidas ui-* (ui-panel, ui-tabs, ui-seg,
+             ui-big, ui-lab, ui-src...): mirá el módulo 3 como ejemplo. -->
+        <div class="ui-wrap br-wrap">
         </div>
       </section>
 
@@ -113,19 +132,19 @@
              mujeres, con IA activable.
 
              Estructura:
-               .fv-wrap            -> ocupa el ancho de .main-col
-                 .fv-lede          -> bajada corta
-                 .fv-tabs          -> 2 botones para elegir qué tabla ver
-                 .fv-panels        -> "grid stack": los 2 .fv-tabpanel
+               .ui-wrap            -> ocupa el ancho de .main-col
+                 .ui-lede          -> bajada corta
+                 .ui-tabs          -> 2 botones para elegir qué tabla ver
+                 .ui-panels        -> "grid stack": los 2 .ui-tabpanel
                                       comparten la misma celda del grid,
                                       así el rectángulo siempre mide el
                                       alto del panel más alto de los 2
                                       (no cambia de tamaño al cambiar de
                                       pestaña). Solo el que tiene .active
                                       se ve (opacity, no display:none).
-                   .fv-tabpanel (x2) -> una por cada visualización
-                     .fv-panel       -> tarjeta con fondo semitransparente
-                       svg#fv-g1/g2  -> los puntos, dibujados por JS
+                   .ui-tabpanel (x2) -> una por cada visualización
+                     .ui-panel       -> tarjeta con fondo semitransparente
+                       svg#me-g1/g2  -> los puntos, dibujados por JS
                                         (ver script.js) usando las coordenadas
                                         del viewBox de abajo.
 
@@ -135,55 +154,55 @@
              Ahora aria-labelledby apunta directo al botón de la pestaña,
              así los lectores de pantalla igual anuncian el título.
              ============================================================ -->
-        <div class="fv-wrap">
-          <p class="fv-lede">Cada punto es una mujer. Encendé la inteligencia artificial y mirá cuántas llamas nuevas aparecen.</p>
+        <div class="ui-wrap">
+          <p class="ui-lede">Cada punto es una mujer. Encendé la inteligencia artificial y mirá cuántas llamas nuevas aparecen.</p>
 
-          <div class="fv-tabs" role="tablist" aria-label="Elegí una visualización">
-            <button class="fv-tab" id="fv-tabbtn-1" type="button" role="tab" aria-selected="true" aria-controls="fv-tabpanel-1">1.000 mujeres en control</button>
-            <button class="fv-tab" id="fv-tabbtn-2" type="button" role="tab" aria-selected="false" aria-controls="fv-tabpanel-2">Las que se escapaban</button>
+          <div class="ui-tabs" role="tablist" aria-label="Elegí una visualización">
+            <button class="ui-tab" id="me-tabbtn-1" type="button" role="tab" aria-selected="true" aria-controls="me-tabpanel-1">1.000 mujeres en control</button>
+            <button class="ui-tab" id="me-tabbtn-2" type="button" role="tab" aria-selected="false" aria-controls="me-tabpanel-2">Las que se escapaban</button>
           </div>
 
-          <!-- .fv-panels: envuelve los 2 paneles (grid-stack, ver CSS)
+          <!-- .ui-panels: envuelve los 2 paneles (grid-stack, ver CSS)
                para que el rectángulo mida siempre el alto del panel
                más alto de los dos, y no cambie de tamaño al cambiar
                de pestaña. -->
-          <div class="fv-panels">
+          <div class="ui-panels">
 
           <!-- Panel 1: arranca visible (clase .active) -->
-          <div class="fv-tabpanel active" id="fv-tabpanel-1" role="tabpanel" aria-labelledby="fv-tabbtn-1">
-            <div class="fv-panel">
-              <p class="fv-sub">En el estudio MASAI (Suecia, 80.020 mujeres), leer las mamografías con apoyo de IA encontró un cáncer más cada 1.000 mujeres.</p>
+          <div class="ui-tabpanel active" id="me-tabpanel-1" role="tabpanel" aria-labelledby="me-tabbtn-1">
+            <div class="ui-panel">
+              <p class="ui-sub">En el estudio MASAI (Suecia, 80.020 mujeres), leer las mamografías con apoyo de IA encontró un cáncer más cada 1.000 mujeres.</p>
 
               <!-- Grupo de 2 botones: cambian qué puntos están encendidos
                    en la grilla. "Llevalo a más mujeres" ya no es un botón:
                    ver más abajo, siempre desplegado. -->
-              <div class="fv-seg" role="group" aria-label="Modo de lectura">
-                <button id="fv-m-sin" type="button" aria-pressed="true">Sin IA</button>
-                <button id="fv-m-con" type="button" aria-pressed="false">Con IA</button>
+              <div class="ui-seg" role="group" aria-label="Modo de lectura">
+                <button id="me-m-sin" type="button" aria-pressed="true">Sin IA</button>
+                <button id="me-m-con" type="button" aria-pressed="false">Con IA</button>
               </div>
 
               <!-- Vista 1: la grilla de 1.000 puntos + leyenda + números.
                    Ya no se alterna con la de abajo: las dos están
                    siempre visibles, una debajo de la otra. -->
-              <div class="fv-view" id="fv-view-grid">
+              <div class="me-view" id="me-view-grid">
                 <!-- viewBox "panorámico" (más ancho que alto: 765x315) en vez
                      del original casi cuadrado (600x375). Misma cantidad de
                      puntos (1.000 = 50 columnas x 20 filas), pero al ser más
                      "achatada" la figura, ocupa menos alto en pantalla.
                      Las coordenadas de cada punto las calcula script.js. -->
-                <!-- .fv-visual: en pantallas angostas, el campo (grilla) y las
-                     estadísticas (.fv-stats) se apilan como antes. Desde 680px
+                <!-- .ui-visual: en pantallas angostas, el campo (grilla) y las
+                     estadísticas (.ui-stats) se apilan como antes. Desde 680px
                      de ancho, CSS los pone lado a lado: la grilla ocupa el
-                     espacio "protagonista" a la izquierda y .fv-stats queda
+                     espacio "protagonista" a la izquierda y .ui-stats queda
                      como una columna angosta de lectura a la derecha, en vez
                      de que todo se estire fino y parejo. -->
-                <div class="fv-visual">
-                  <div class="fv-field"><svg id="fv-g1" viewBox="0 0 765 315" role="img" aria-label="Grilla de 1.000 mujeres"></svg></div>
-                  <div class="fv-stats">
-                    <div class="fv-legend"><span><i style="background:var(--fv-flame)"></i>Cáncer detectado</span><span><i style="background:var(--rose-strong)"></i>Detectado gracias a la IA</span></div>
-                    <div class="fv-readout">
-                      <div><div class="fv-big" id="fv-r1">5,1</div><div class="fv-lab">cánceres cada 1.000 mujeres</div></div>
-                      <div><div class="fv-big fv-pinktext" id="fv-r1d">&nbsp;</div><div class="fv-lab" id="fv-r1dl">&nbsp;</div></div>
+                <div class="ui-visual">
+                  <div class="ui-field"><svg id="me-g1" viewBox="0 0 765 315" role="img" aria-label="Grilla de 1.000 mujeres"></svg></div>
+                  <div class="ui-stats">
+                    <div class="ui-legend"><span><i style="background:var(--flame)"></i>Cáncer detectado</span><span><i style="background:var(--rose-strong)"></i>Detectado gracias a la IA</span></div>
+                    <div class="ui-readout">
+                      <div><div class="ui-big" id="me-r1">5,1</div><div class="ui-lab">cánceres cada 1.000 mujeres</div></div>
+                      <div><div class="ui-big ui-pinktext" id="me-r1d">&nbsp;</div><div class="ui-lab" id="me-r1dl">&nbsp;</div></div>
                     </div>
                   </div>
                 </div>
@@ -192,15 +211,15 @@
               <!-- Vista 2: la barra deslizadora + resultados de la escala.
                    Ya no hace falta tocar ningún botón para verla: queda
                    siempre desplegada debajo de la grilla / Sin IA-Con IA
-                   (separada por una línea sutil, ver CSS ".fv-view + .fv-view"). -->
-              <div class="fv-view" id="fv-view-scale">
-                <div class="fv-scale">
-                  <label for="fv-n">Llevalo a más mujeres: <strong id="fv-nlab">40.000</strong></label>
-                  <input id="fv-n" type="range" min="1000" max="1000000" step="1000" value="40000">
-                  <div class="fv-scale-out">
-                    <div><div class="fv-big" id="fv-s-sin">204</div><div class="fv-lab">detectados sin IA</div></div>
-                    <div><div class="fv-big" id="fv-s-con">244</div><div class="fv-lab">detectados con IA</div></div>
-                    <div><div class="fv-big fv-pinktext" id="fv-s-dif">+40</div><div class="fv-lab">cánceres más encontrados</div></div>
+                   (separada por una línea sutil, ver CSS ".me-view + .me-view"). -->
+              <div class="me-view" id="me-view-scale">
+                <div class="me-scale">
+                  <label for="me-n">Llevalo a más mujeres: <strong id="me-nlab">40.000</strong></label>
+                  <input id="me-n" type="range" min="1000" max="1000000" step="1000" value="40000">
+                  <div class="me-scale-out">
+                    <div><div class="ui-big" id="me-s-sin">204</div><div class="ui-lab">detectados sin IA</div></div>
+                    <div><div class="ui-big" id="me-s-con">244</div><div class="ui-lab">detectados con IA</div></div>
+                    <div><div class="ui-big ui-pinktext" id="me-s-dif">+40</div><div class="ui-lab">cánceres más encontrados</div></div>
                   </div>
                 </div>
               </div>
@@ -209,7 +228,7 @@
                    no hace falta JS. "Fuente" (el <summary>) es lo único
                    que se ve por defecto, alineado a la esquina derecha
                    del panel; al hacer click se despliega el texto completo. -->
-              <details class="fv-src">
+              <details class="ui-src">
                 <summary>Fuente</summary>
                 <p>Lång et al., MASAI, The Lancet Oncology (2023): 244 cánceres en 39.996 mujeres con IA (6,1‰) y 203 en 40.024 sin IA (5,1‰). La escala es una proyección con esas tasas. Detectar más no equivale todavía a salvar más vidas: el estudio sigue midiendo ese resultado.</p>
               </details>
@@ -217,44 +236,44 @@
           </div>
 
           <!-- Panel 2: arranca oculto, sin clase .active -->
-          <div class="fv-tabpanel" id="fv-tabpanel-2" role="tabpanel" aria-labelledby="fv-tabbtn-2">
-            <div class="fv-panel">
-              <p class="fv-sub">Cada punto es una mujer con cáncer de mama. Con IA, los falsos negativos (cánceres que la lectura no detectó) bajaron.</p>
-              <div class="fv-seg" role="group" aria-label="País">
-                <button id="fv-c-us" type="button" aria-pressed="true">Estados Unidos</button>
-                <button id="fv-c-uk" type="button" aria-pressed="false">Reino Unido</button>
+          <div class="ui-tabpanel" id="me-tabpanel-2" role="tabpanel" aria-labelledby="me-tabbtn-2">
+            <div class="ui-panel">
+              <p class="ui-sub">Cada punto es una mujer con cáncer de mama. Con IA, los falsos negativos (cánceres que la lectura no detectó) bajaron.</p>
+              <div class="ui-seg" role="group" aria-label="País">
+                <button id="me-c-us" type="button" aria-pressed="true">Estados Unidos</button>
+                <button id="me-c-uk" type="button" aria-pressed="false">Reino Unido</button>
               </div>
-              <div class="fv-seg" role="group" aria-label="IA" style="margin-left:6px">
-                <button id="fv-f-off" type="button" aria-pressed="true">Sin IA</button>
-                <button id="fv-f-on" type="button" aria-pressed="false">Con IA</button>
+              <div class="ui-seg" role="group" aria-label="IA" style="margin-left:6px">
+                <button id="me-f-off" type="button" aria-pressed="true">Sin IA</button>
+                <button id="me-f-on" type="button" aria-pressed="false">Con IA</button>
               </div>
               <!-- Grilla panorámica: 20 columnas x 5 filas (100 puntos),
                    viewBox 800x200. Tiene que ser más achatada que la del
                    panel 1 (765x315): si no, esta grilla termina siendo
                    intrínsecamente más alta que el panel 1 y ESO es lo que
                    fija el alto compartido de los dos paneles (ver
-                   .fv-panels más abajo), dejando un hueco vacío en el
+                   .ui-panels más abajo), dejando un hueco vacío en el
                    panel 1 -- que es justo el bug que había con la grilla
                    cuadrada (10x10). Con esta forma más baja, el CSS
-                   ("#fv-tabpanel-2 .fv-field") puede hacerla crecer hasta
+                   ("#me-tabpanel-2 .ui-field") puede hacerla crecer hasta
                    el alto del panel 1 con seguridad, sin volver a
                    provocar ese hueco. -->
-              <div class="fv-visual">
-                <div class="fv-field"><svg id="fv-g2" viewBox="0 0 800 200" role="img" aria-label="100 mujeres con cáncer"></svg></div>
-                <div class="fv-stats">
-                  <div class="fv-readout">
-                    <div><div class="fv-big fv-pinktext" id="fv-r2">0</div><div class="fv-lab" id="fv-r2l">de cada 100 recuperadas por la IA</div></div>
+              <div class="ui-visual">
+                <div class="ui-field"><svg id="me-g2" viewBox="0 0 800 200" role="img" aria-label="100 mujeres con cáncer"></svg></div>
+                <div class="ui-stats">
+                  <div class="ui-readout">
+                    <div><div class="ui-big ui-pinktext" id="me-r2">0</div><div class="ui-lab" id="me-r2l">de cada 100 recuperadas por la IA</div></div>
                   </div>
                 </div>
               </div>
-              <details class="fv-src">
+              <details class="ui-src">
                 <summary>Fuente</summary>
                 <p>McKinney et al., Nature (2020). Reducción absoluta de falsos negativos: 9,4 puntos en EE. UU. y 2,7 en Reino Unido (redondeado a puntos enteros en la grilla). Estudio retrospectivo sobre mamografías ya realizadas.</p>
               </details>
             </div>
           </div>
 
-          </div><!-- /.fv-panels -->
+          </div><!-- /.ui-panels -->
         </div>
 
       </section>
@@ -304,5 +323,8 @@
 </div>
 
 <script src="script.js"></script>
+<script src="modulo1.js"></script>
+<script src="modulo2.js"></script>
+<script src="modulo3.js"></script>
 </body>
 </html>

@@ -1,3 +1,12 @@
+/* ============================================================
+   STYLE.CSS — ARCHIVO GENERAL (lo comparten los 3 módulos)
+   Acá viven: variables de color/tipografía, intro, layout, menú,
+   títulos de capítulo y los COMPONENTES COMPARTIDOS "ui-*" (al final).
+   Cada módulo tiene su propio CSS: modulo1.css (Emi, em-),
+   modulo2.css (Brenda, br-) y modulo3.css (Meli, me-).
+   Si cambiás algo de acá, se nota en todos los módulos: avisá al equipo.
+   ============================================================ */
+
 /* ============ VARIABLES DE COLOR Y TIPOGRAFÍA ============ */
 :root{
     --bg:#07050a;
@@ -11,6 +20,10 @@
     --text-dim:#a99aa6;
     --serif: 'Fraunces', Georgia, serif;
     --sans: 'Inter', system-ui, sans-serif;
+    /* Colores de los puntos/llamas de las visualizaciones (compartidos por todos los módulos) */
+    --dot-off:rgba(255,255,255,0.16); /* punto "apagado" */
+    --flame:#ffb35c;                  /* cáncer detectado (ámbar) */
+    --dot-pink:var(--rose-strong);    /* detectado gracias a la IA */
   }
   @media (prefers-color-scheme: light){
     :root:not([data-theme="dark"]){
@@ -240,20 +253,13 @@
   }
 
   /* ============================================================
-     Ajuste SOLO para el capítulo 3: como este capítulo tiene
-     contenido extra (el módulo fv-*), le achicamos el margen
-     inferior del título para ganar altura y que todo entre en
-     una pantalla. Al usar el selector "#chapter-3 .chapter-title"
-     (en vez de tocar .chapter-title en general), los capítulos
-     1 y 2 quedan exactamente como estaban.
+     COMPONENTES COMPARTIDOS (ui-*) — tarjeta, pestañas, botones
+     Sin/Con, números grandes, "Fuente", leyenda, grilla+estadísticas.
+     Usalos en tu módulo para que todo se vea parejo.
      ============================================================ */
-  #chapter-3 .chapter-title{ margin-bottom:4px; }
-  #chapter-3 .chapter-header{ margin-bottom:2px; }
-  #chapter-3 .chapter-eyebrow{ margin-bottom:2px; }
-
   /* ============================================================
      MÓDULO "EL FUTURO" — visualización IA (capítulo 3)
-     Todo prefijado con fv- para no chocar con .dot, section, h2, etc.
+     Todo prefijado con me- para no chocar con .dot, section, h2, etc.
      que ya usa el resto del sitio.
 
      Objetivo de este bloque: que el capítulo 3 entre completo en
@@ -267,48 +273,45 @@
      derecha de la columna (ahí vivía el video de fondo del capítulo).
      Ahora el video tiene su propia columna en el grid (.chapter-media),
      así que este módulo puede ocupar el ancho completo de .main-col. */
-  .fv-wrap{
+  .ui-wrap{
     position:relative; z-index:1;
     margin-top:2px;
     width:100%;
-    --fv-dot:rgba(255,255,255,0.16); /* color de los puntos "apagados" */
-    --fv-flame:#ffb35c;              /* color del cáncer detectado (ámbar) */
-    --fv-pink:var(--rose-strong);    /* color de "detectado gracias a la IA" */
   }
 
   /* Bajada corta arriba de las pestañas. Margen chico a propósito
      para no consumir alto de pantalla. */
-  .fv-lede{color:var(--text-dim); max-width:68ch; margin:0 0 6px; font-size:0.85rem; line-height:1.28;}
+  .ui-lede{color:var(--text-dim); max-width:68ch; margin:0 0 6px; font-size:0.85rem; line-height:1.28;}
 
   /* ---- Pestañas para elegir qué visualización ver ----
      En vez de mostrar las dos tablas una al lado de la otra (lo que
      hacía la página altísima), ahora solo se muestra una a la vez:
-     estos botones cambian cuál .fv-tabpanel tiene la clase .active
+     estos botones cambian cuál .ui-tabpanel tiene la clase .active
      (ver la lógica en script.js). */
-  .fv-tabs{display:flex; gap:6px; margin-bottom:6px; flex-wrap:wrap;}
-  .fv-tab{
+  .ui-tabs{display:flex; gap:6px; margin-bottom:6px; flex-wrap:wrap;}
+  .ui-tab{
     font:inherit; font-size:0.8rem; font-family:var(--sans); text-align:left;
     border:1px solid var(--panel-border); background:rgba(255,255,255,0.04);
     color:var(--text-dim); padding:5px 12px; border-radius:10px; cursor:pointer;
     transition:all .2s; flex:1 1 auto; min-width:140px;
   }
-  .fv-tab:hover{border-color:rgba(255,255,255,0.3); color:var(--text);}
+  .ui-tab:hover{border-color:rgba(255,255,255,0.3); color:var(--text);}
   /* Pestaña activa: la marca script.js poniendo aria-selected="true" */
-  .fv-tab[aria-selected="true"]{
+  .ui-tab[aria-selected="true"]{
     background:var(--rose-strong); border-color:var(--rose-strong); color:#1a0510; font-weight:600;
   }
 
   /* ============================================================
-     NUEVO: .fv-panels envuelve los 2 .fv-tabpanel (ver index.html).
+     NUEVO: .ui-panels envuelve los 2 .ui-tabpanel (ver index.html).
 
-     Antes, cada .fv-tabpanel tenía display:none / display:block, así
+     Antes, cada .ui-tabpanel tenía display:none / display:block, así
      que en cualquier momento solo UNO de los dos "existía" para el
      cálculo de alto del layout -> el rectángulo se agrandaba o
      achicaba según la pestaña, porque panel 1 y panel 2 tienen
      contenido de distinta altura.
 
-     Solución ("grid stack"): .fv-panels es un grid de una sola celda,
-     y los 2 .fv-tabpanel comparten esa misma celda (grid-area:1/1).
+     Solución ("grid stack"): .ui-panels es un grid de una sola celda,
+     y los 2 .ui-tabpanel comparten esa misma celda (grid-area:1/1).
      Como ninguno usa display:none, LOS DOS cuentan al mismo tiempo
      para medir el alto de la celda -> el grid siempre usa el alto
      del más alto de los dos, sin importar cuál esté visible. El panel
@@ -316,17 +319,17 @@
      display:none), así sigue "ocupando lugar" para la medición pero
      no se ve ni se puede clickear.
      ============================================================ */
-  .fv-panels{
+  .ui-panels{
     display:grid;
   }
-  .fv-tabpanel{
+  .ui-tabpanel{
     grid-area: 1 / 1;
     opacity:0;
     visibility:hidden;
     pointer-events:none;
     transition:opacity .35s ease;
   }
-  .fv-tabpanel.active{
+  .ui-tabpanel.active{
     opacity:1;
     visibility:visible;
     pointer-events:auto;
@@ -336,7 +339,7 @@
      esto es clave para que la vela del video de fondo del capítulo
      siga viéndose "a través" del panel en vez de quedar tapada por
      un fondo sólido. */
-  .fv-panel{
+  .ui-panel{
     position:relative; /* contexto para que el popover de "Fuente" se ubique bien */
     background:rgba(22,15,27,0.66);
     border:1px solid var(--panel-border);
@@ -351,109 +354,58 @@
     display:flex;
     flex-direction:column;
   }
-  .fv-sub{color:var(--text-dim); margin:0 0 6px; font-size:0.84rem; line-height:1.28; max-width:64ch;}
+  .ui-sub{color:var(--text-dim); margin:0 0 6px; font-size:0.84rem; line-height:1.28; max-width:64ch;}
 
-  .fv-seg{display:inline-flex; justify-content:center; flex-wrap:wrap; border:1px solid var(--panel-border); border-radius:999px; padding:3px; gap:2px; margin-bottom:6px;}
-  .fv-seg button{font:inherit; font-size:0.82rem; border:0; background:transparent; color:var(--text-dim); padding:5px 11px; border-radius:999px; cursor:pointer;}
-  .fv-seg button[aria-pressed="true"]{background:var(--rose-strong); color:#1a0510;}
+  .ui-seg{display:inline-flex; justify-content:center; flex-wrap:wrap; border:1px solid var(--panel-border); border-radius:999px; padding:3px; gap:2px; margin-bottom:6px;}
+  .ui-seg button{font:inherit; font-size:0.82rem; border:0; background:transparent; color:var(--text-dim); padding:5px 11px; border-radius:999px; cursor:pointer;}
+  .ui-seg button[aria-pressed="true"]{background:var(--rose-strong); color:#1a0510;}
 
-  /* .fv-view: antes eran 2 vistas que se alternaban (grilla ó escala,
+  /* .me-view: antes eran 2 vistas que se alternaban (grilla ó escala,
      nunca las dos juntas). Ahora las 2 quedan siempre visibles, apiladas
      -- la de escala ("Llevalo a más mujeres") ya no depende de tocar
-     ningún botón. El "+" separa la segunda de la primera con una línea
-     sutil, para que se lea como una sección aparte y no como un batido
-     continuo de contenido. */
-  .fv-view{display:block;}
-  .fv-view + .fv-view{
-    margin-top:10px;
-    padding-top:10px;
-    border-top:1px solid var(--panel-border);
-  }
-
-  /* .fv-field envuelve el <svg>. El svg no tiene un tamaño fijo en
-     píxeles: usa viewBox + width:100% para escalar solo, así que
-     angostar el ancho asignado a esta columna (ver flex:0 0 42% más
-     abajo) alcanza para bajarle también el alto, porque escala en
+     ningún botónrle también el alto, porque escala en
      proporción al ancho. */
-  .fv-field{position:relative; border-radius:12px; overflow-x:auto;}
-  .fv-field svg{display:block; width:100%; height:auto;}
+  .ui-field{position:relative; border-radius:12px; overflow-x:auto;}
+  .ui-field svg{display:block; width:100%; height:auto;}
 
-  /* .fv-visual agrupa la grilla de puntos (.fv-field) con la leyenda y
-     los números (.fv-stats). Por defecto van apilados (mobile / panel
+  /* .ui-visual agrupa la grilla de puntos (.ui-field) con la leyenda y
+     los números (.ui-stats). Por defecto van apilados (mobile / panel
      angosto). Desde 680px de ancho de panel, se acomodan en fila: la
-     grilla queda como elemento protagonista a la izquierda y .fv-stats
+     grilla queda como elemento protagonista a la izquierda y .ui-stats
      como una columna angosta de lectura a la derecha, vertical-centrada
      contra la grilla -- así el ancho extra se usa como una separación
      "ver / leer" en vez de agrandar todo por igual. */
-  .fv-visual{display:flex; flex-direction:column; gap:10px;}
-  .fv-stats{display:flex; flex-direction:column; gap:8px;}
-  .fv-stats .fv-legend, .fv-stats .fv-readout{margin-top:0;} /* el gap del flex ya separa, no hace falta el margin-top original */
+  .ui-visual{display:flex; flex-direction:column; gap:10px;}
+  .ui-stats{display:flex; flex-direction:column; gap:8px;}
+  .ui-stats .ui-legend, .ui-stats .ui-readout{margin-top:0;} /* el gap del flex ya separa, no hace falta el margin-top original */
 
   @media (min-width:680px){
-    .fv-visual{flex-direction:row; align-items:center; gap:28px;}
-    .fv-visual .fv-field{flex:0 0 42%; min-width:0;} /* más angosta que antes (56%) => también más baja, porque el svg escala en proporción al ancho */
-    .fv-visual .fv-stats{flex:1 1 auto; max-width:320px;}
+    .ui-visual{flex-direction:row; align-items:center; gap:28px;}
+    .ui-visual .ui-field{flex:0 0 42%; min-width:0;} /* más angosta que antes (56%) => también más baja, porque el svg escala en proporción al ancho */
+    .ui-visual .ui-stats{flex:1 1 auto; max-width:320px;}
   }
 
   /* ---- Pestaña "Las que se escapaban" (panel 2): la visual ocupa el
      alto libre del panel ----
-     .fv-panel está forzado al alto del panel más alto de los dos (ver
-     comentario de .fv-panels, arriba): como el panel 2 tiene menos
-     contenido que el panel 1 (que además tiene la barra "Llevalo a más
-     mujeres"), sin esto quedaba un hueco vacío debajo de "Fuente".
-     Con flex:1 en .fv-visual y .fv-field, la grilla de 100 puntos crece
-     para llenar ese espacio libre.
-     OJO: esto da por sentado que la grilla del panel 2 (ver su viewBox
-     en el HTML) es, de por sí, más baja que la del panel 1 -- si no,
-     es ELLA la que termina fijando el alto compartido de los dos
-     paneles, y el hueco vacío reaparece (pero en el panel 1). Por eso
-     el viewBox de #fv-g2 tiene que seguir siendo más panorámico/achatado
-     que el de #fv-g1. */
-  #fv-tabpanel-2 .fv-visual{flex:1 1 auto;}
-  #fv-tabpanel-2 .fv-field{flex:1 1 auto; display:flex;}
-  #fv-tabpanel-2 .fv-field svg{width:100%; height:100%;}
-  #fv-tabpanel-2 .fv-src{margin-top:auto; padding-top:8px;}
+     .ui-panel está forzado al alto del panel más alto de los dos (ver
+     comentario de .ui-panels, arriba): como el panel 2 tienktext{color:var(--rose-strong);}
+  .ui-lab{color:var(--text-dim); font-size:0.8rem;}
 
-  @media (min-width:680px){
-    #fv-tabpanel-2 .fv-visual{align-items:stretch;}
-    #fv-tabpanel-2 .fv-stats{justify-content:center;}
-  }
-
-  .fv-dot{fill:var(--fv-dot); transition:fill .5s;}
-  .fv-dot.fv-lit{fill:var(--fv-flame);}
-  .fv-dot.fv-new{fill:var(--fv-pink);}
-  .fv-glow{opacity:0; transition:opacity .6s;}
-  .fv-glow.fv-on{opacity:1;}
-
-  .fv-readout{display:flex; gap:12px; flex-wrap:wrap; margin-top:4px; align-items:flex-end;}
-  .fv-big{font-family:var(--serif); font-size:1.4rem; line-height:1; color:var(--text); font-variant-numeric:tabular-nums;}
-  .fv-big.fv-pinktext{color:var(--rose-strong);}
-  .fv-lab{color:var(--text-dim); font-size:0.8rem;}
-
-  /* Antes .fv-scale iba pegada debajo de .fv-readout con un borde
+  /* Antes .me-scale iba pegada debajo de .ui-readout con un borde
      arriba para separarla visualmente. Ahora es su propia vista
-     (.fv-view), así que no necesita ni el borde ni el margen superior. */
-  .fv-scale{margin-top:0; padding-top:0;}
-  .fv-scale label{display:block; font-size:0.82rem; margin-bottom:4px; color:var(--text-dim);}
-  .fv-scale input[type=range]{width:100%; accent-color:var(--rose-strong);}
-  .fv-scale-out{display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:4px;}
-  .fv-scale-out .fv-big{font-size:1.1rem;}
-
-  /* .fv-src ahora es un <details>: por defecto el navegador solo
-     muestra el <summary> ("Fuente"), así que ahorra todo el alto
-     que antes ocupaba el párrafo completo. text-align:right lo
-     pega a la esquina derecha, como una etiqueta discreta. */
+     (.me-view), así que no necesita ni el borde ni el margen superior. */
+  .me-scale{margin-top:0; una etiqueta discreta. */
   /* position:relative -> este es el punto de referencia para el
      popover (el <p> de abajo) que se posiciona con position:absolute
      "sobre" este elemento. margin-top más chico (4px, antes 8px) para
      subir un poco la etiqueta y ganar los últimos pixeles de alto. */
-  .fv-src{position:relative; margin-top:4px; text-align:right;}
+  .ui-src{position:relative; margin-top:4px; text-align:right;}
 
   /* El <summary> es la "etiqueta" clickeable. Le sacamos la flechita
      que pone el navegador por default (::marker / ::-webkit-details-marker)
      y ponemos un ícono propio (▸) que rotamos 90° cuando el <details>
      está abierto, para que se note que es desplegable. */
-  .fv-src summary{
+  .ui-src summary{
     display:inline-flex; align-items:center; gap:4px;
     list-style:none; cursor:pointer; user-select:none;
     font-size:0.72rem; color:var(--text-dim);
@@ -461,21 +413,21 @@
     padding:3px 10px; background:rgba(255,255,255,0.03);
     transition:color .2s, border-color .2s;
   }
-  .fv-src summary::-webkit-details-marker{ display:none; } /* Chrome/Safari */
-  .fv-src summary::marker{ content:""; }                   /* Firefox */
-  .fv-src summary::before{
+  .ui-src summary::-webkit-details-marker{ display:none; } /* Chrome/Safari */
+  .ui-src summary::marker{ content:""; }                   /* Firefox */
+  .ui-src summary::before{
     content:"▸"; font-size:0.65rem; transition:transform .2s;
   }
-  .fv-src[open] summary::before{ transform:rotate(90deg); }
-  .fv-src summary:hover{ color:var(--text); border-color:rgba(255,255,255,0.3); }
+  .ui-src[open] summary::before{ transform:rotate(90deg); }
+  .ui-src summary:hover{ color:var(--text); border-color:rgba(255,255,255,0.3); }
 
   /* El texto de la fuente ahora es un "popover" flotante:
      position:absolute lo saca del flujo normal, así que aunque el
      texto sea largo NO empuja nada hacia abajo ni agranda el panel
      (por eso "no ocupa lugar"). bottom:100% lo apoya justo arriba de
-     la etiqueta (que es el elemento con position:relative, .fv-src),
+     la etiqueta (que es el elemento con position:relative, .ui-src),
      y right:0 lo alinea con el borde derecho, donde está la etiqueta. */
-  .fv-src p{
+  .ui-src p{
     position:absolute;
     right:0;
     bottom:calc(100% + 10px); /* 10px de separación respecto a la etiqueta */
@@ -492,15 +444,15 @@
     z-index:20; /* por encima de la grilla y del resto del panel */
   }
   /* Triangulito que apunta hacia la etiqueta, como un globo de diálogo */
-  .fv-src p::after{
+  .ui-src p::after{
     content:"";
     position:absolute; top:100%; right:14px;
     border:6px solid transparent;
     border-top-color:var(--panel);
   }
-  .fv-legend{display:flex; gap:14px; flex-wrap:wrap; font-size:0.76rem; color:var(--text-dim); margin-top:4px;}
-  .fv-legend i{display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:5px; vertical-align:-1px;}
+  .ui-legend{display:flex; gap:14px; flex-wrap:wrap; font-size:0.76rem; color:var(--text-dim); margin-top:4px;}
+  .ui-legend i{display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:5px; vertical-align:-1px;}
 
   @media (prefers-reduced-motion: reduce){
-    .fv-dot, .fv-glow{transition:none;}
+    .me-dot, .me-glow{transition:none;}
   }

@@ -1,0 +1,8 @@
+/* ============================================================
+   MODULO2.CSS — Capítulo 2 "El tiempo" — Brenda — prefijo: br-
+   Solo estilos de este módulo, todos con prefijo "br-" (o con el id
+   del capítulo). Para tarjetas, pestañas, botones, etc. usá las clases
+   compartidas "ui-*" de style.css y las variables de :root.
+   ============================================================ */
+
+/* Ejemplo: .br-algo{ color:var(--rose); } */
