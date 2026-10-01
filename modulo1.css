@@ -1,0 +1,8 @@
+/* ============================================================
+   MODULO1.CSS — Capítulo 1 "Argentina hoy" — Emi — prefijo: em-
+   Solo estilos de este módulo, todos con prefijo "em-" (o con el id
+   del capítulo). Para tarjetas, pestañas, botones, etc. usá las clases
+   compartidas "ui-*" de style.css y las variables de :root.
+   ============================================================ */
+
+/* Ejemplo: .em-algo{ color:var(--rose); } */
