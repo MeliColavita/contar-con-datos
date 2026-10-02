@@ -1,181 +1,119 @@
 // ============================================================
 // MODULO3.JS — "EL FUTURO" (capítulo 3) — Meli — prefijo: me-
-// Todo encerrado en su propia IIFE con ids me-* para no chocar
-// con nada del resto del sitio. Helpers y pestañas: ver script.js.
+// Datos del estudio AIMS (Reino Unido, 115.973 mamografías) — Kelly
+// et al., Nature Cancer 2026. Reemplaza la versión anterior, que
+// usaba MASAI/McKinney.
+//
+// Las grillas de puntos (me-g1, me-g2) ya NO se arman con <svg>: son
+// <div class="me-dot"> dentro de un contenedor CSS Grid (.me-dotgrid),
+// la misma técnica que ya usa el waffle del Capítulo 1 — así los dos
+// capítulos comparten un solo enfoque para "grilla que se pinta según
+// datos", y este archivo ya no necesita los helpers de SVG de
+// script.js (UI.NS, UI.el). Sigue en su propia IIFE con ids me-* para
+// no chocar con nada del resto del sitio. Las pestañas
+// (.ui-tab/.ui-tabpanel) ya funcionan solas (ver script.js).
 // ============================================================
 (function () {
-  let g1 = document.getElementById('me-g1');
+  const g1 = document.getElementById('me-g1');
   if (!g1) return; // el módulo no está en la página, no hacemos nada
 
-  // DATOS del módulo: si cambia una cifra, se cambia SOLO acá.
-  // masai: cánceres cada 1.000 mujeres (Lång et al., 2023). mckinney: falsos negativos recuperados cada 100 (McKinney et al., 2020).
-  const DATOS = { masai: { sin: 5.1, con: 6.1 }, mckinney: { us: 9.4, uk: 2.7 } };
-  const coma = (n) => String(n).replace('.', ',');
+  const fmt = (v) => Math.round(v).toLocaleString('es-AR'); // 1234567 -> "1.234.567"
 
-  // NS: namespace necesario para crear elementos <svg>/<circle> con JS puro
-  // (document.createElementNS en vez de createElement).
-  // rng(seed): generador de números "aleatorios" pero reproducibles (con la
-  // misma seed siempre da los mismos números), así los puntos que se
-  // encienden con la IA no cambian cada vez que se recarga la página.
-  // el(tag, attrs): helper corto para crear un elemento SVG y setearle
-  // atributos en una sola línea.
-  const { NS, rng, el, fmt } = UI; // helpers compartidos (ver script.js)
-
-  // ---------- Grilla 1: 1.000 mujeres ----------
-  // 50 columnas x 20 filas = 1.000 puntos igual que antes, pero en
-  // formato panorámico (más ancho que alto) para que la visualización
-  // ocupe menos altura de pantalla. El viewBox del SVG en el HTML
-  // (765x315) tiene que coincidir con cols*step y rows*step de acá abajo.
-  let defs = el('defs', {});
-  defs.innerHTML =
-    '<radialGradient id="me-rg"><stop offset="0" stop-color="#ffb35c" stop-opacity=".9"/><stop offset="1" stop-color="#ffb35c" stop-opacity="0"/></radialGradient>' +
-    '<radialGradient id="me-rp"><stop offset="0" stop-color="#ff6f9c" stop-opacity=".95"/><stop offset="1" stop-color="#ff6f9c" stop-opacity="0"/></radialGradient>';
-  g1.appendChild(defs);
-
-  let cols = 50,
-    rows = 20,
-    step = 15,
-    dots = [];
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      let d = el('circle', { cx: 7.5 + c * step, cy: 7.5 + r * step, r: 3.2, class: 'me-dot' });
-      g1.appendChild(d);
-      dots.push(d);
+  // Crea "count" <div class="me-dot"> dentro de "container" y devuelve
+  // el array de referencias, para después pintarlas una por una.
+  function crearPuntos(container, count) {
+    const out = [];
+    for (let i = 0; i < count; i++) {
+      const d = document.createElement('div');
+      d.className = 'me-dot';
+      container.appendChild(d);
+      out.push(d);
     }
+    return out;
   }
 
-  let R = rng(11),
-    picks = [];
-  while (picks.length < 6) {
-    let i = Math.floor(R() * 1000);
-    if (picks.indexOf(i) < 0) picks.push(i);
-  }
-  let glows = picks.map(function (i, k) {
-    let cx = +dots[i].getAttribute('cx'),
-      cy = +dots[i].getAttribute('cy');
-    let gl = el('circle', {
-      cx: cx,
-      cy: cy,
-      r: 16,
-      fill: k === 5 ? 'url(#me-rp)' : 'url(#me-rg)',
-      class: 'me-glow',
-    });
-    g1.insertBefore(gl, g1.firstChild.nextSibling);
-    return gl;
-  });
+  // ---------- Panel 1: grilla de 1.000 mujeres (tasas AIMS) ----------
+  // SIN = tasa de detección de un radiólogo solo (7,54 cada 1.000).
+  // CON = tasa con apoyo de IA (9,33 cada 1.000). Fuente: Kelly et al.,
+  // Nature Cancer 2026 (ver <details class="ui-src"> en el HTML).
+  const SIN1 = 7.54, CON1 = 9.33;
+  const dots1 = crearPuntos(g1, 1000);
 
-  // ---------- Sin IA / Con IA ----------
-  // Antes también existía una 3ra vista ("escala") que se mostraba u
-  // ocultaba con un botón aparte. Ya no: la grilla y la barra de escala
-  // están siempre visibles las dos (ver CSS), así que acá solo queda
-  // la lógica de qué puntos enciende "Sin IA"/"Con IA".
-  function setMode(con) {
-    document.getElementById('me-m-sin').setAttribute('aria-pressed', !con);
-    document.getElementById('me-m-con').setAttribute('aria-pressed', con);
-    picks.forEach(function (i, k) {
-      let on = k < 5 || con;
-      dots[i].setAttribute('class', 'me-dot' + (on ? (k === 5 ? ' me-new' : ' me-lit') : ''));
-      dots[i].setAttribute('r', on ? 4.6 : 3.2);
-      glows[k].setAttribute('class', 'me-glow' + (on ? ' me-on' : ''));
-    });
-    document.getElementById('me-r1').textContent = coma(con ? DATOS.masai.con : DATOS.masai.sin);
-    document.getElementById('me-r1d').textContent = con
-      ? '+' + coma(Math.round((DATOS.masai.con - DATOS.masai.sin) * 10) / 10)
-      : '\u00a0';
-    document.getElementById('me-r1dl').textContent = con ? 'cáncer más encontrado' : '\u00a0';
-  }
-  document.getElementById('me-m-sin').onclick = function () {
-    setMode(false);
-  };
-  document.getElementById('me-m-con').onclick = function () {
-    setMode(true);
-  };
-  setMode(false);
+  // 8 posiciones "base" (lo que encuentra un radiólogo, ~7,54 por mil
+  // redondeado) + 2 posiciones "extra" que se suman solo con IA
+  // activada (hasta completar ~9,33 por mil). Son posiciones fijas (no
+  // al azar en cada carga de página), elegidas para que se vean
+  // repartidas en la grilla.
+  const base1 = [37, 152, 268, 391, 468, 591, 743, 880];
+  const extra1 = [88, 655];
 
-  let n = document.getElementById('me-n');
+  function pintarPanel1(conIA) {
+    dots1.forEach((d) => { d.className = 'me-dot'; });
+    base1.forEach((p) => { dots1[p].className = 'me-dot me-lit'; });
+    if (conIA) extra1.forEach((p) => { dots1[p].className = 'me-dot me-new'; });
+    document.getElementById('me-r1').textContent = conIA ? '9,33' : '7,54';
+  }
+  pintarPanel1(false);
+
+  const bSin1 = document.getElementById('me-m-sin');
+  const bCon1 = document.getElementById('me-m-con');
+  function modoPanel1(conIA) {
+    bSin1.setAttribute('aria-pressed', !conIA);
+    bCon1.setAttribute('aria-pressed', conIA);
+    pintarPanel1(conIA);
+  }
+  bSin1.onclick = () => modoPanel1(false);
+  bCon1.onclick = () => modoPanel1(true);
+
+  // ---------- Slider de proyección ("Llevalo a más mujeres") ----------
+  // Proyección LINEAL de las tasas SIN1/CON1 sobre una cantidad de
+  // mujeres mayor a las 115.973 del estudio real — por eso la nota del
+  // <details class="ui-src"> aclara que es una extrapolación, no un
+  // resultado del estudio.
+  const n = document.getElementById('me-n');
   function upd() {
-    let v = +n.value,
-      a = (v * DATOS.masai.sin) / 1000,
-      b = (v * DATOS.masai.con) / 1000;
-    document.getElementById('me-nlab').textContent = fmt(v) + ' mujeres';
+    const v = +n.value;
+    const a = Math.round((v * SIN1) / 1000);
+    const b = Math.round((v * CON1) / 1000);
+    document.getElementById('me-nlab').textContent = fmt(v);
     document.getElementById('me-s-sin').textContent = fmt(a);
     document.getElementById('me-s-con').textContent = fmt(b);
-    document.getElementById('me-s-dif').textContent = '+' + fmt(Math.round(b) - Math.round(a));
+    document.getElementById('me-s-dif').textContent = '+' + fmt(b - a);
   }
   n.oninput = upd;
-  upd();
+  upd(); // pinta los valores iniciales (40.000 mujeres) apenas carga
 
-  // ---------- Grilla 2: 100 mujeres con cáncer ----------
-  // 20 columnas x 5 filas = 100 puntos, en formato panorámico (viewBox
-  // 800x200 en el HTML). Tiene que quedar más achatada/baja que la
-  // grilla del panel 1 (765x315): si esta fuera más alta que esa (como
-  // pasó al probar un formato cuadrado 10x10), pasa a ser ELLA la que
-  // fija el alto compartido de los dos paneles (ver .ui-panels), y deja
-  // un hueco vacío en el panel 1. Con esta forma más baja, el CSS
-  // ("#me-tabpanel-2 .ui-field") la hace crecer con seguridad hasta el
-  // alto del panel 1, sin volver a provocar ese hueco.
-  let g2 = document.getElementById('me-g2');
-  let d2 = el('defs', {});
-  d2.innerHTML = defs.innerHTML.replace(/me-rg/g, 'me-rg2').replace(/me-rp/g, 'me-rp2');
-  g2.appendChild(d2);
+  // ---------- Panel 2: 100 cánceres de intervalo ----------
+  // Un cáncer de intervalo es el que aparece entre dos controles
+  // porque no se vio en la mamografía anterior. La IA identificó el
+  // 25% de esos cánceres ya presentes (aunque no detectados) en esa
+  // mamografía previa — por eso acá no hay "tasa", es directamente
+  // "25 de cada 100 puntos se encienden".
+  const g2 = document.getElementById('me-g2');
+  const dots2 = crearPuntos(g2, 100);
 
-  let cells = [],
-    gl2 = [];
-  for (let i2 = 0; i2 < 100; i2++) {
-    let cx = 20 + (i2 % 20) * 40,
-      cy = 20 + Math.floor(i2 / 20) * 40;
-    let gg = el('circle', { cx: cx, cy: cy, r: 18, fill: 'url(#me-rp2)', class: 'me-glow' });
-    g2.appendChild(gg);
-    gl2.push(gg);
-    let cc = el('circle', { cx: cx, cy: cy, r: 7, class: 'me-dot' });
-    g2.appendChild(cc);
-    cells.push(cc);
+  // 25 posiciones fijas = el 25% que la IA habría identificado antes.
+  const escapaban = [3, 11, 19, 27, 34, 42, 48, 55, 61, 66, 70, 73, 77, 80, 82, 85, 87, 89, 91, 92, 94, 95, 96, 97, 98];
+
+  function pintarPanel2(conIA) {
+    dots2.forEach((d) => { d.className = 'me-dot'; });
+    if (conIA) escapaban.forEach((p) => { dots2[p].className = 'me-dot me-new'; });
+    const num = document.getElementById('me-r2');
+    num.textContent = conIA ? '25' : '0';
+    num.classList.toggle('ui-pinktext', conIA);
   }
+  pintarPanel2(false);
 
-  let R2 = rng(7),
-    order = [];
-  while (order.length < 100) {
-    let j = Math.floor(R2() * 100);
-    if (order.indexOf(j) < 0) order.push(j);
-  }
-  let country = 'us',
-    ai = false,
-    vals = DATOS.mckinney;
-
-  function draw2() {
-    ['me-c-us', 'me-c-uk'].forEach(function (id) {
-      document.getElementById(id).setAttribute('aria-pressed', id === 'me-c-' + country);
-    });
-    document.getElementById('me-f-off').setAttribute('aria-pressed', !ai);
-    document.getElementById('me-f-on').setAttribute('aria-pressed', ai);
-    let k = ai ? Math.round(vals[country]) : 0;
-    cells.forEach(function (c, idx) {
-      let on = order.indexOf(idx) < k;
-      c.setAttribute('class', 'me-dot' + (on ? ' me-new' : ''));
-      gl2[idx].setAttribute('class', 'me-glow' + (on ? ' me-on' : ''));
-    });
-    document.getElementById('me-r2').textContent = ai
-      ? String(vals[country]).replace('.', ',')
-      : '0';
-    document.getElementById('me-r2l').textContent = ai
-      ? 'de cada 100 mujeres con cáncer, detectadas gracias a la IA'
-      : 'Activá la IA para ver cuántas se recuperan';
-  }
-  document.getElementById('me-c-us').onclick = function () {
-    country = 'us';
-    draw2();
+  const bSin2 = document.getElementById('me-m-sin2');
+  const bCon2 = document.getElementById('me-m-con2');
+  bSin2.onclick = () => {
+    bSin2.setAttribute('aria-pressed', 'true');
+    bCon2.setAttribute('aria-pressed', 'false');
+    pintarPanel2(false);
   };
-  document.getElementById('me-c-uk').onclick = function () {
-    country = 'uk';
-    draw2();
+  bCon2.onclick = () => {
+    bSin2.setAttribute('aria-pressed', 'false');
+    bCon2.setAttribute('aria-pressed', 'true');
+    pintarPanel2(true);
   };
-  document.getElementById('me-f-off').onclick = function () {
-    ai = false;
-    draw2();
-  };
-  document.getElementById('me-f-on').onclick = function () {
-    ai = true;
-    draw2();
-  };
-  draw2();
 })();
