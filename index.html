@@ -63,8 +63,7 @@
     <!-- ================= EXPERIENCE ================= -->
     <!-- Contenedor principal: los 3 capítulos + el menú lateral de navegación. -->
     <div id="experience">
-      <div class="chapter-bg">
-      </div>
+      <div class="chapter-bg"></div>
       <div class="layout">
         <div class="main-col">
           <!-- CAPÍTULO 1 -->
@@ -121,7 +120,104 @@
              Estilos en modulo2.css, lógica en modulo2.js.
              Usá las clases compartidas ui-* (ui-panel, ui-tabs, ui-seg,
              ui-big, ui-lab, ui-src...): mirá el módulo 3 como ejemplo. -->
-            <div class="ui-wrap br-wrap"></div>
+
+            <div class="ui-wrap br-wrap">
+              <div class="br-frame" id="brFrame">
+                <div class="br-stage" id="brStage">
+                  <div class="br-widget">
+                    <h1 class="br-title">¿Con qué herramientas contamos para detectarlo?</h1>
+
+                    <div class="br-tabs">
+                      <button class="br-tab-btn active" id="brTabProvincia" type="button">
+                        Por provincia
+                      </button>
+                      <button class="br-tab-btn" id="brTabAnio" type="button">Por año</button>
+                    </div>
+
+                    <div id="brPanelProvincia">
+                      <p class="br-subhead">
+                        Muertes por cáncer de mama por provincia, 2018–2022. Pasá el cursor sobre
+                        una provincia para resaltarla y ver sus datos.
+                      </p>
+                      <div class="br-grid-layout">
+                        <div class="br-map-card">
+                          <svg
+                            class="br-map"
+                            id="brMap"
+                            viewBox="0 0 520 920"
+                            xmlns="http://www.w3.org/2000/svg"
+                          ></svg>
+                          <div class="br-legend">
+                            <span class="br-dot-sample"></span>
+                            <span>= 100 muertes por cáncer de mama</span>
+                          </div>
+                          <div class="br-tooltip" id="brTooltip">
+                            <p class="br-t-name" id="brTtName">—</p>
+                            <p class="br-t-pct" id="brTtPct">—</p>
+                          </div>
+                        </div>
+
+                        <div class="br-panel" style="max-width: 520px; justify-self: start">
+                          <h2 id="brChartTitle">
+                            Defunciones totales vs. cáncer de mama — Buenos Aires
+                          </h2>
+                          <p class="br-sub">
+                            Cada barra corresponde a la provincia seleccionada en el mapa.
+                          </p>
+                          <div style="width: 100%; height: 200px; position: relative">
+                            <canvas id="brProvinceChart"></canvas>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div id="brPanelAnio" class="br-hidden">
+                      <p class="br-subhead">
+                        Evolución de la tasa de mortalidad por cáncer de mama en Argentina,
+                        2005–2024.
+                      </p>
+                      <div class="br-grid-layout">
+                        <div class="br-map-card">
+                          <svg
+                            class="br-map"
+                            id="brMapAnio"
+                            viewBox="0 0 520 920"
+                            xmlns="http://www.w3.org/2000/svg"
+                          ></svg>
+                          <div class="br-map-overlay">
+                            <div class="br-overlay-year" id="brOverlayYear">2024</div>
+                            <div class="br-overlay-pct" id="brOverlayPct">19,4%</div>
+                            <div class="br-overlay-label">
+                              de las muertes por cáncer en mujeres<br />fueron por cáncer de mama
+                            </div>
+                          </div>
+                        </div>
+                        <div class="br-panel" style="max-width: 520px; justify-self: start">
+                          <h2>
+                            Tasa de mortalidad por cáncer de mama — Argentina,
+                            <span id="brAnioYear">2024</span>
+                          </h2>
+                          <p class="br-sub">Pasá el cursor sobre un año para ver su valor.</p>
+                          <div style="width: 100%; height: 190px; position: relative">
+                            <canvas id="brAnioScatter"></canvas>
+                          </div>
+                          <div class="br-stat-row" style="margin-top: 20px">
+                            <div class="br-stat-block">
+                              <div class="br-num" id="brStatMama">—</div>
+                              <div class="br-lbl">muertes por cáncer de mama</div>
+                            </div>
+                            <div class="br-stat-block">
+                              <div class="br-num" id="brStatTasa">—</div>
+                              <div class="br-lbl">muertes cada 100.000 mujeres</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </section>
 
           <!-- CAPÍTULO 3 -->
@@ -425,6 +521,7 @@
 
     <script src="script.js"></script>
     <script src="modulo1.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
     <script src="modulo2.js"></script>
     <script src="modulo3.js"></script>
   </body>
