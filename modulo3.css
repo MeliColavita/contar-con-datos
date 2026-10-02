@@ -17,12 +17,11 @@
   #chapter-3 .chapter-header{ margin-bottom:2px; }
   #chapter-3 .chapter-eyebrow{ margin-bottom:2px; }
 
-  /* .me-view: antes eran 2 vistas que se alternaban (grilla ó escala,
-     nunca las dos juntas). Ahora las 2 quedan siempre visibles, apiladas
-     -- la de escala ("Llevalo a más mujeres") ya no depende de tocar
-     ningún botón. El "+" separa la segunda de la primera con una línea
-     sutil, para que se lea como una sección aparte y no como un batido
-     continuo de contenido. */
+  /* .me-view: la grilla y la barra de proyección ("Llevalo a más
+     mujeres") quedan siempre visibles, apiladas -- ninguna depende de
+     tocar un botón. El "+" separa la segunda de la primera con una
+     línea sutil, para que se lea como una sección aparte y no como un
+     bloque continuo de contenido. */
   .me-view{display:block;}
   .me-view + .me-view{
     margin-top:10px;
@@ -30,41 +29,74 @@
     border-top:1px solid var(--panel-border);
   }
 
-  /* ---- Pestaña "Las que se escapaban" (panel 2): la visual ocupa el
-     alto libre del panel ----
-     .ui-panel está forzado al alto del panel más alto de los dos (ver
-     comentario de .ui-panels, arriba): como el panel 2 tiene menos
-     contenido que el panel 1 (que además tiene la barra "Llevalo a más
-     mujeres"), sin esto quedaba un hueco vacío debajo de "Fuente".
-     Con flex:1 en .ui-visual y .ui-field, la grilla de 100 puntos crece
-     para llenar ese espacio libre.
-     OJO: esto da por sentado que la grilla del panel 2 (ver su viewBox
-     en el HTML) es, de por sí, más baja que la del panel 1 -- si no,
-     es ELLA la que termina fijando el alto compartido de los dos
-     paneles, y el hueco vacío reaparece (pero en el panel 1). Por eso
-     el viewBox de #me-g2 tiene que seguir siendo más panorámico/achatado
-     que el de #me-g1. */
-  #me-tabpanel-2 .ui-visual{flex:1 1 auto;}
-  #me-tabpanel-2 .ui-field{flex:1 1 auto; display:flex;}
-  #me-tabpanel-2 .ui-field svg{width:100%; height:100%;}
-  #me-tabpanel-2 .ui-src{margin-top:auto; padding-top:8px;}
-
-  @media (min-width:680px){
-    #me-tabpanel-2 .ui-visual{align-items:stretch;}
-    #me-tabpanel-2 .ui-stats{justify-content:center;}
+  /* ============================================================
+     Grilla de puntos (paneles 1 y 2): antes se dibujaba con <svg>/
+     <circle>; ahora son <div class="me-dot"> dentro de un contenedor
+     CSS Grid, la misma técnica que ya usa el waffle del Capítulo 1
+     (.em-waffle-grid) -- así los dos capítulos comparten un solo
+     enfoque para "grilla que se pinta según datos". El número de
+     columnas se fija inline en el HTML (40 para el panel 1, 20 para
+     el panel 2) según cuántos puntos tiene cada visualización.
+     ============================================================ */
+  .me-dotgrid{
+    display:grid; gap:3px; width:100%;
+  }
+  /* Cada punto arranca "apagado" (--dot-off, variable compartida de
+     :root). aspect-ratio:1 lo mantiene cuadrado sin importar cuántas
+     columnas tenga la grilla; border-radius:50% lo hace circular. */
+  .me-dot{
+    width:100%; aspect-ratio:1; border-radius:50%;
+    background:var(--dot-off); transition:background .5s ease;
+  }
+  /* "Cáncer detectado" (tasa base, sin IA): ámbar, con un resplandor
+     sutil del mismo color -- reemplaza el círculo .me-glow aparte que
+     existía con la versión en SVG; acá el brillo es un box-shadow en
+     el punto mismo, más simple. */
+  .me-dot.me-lit{
+    background:var(--flame);
+    box-shadow:0 0 6px rgba(255,179,92,.7);
+  }
+  /* "Detectado gracias a la IA": rosa fuerte, mismo resplandor en
+     rosa. Se usa tanto para los puntos nuevos del panel 1 como para
+     los cánceres de intervalo "recuperados" del panel 2. */
+  .me-dot.me-new{
+    background:var(--dot-pink);
+    box-shadow:0 0 7px rgba(255,111,156,.8);
   }
 
-  .me-dot{fill:var(--dot-off); transition:fill .5s;}
-  .me-dot.me-lit{fill:var(--flame);}
-  .me-dot.me-new{fill:var(--dot-pink);}
-  .me-glow{opacity:0; transition:opacity .6s;}
-  .me-glow.me-on{opacity:1;}
-
-  /* Antes .me-scale iba pegada debajo de .ui-readout con un borde
-     arriba para separarla visualmente. Ahora es su propia vista
-     (.me-view), así que no necesita ni el borde ni el margen superior. */
   .me-scale{margin-top:0; padding-top:0;}
   .me-scale label{display:block; font-size:0.82rem; margin-bottom:4px; color:var(--text-dim);}
   .me-scale input[type=range]{width:100%; accent-color:var(--rose-strong);}
   .me-scale-out{display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:4px;}
   .me-scale-out .ui-big{font-size:1.1rem;}
+
+  /* ---- Panel 2 ("Las que se escapaban"): tiene menos contenido que
+     el panel 1 (no tiene la barra de proyección) y la tarjeta mide el
+     alto del panel 1 -- el más alto de los dos, ver comentario de
+     .ui-panels en style.css -- así que sin estos ajustes queda un
+     hueco vacío grande abajo. ---- */
+  /* "Fuente" sale del flujo normal (position:absolute, apoyada en la
+     esquina inferior derecha del panel -- .ui-panel ya es
+     position:relative, así que es el punto de referencia). Así el
+     espacio libre completo queda solo para centrar .ui-visual, en vez
+     de competir con ella por el mismo lugar. */
+  #me-tabpanel-2 .ui-src{ position:absolute; right:20px; bottom:14px; margin-top:0; }
+
+  /* margin-top/bottom:auto en .ui-visual (hijo directo de .ui-panel,
+     que es flex-column) hace que absorba el espacio libre repartido
+     arriba y abajo suyo -- empujándola al centro vertical del espacio
+     disponible, sin mover .ui-sub/.ui-seg (quedan arriba) ni "Fuente"
+     (ya la sacamos del flujo, arriba). */
+  #me-tabpanel-2 .ui-visual{ margin-top:auto; margin-bottom:auto; }
+
+  @media (min-width:680px){
+    /* 65% en vez del 42% que usa el panel 1: como acá no hay
+       .ui-stats compitiendo por texto largo (son 2 líneas nomás), la
+       grilla puede ocupar bastante más ancho -> cada punto sale más
+       grande. */
+    #me-tabpanel-2 .ui-visual .ui-field{ flex:0 0 65%; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .me-dot{transition:none;}
+  }

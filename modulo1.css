@@ -5,4 +5,155 @@
    compartidas "ui-*" de style.css y las variables de :root.
    ============================================================ */
 
-/* Ejemplo: .em-algo{ color:var(--rose); } */
+/* ============ TARJETA PRINCIPAL ============
+   Reutiliza el componente compartido .ui-panel (ver style.css) en vez
+   de un tamaño propio: así la tarjeta de este módulo mide EXACTO lo
+   mismo (100% del ancho de .main-col, mismo padding, mismo fondo con
+   blur) que el panel del módulo 3 -- las dos tarjetas ocupan siempre
+   las columnas 1 y 2 del layout de 4 (la vela vive en la 3ra, el menú
+   de capítulos en la 4ta: eso ya lo resuelve .main-col en style.css,
+   compartido por los 3 capítulos). .em-card solo agrega los ajustes
+   puntuales de este módulo, sin duplicar el tamaño/fondo de .ui-panel. */
+.em-card{ margin-bottom:8px; }
+
+/* Pregunta fija arriba de la tarjeta. clamp() = tamaño de fuente
+   responsivo: nunca menos de 1.1rem, nunca más de 1.5rem, escala en
+   el medio según el ancho de pantalla (2.2vw). */
+.em-question{
+  font-family:var(--serif); font-weight:500;
+  font-size:clamp(1.1rem,2.2vw,1.5rem);
+  color:var(--text); margin:0 0 12px;
+}
+
+/* ---- Pestañas para elegir qué gráfico ver ----
+   Look propio en píldora (no el rectángulo redondeado de .ui-tab, que
+   acá no encaja con 3 botones en una fila). flex-wrap:nowrap +
+   align-items:stretch = SIEMPRE en un solo renglón, los 3 botones de
+   la misma altura entre sí. */
+.em-tabs{
+  display:flex; flex-wrap:nowrap; align-items:stretch; gap:6px; margin-bottom:14px;
+}
+/* Cada botón. flex:0 1 auto + white-space:nowrap es la parte clave:
+   cada uno ocupa SOLO el ancho que su propio texto necesita (no un
+   tercio repartido entre los 3) y ese texto nunca se corta en 2
+   líneas — esto evita que "Casos por tipo de cáncer" (texto largo) se
+   parta, sin tener que forzar letra chica. */
+.em-tab{
+  font-family:var(--sans); font-size:0.8rem; font-weight:600;
+  color:var(--text-dim); background:rgba(255,255,255,0.04); border:1px solid var(--panel-border);
+  border-radius:30px; padding:8px 12px; cursor:pointer; transition:all .2s;
+  flex:0 1 auto; white-space:nowrap; text-align:center;
+}
+.em-tab:hover{border-color:rgba(255,255,255,0.3); color:var(--text);}
+/* Pestaña activa: el JS le agrega/saca la clase "active" al clickear
+   (a diferencia de .ui-tab, que usa el atributo aria-selected). */
+.em-tab.active{background:var(--rose-strong); border-color:var(--rose-strong); color:#1a0510; box-shadow:0 6px 18px rgba(255,111,156,0.35);}
+
+/* Contenedor vacío donde el JS dibuja el gráfico activo (barras SVG o
+   la grilla del waffle). */
+.em-panel{width:100%;}
+/* El <svg> en sí: ancho 100%, alto automático (mantiene proporción
+   según su viewBox). display:block saca el espacio fantasma que los
+   navegadores agregan debajo de elementos inline por defecto. JS le
+   agrega esta clase al crearlo (ver createChartSVG en modulo1.js) en
+   vez de setear los mismos 3 estilos inline. */
+.em-svg{width:100%; height:auto; display:block;}
+
+/* Texto chico ARRIBA del gráfico: explica qué se está por ver antes
+   de leer las barras/el waffle. Reutiliza .ui-sub (ver style.css) en
+   vez de un tamaño propio, para que el cuerpo de texto mida lo mismo
+   que el del módulo 3 (.ui-sub ahí también). Solo se le agrega un
+   poco más de margen inferior, porque acá separa del gráfico (no de
+   otro párrafo). */
+.em-panel .ui-sub{ margin-bottom:10px; }
+/* Texto chico ABAJO del gráfico — hoy sin uso en ningún gráfico
+   puntual, queda definido por si hace falta una aclaración al pie. */
+.em-caption{
+  font-family:var(--sans); font-size:0.78rem; color:var(--text-dim);
+  margin:12px 0 0;
+}
+
+/* Un "dato suelto" individual (ej: "66,2" + su descripción): columna
+   con el número arriba y la descripción abajo. Mismo tamaño que
+   .ui-big/.ui-lab del módulo 3 (y misma tipografía serif/sans), solo
+   en rosa en vez de blanco, porque acá el número ES el protagonista
+   de la tarjeta, no un dato secundario. */
+.em-stat{display:flex; flex-direction:column; gap:2px;}
+.em-stat-value{
+  font-family:var(--serif); font-weight:600;
+  font-size:1.4rem;
+  color:var(--rose-strong);
+  line-height:1;
+  font-variant-numeric:tabular-nums;
+}
+.em-stat-label{
+  font-family:var(--sans); font-size:0.8rem; color:var(--text-dim);
+  line-height:1.3;
+}
+/* Agrupa TODOS los datos sueltos de un gráfico (ej: los 2 de "Casos
+   por edad"). flex-wrap:wrap = si no entran en una fila, pasan a la
+   siguiente. border-top los separa del gráfico de arriba. */
+.em-inline-stats{
+  display:flex; flex-wrap:wrap; gap:24px;
+  margin-top:10px; padding-top:10px; border-top:1px solid var(--panel-border);
+}
+
+/* ============ Gráfico de "waffle" (tab Porcentaje) ============ */
+/* Envuelve la grilla de cuadrados + el texto informativo. Apiladas en
+   mobile/panel angosto (igual que .ui-visual compartida); desde 680px
+   pasan a quedar lado a lado -- mismo criterio responsivo que usa
+   .ui-visual en style.css para el módulo 3 -- así la grilla deja de
+   sumar su alto al de la info de abajo y la tarjeta queda bastante
+   más baja en pantallas grandes, que es donde más se nota. */
+.em-waffle-body{ display:flex; flex-direction:column; gap:16px; }
+@media (min-width:680px){
+  .em-waffle-body{ flex-direction:row; align-items:center; gap:28px; }
+  .em-waffle-body .em-waffle-grid{ flex:0 0 180px; margin:0; }
+  .em-waffle-body .em-waffle-info{ flex:1 1 auto; }
+}
+
+/* La grilla de 100 cuadrados: 10 columnas iguales (con 10 filas se
+   completan los 100). aspect-ratio:1 fuerza que sea siempre un
+   cuadrado perfecto sin importar el espacio disponible. max-width le
+   pone un techo en mobile (en desktop manda el flex:0 0 180px de
+   arriba); margin:0 auto la centra. */
+.em-waffle-grid{
+  display:grid; grid-template-columns:repeat(10,1fr); gap:5px;
+  aspect-ratio:1; width:100%; max-width:220px; margin:0 auto;
+}
+/* Cada cuadrado arranca invisible y achicado — estado inicial de la
+   animación de entrada que el JS va revelando de a uno agregando
+   .is-in. */
+.em-waffle-sq{
+  border-radius:4px; opacity:0; transform:scale(.4); cursor:pointer;
+  transition:opacity .25s ease, transform .25s ease;
+}
+.em-waffle-sq.is-in{ opacity:1; transform:scale(1); }
+/* Con una categoría "enfocada" (mouse encima o clickeada), el JS
+   agrega .is-focused a la grilla entera: todos los cuadrados bajan su
+   opacidad al 18%... */
+.em-waffle-grid.is-focused .em-waffle-sq.is-in{ opacity:.18; }
+/* ...excepto los .is-active (los de la categoría elegida), que quedan
+   al 100% y se agrandan 8% para destacarse. */
+.em-waffle-grid.is-focused .em-waffle-sq.is-in.is-active{ opacity:1; transform:scale(1.08); }
+
+/* El titular grande ("3 de cada 10"). transition:color porque el JS
+   cambia este color según la categoría (rosa si es "Mama", blanco si
+   es otra). */
+.em-waffle-headline{
+  font-family:var(--serif); font-weight:600;
+  font-size:clamp(1.8rem,5vw,2.4rem); line-height:1;
+  color:var(--rose-strong); margin:0; transition:color .2s;
+}
+/* Texto explicativo debajo del titular. min-height reserva espacio
+   para 1 línea siempre, aunque el contenido cambie de largo al pasar
+   de categoría, así el layout no "salta". */
+.em-waffle-hltext{ font-size:0.95rem; color:var(--text); margin:8px 0 2px; min-height:1.3em; }
+.em-waffle-hlmeta{ font-size:0.8rem; color:var(--text-dim); margin:0 0 16px; min-height:1.3em; }
+
+/* "Fuente": reutiliza el componente compartido .ui-src (ver
+   style.css) tal cual — ya trae el acordeón, el popover y el
+   triangulito — en vez de duplicarlo con otro nombre. Solo se ajusta
+   el margen superior para separarla del bloque de arriba
+   (.em-inline-stats o la grilla del waffle). */
+.em-card .ui-src{ margin-top:12px; }
