@@ -6,3 +6,291 @@
    ============================================================ */
 
 /* Ejemplo: .br-algo{ color:var(--rose); } */
+
+/* ============================================================
+   MODULO2.CSS — Capítulo 2 "El tiempo" — Brenda — prefijo: br-
+   ============================================================ */
+
+/* Marco: ocupa el ancho de la columna y un alto acotado a la pantalla.
+   La tarjeta (.br-stage) se escala sola para entrar (ver modulo2.js). */
+.br-frame {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 200px);
+  min-height: 360px;
+  max-height: 600px;
+  overflow: hidden;
+}
+.br-stage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: top left;
+}
+
+.br-widget {
+  /* Colores compartidos (vienen de :root en style.css) */
+  --br-panel: var(--panel);
+  --br-panel-border: var(--panel-border);
+  --br-rose: var(--rose);
+  --br-rose-strong: var(--rose-strong);
+  --br-rose-glow: var(--rose-glow);
+  --br-text: var(--text);
+  --br-text-dim: var(--text-dim);
+  --br-serif: var(--serif);
+  --br-sans: var(--sans);
+  /* Colores propios del mapa (no existen en :root) */
+  --br-bg: #0e0a13;
+  --br-land: #1c1220;
+  --br-land-border: #3a2438;
+
+  background: var(--br-bg);
+  color: var(--br-text);
+  font-family: var(--br-sans);
+  padding: 32px 32px 36px;
+  box-sizing: border-box;
+  overflow: hidden;
+  max-width: 900px;
+  width: fit-content;
+  margin: 0;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 20px;
+}
+.br-widget * {
+  box-sizing: border-box;
+}
+.br-title {
+  font-family: var(--br-serif);
+  font-weight: 500;
+  font-size: 2rem;
+  margin: 0 0 6px;
+  color: var(--br-text);
+}
+.br-subhead {
+  font-size: 0.9rem;
+  color: var(--br-text-dim);
+  margin: 0 0 32px;
+  max-width: 640px;
+  line-height: 1.5;
+  min-height: 2.7em;
+}
+
+.br-widget path.br-province-plain {
+  fill: var(--br-rose-strong);
+  stroke: var(--br-rose-strong);
+  stroke-width: 0.5;
+  pointer-events: none;
+}
+
+.br-map-overlay {
+  position: absolute;
+  top: 31%;
+  left: 44%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+  width: 80%;
+}
+.br-overlay-year {
+  font-family: var(--br-serif);
+  font-weight: 600;
+  font-size: 2.8rem;
+  color: #160f1b;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.55);
+}
+.br-overlay-pct {
+  font-family: var(--br-serif);
+  font-weight: 600;
+  font-size: 2rem;
+  color: #7a2c46;
+  margin-top: 4px;
+}
+.br-overlay-label {
+  font-size: 0.75rem;
+  color: #3a1c28;
+  opacity: 0.75;
+  margin-top: 6px;
+  line-height: 1.4;
+}
+
+.br-grid-layout {
+  display: grid;
+  grid-template-columns: 320px 500px;
+  gap: 28px;
+  align-items: start;
+}
+
+.br-map-card {
+  position: relative;
+}
+.br-widget svg.br-map {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: hidden;
+}
+.br-widget path.br-province {
+  fill: var(--br-land);
+  stroke: var(--br-land-border);
+  stroke-width: 1;
+  cursor: pointer;
+  transition: fill 0.15s ease;
+}
+.br-widget path.br-province:hover,
+.br-widget path.br-province.active {
+  fill: var(--br-rose-strong);
+}
+.br-widget g.br-dots {
+  pointer-events: none;
+}
+.br-widget g.br-dots circle {
+  fill: var(--br-rose);
+  opacity: 0.9;
+}
+
+.br-legend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+  font-size: 0.78rem;
+  color: var(--br-text-dim);
+  flex-wrap: wrap;
+}
+.br-legend .br-dot-sample {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--br-rose);
+  display: inline-block;
+}
+
+.br-tooltip {
+  position: absolute;
+  pointer-events: none;
+  z-index: 20;
+  background: var(--br-panel);
+  border: 1px solid var(--br-panel-border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  min-width: 180px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  transform: translate(-50%, -115%);
+  transition: opacity 0.12s ease;
+}
+.br-tooltip.visible {
+  opacity: 1;
+}
+.br-tooltip .br-t-name {
+  font-family: var(--br-serif);
+  font-size: 1rem;
+  color: var(--br-rose);
+  margin: 0 0 3px;
+}
+.br-tooltip .br-t-pct {
+  font-size: 0.8rem;
+  color: var(--br-text-dim);
+  margin: 0;
+}
+.br-tooltip .br-t-pct b {
+  color: var(--br-text);
+  font-weight: 600;
+}
+
+.br-panel {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+  border: 1px solid var(--br-panel-border);
+  border-radius: 14px;
+  padding: 20px 20px 18px;
+}
+.br-panel h2 {
+  font-family: var(--br-serif);
+  font-weight: 500;
+  font-size: 1.35rem;
+  margin: 0 0 4px;
+  color: var(--br-text);
+}
+.br-panel .br-sub {
+  font-size: 0.85rem;
+  color: var(--br-text-dim);
+  margin: 0 0 22px;
+}
+
+.br-stat-row {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 22px;
+  flex-wrap: nowrap;
+  justify-content: center;
+}
+.br-stat-block .br-num {
+  font-family: var(--br-serif);
+  font-weight: 500;
+  font-size: 1.9rem;
+  color: var(--br-rose);
+  text-shadow: 0 0 18px var(--br-rose-glow);
+  line-height: 1;
+}
+.br-stat-block .br-lbl {
+  font-size: 0.8rem;
+  color: var(--br-text-dim);
+  margin-top: 4px;
+  max-width: 150px;
+}
+
+.br-widget canvas {
+  max-width: 100%;
+}
+
+@media (max-width: 880px) {
+  .br-grid-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.br-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.br-tab-btn {
+  background: transparent;
+  border: 1px solid var(--br-panel-border);
+  color: var(--br-text-dim);
+  font-family: var(--br-sans);
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 10px 22px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.br-tab-btn:hover {
+  color: var(--br-text);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+.br-tab-btn.active {
+  background: var(--br-rose-strong);
+  color: #160f1b;
+  border-color: var(--br-rose-strong);
+  font-weight: 600;
+  box-shadow: 0 6px 18px rgba(255, 111, 156, 0.35);
+}
+.br-hidden {
+  display: none !important;
+}
+
+@keyframes brFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.br-fade-in {
+  animation: brFadeIn 0.35s ease;
+}
