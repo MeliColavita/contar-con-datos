@@ -63,8 +63,7 @@
     <!-- ================= EXPERIENCE ================= -->
     <!-- Contenedor principal: los 3 capítulos + el menú lateral de navegación. -->
     <div id="experience">
-      <div class="chapter-bg">
-      </div>
+      <div class="chapter-bg"></div>
       <div class="layout">
         <div class="main-col">
           <!-- CAPÍTULO 1 -->
@@ -101,7 +100,7 @@
                  .em-card         -> tarjeta (80% de ancho, fondo
                                      semitransparente + blur, igual
                                      criterio que .ui-panel)
-                   .em-question   -> pregunta fija arriba
+                   .ui-card-title -> pregunta fija arriba (clase compartida)
                    .em-tabs       -> 3 botones para elegir qué gráfico ver
                    #em-chart-panel -> contenedor vacío donde modulo1.js
                                      dibuja el gráfico activo (barras
@@ -114,22 +113,43 @@
              el mismo patrón (resumen + popover + triangulito). -->
             <div class="ui-wrap em-wrap">
               <div class="ui-panel em-card">
-                <h3 class="em-question">¿Cuál es la dimensión del cáncer de mama en Argentina?</h3>
+                <h3 class="ui-card-title">¿Cuál es la dimensión del cáncer de mama en Argentina?</h3>
                 <div class="em-tabs" role="tablist">
-                  <button class="em-tab active" data-chart="casosPorTipo" type="button" role="tab" aria-selected="true">
+                  <button
+                    class="em-tab active"
+                    data-chart="casosPorTipo"
+                    type="button"
+                    role="tab"
+                    aria-selected="true"
+                  >
                     Casos por tipo de cáncer
                   </button>
-                  <button class="em-tab" data-chart="casosPorEdad" type="button" role="tab" aria-selected="false">
+                  <button
+                    class="em-tab"
+                    data-chart="casosPorEdad"
+                    type="button"
+                    role="tab"
+                    aria-selected="false"
+                  >
                     Casos por edad
                   </button>
-                  <button class="em-tab" data-chart="porcentaje" type="button" role="tab" aria-selected="false">
+                  <button
+                    class="em-tab"
+                    data-chart="porcentaje"
+                    type="button"
+                    role="tab"
+                    aria-selected="false"
+                  >
                     Porcentaje
                   </button>
                 </div>
                 <div class="em-panel" id="em-chart-panel"></div>
                 <details class="ui-src">
                   <summary>Fuente</summary>
-                  <p>GLOBOCAN 2024 (IARC/OMS) — cáncer en mujeres, Argentina. Datos de CancerGlobalMujeres2024.xlsx.</p>
+                  <p>
+                    GLOBOCAN 2024 (IARC/OMS) — cáncer en mujeres, Argentina. Datos de
+                    CancerGlobalMujeres2024.xlsx.
+                  </p>
                 </details>
               </div>
             </div>
@@ -157,7 +177,103 @@
              Estilos en modulo2.css, lógica en modulo2.js.
              Usá las clases compartidas ui-* (ui-panel, ui-tabs, ui-seg,
              ui-big, ui-lab, ui-src...): mirá el módulo 3 como ejemplo. -->
-            <div class="ui-wrap br-wrap"></div>
+            <div class="ui-wrap br-wrap">
+              <div class="br-frame" id="brFrame">
+                <div class="br-stage" id="brStage">
+                  <div class="br-widget">
+                    <h1 class="br-title">¿Con qué herramientas contamos para detectarlo?</h1>
+
+                    <div class="br-tabs">
+                      <button class="br-tab-btn active" id="brTabProvincia" type="button">
+                        Por provincia
+                      </button>
+                      <button class="br-tab-btn" id="brTabAnio" type="button">Por año</button>
+                    </div>
+
+                    <div id="brPanelProvincia">
+                      <p class="br-subhead">
+                        Muertes por cáncer de mama por provincia, 2018–2022. Pasá el cursor sobre
+                        una provincia para resaltarla y ver sus datos.
+                      </p>
+                      <div class="br-grid-layout">
+                        <div class="br-map-card">
+                          <svg
+                            class="br-map"
+                            id="brMap"
+                            viewBox="0 0 520 920"
+                            xmlns="http://www.w3.org/2000/svg"
+                          ></svg>
+                          <div class="br-legend">
+                            <span class="br-dot-sample"></span>
+                            <span>= 100 muertes por cáncer de mama</span>
+                          </div>
+                          <div class="br-tooltip" id="brTooltip">
+                            <p class="br-t-name" id="brTtName">—</p>
+                            <p class="br-t-pct" id="brTtPct">—</p>
+                          </div>
+                        </div>
+
+                        <div class="br-panel" style="max-width: 520px; justify-self: start">
+                          <h2 id="brChartTitle">
+                            Defunciones totales vs. cáncer de mama — Buenos Aires
+                          </h2>
+                          <p class="br-sub">
+                            Cada barra corresponde a la provincia seleccionada en el mapa.
+                          </p>
+                          <div style="width: 100%; height: 200px; position: relative">
+                            <canvas id="brProvinceChart"></canvas>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div id="brPanelAnio" class="br-hidden">
+                      <p class="br-subhead">
+                        Evolución de la tasa de mortalidad por cáncer de mama en Argentina,
+                        2005–2024.
+                      </p>
+                      <div class="br-grid-layout">
+                        <div class="br-map-card">
+                          <svg
+                            class="br-map"
+                            id="brMapAnio"
+                            viewBox="0 0 520 920"
+                            xmlns="http://www.w3.org/2000/svg"
+                          ></svg>
+                          <div class="br-map-overlay">
+                            <div class="br-overlay-year" id="brOverlayYear">2024</div>
+                            <div class="br-overlay-pct" id="brOverlayPct">19,4%</div>
+                            <div class="br-overlay-label">
+                              de las muertes por cáncer en mujeres<br />fueron por cáncer de mama
+                            </div>
+                          </div>
+                        </div>
+                        <div class="br-panel" style="max-width: 520px; justify-self: start">
+                          <h2>
+                            Tasa de mortalidad por cáncer de mama — Argentina,
+                            <span id="brAnioYear">2024</span>
+                          </h2>
+                          <p class="br-sub">Pasá el cursor sobre un año para ver su valor.</p>
+                          <div style="width: 100%; height: 190px; position: relative">
+                            <canvas id="brAnioScatter"></canvas>
+                          </div>
+                          <div class="br-stat-row" style="margin-top: 20px">
+                            <div class="br-stat-block">
+                              <div class="br-num" id="brStatMama">—</div>
+                              <div class="br-lbl">muertes por cáncer de mama</div>
+                            </div>
+                            <div class="br-stat-block">
+                              <div class="br-num" id="brStatTasa">—</div>
+                              <div class="br-lbl">muertes cada 100.000 mujeres</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </section>
 
           <!-- CAPÍTULO 3 -->
@@ -181,89 +297,95 @@
              Módulo "El futuro": visualización de puntos que representan
              mujeres, con IA activable. Datos del estudio AIMS (Reino
              Unido, 115.973 mamografías) — Kelly et al., Nature Cancer
-             2026. Reemplaza la versión anterior, que usaba MASAI/McKinney.
+             2026.
 
-             Estructura (sin cambios estructurales respecto a la versión
-             anterior, salvo la grilla de puntos -- ver más abajo):
-               .ui-wrap            -> ocupa el ancho de .main-col
-                 .ui-lede          -> bajada corta
-                 .ui-tabs          -> 2 botones para elegir qué tabla ver
-                 .ui-panels        -> "grid stack": los 2 .ui-tabpanel
-                                      comparten la misma celda del grid,
-                                      así el rectángulo siempre mide el
-                                      alto del panel más alto de los 2
-                                      (no cambia de tamaño al cambiar de
-                                      pestaña). Solo el que tiene .active
-                                      se ve (opacity, no display:none).
-                   .ui-tabpanel (x2) -> una por cada visualización
-                     .ui-panel       -> tarjeta con fondo semitransparente
+             Estructura -- ahora calcada de la tarjeta del módulo 1
+             (mismo molde, para que las dos se vean parejas):
+               .ui-wrap              -> ocupa el ancho de .main-col
+                 .ui-panel.me-card   -> LA tarjeta (una sola, fondo con
+                                        blur) envuelve todo lo de abajo
+                   .ui-card-title    -> pregunta fija arriba (clase
+                                        compartida con el módulo 1)
+                   .ui-sub           -> UNA sola bajada corta (antes
+                                        había 2: una acá arriba y otra
+                                        repetida adentro de cada pestaña
+                                        -- se unificaron en esta sola)
+                   .ui-tabs          -> 2 botones para elegir qué tabla ver
+                   .ui-panels        -> "grid stack": los 2 .ui-tabpanel
+                                        comparten la misma celda del grid,
+                                        así el rectángulo siempre mide el
+                                        alto del panel más alto de los 2
+                                        (no cambia de tamaño al cambiar de
+                                        pestaña). Solo el que tiene .active
+                                        se ve (opacity, no display:none).
+                     .ui-tabpanel (x2) -> una por cada visualización. Ya
+                                        NO tiene su propio fondo/borde
+                                        (se lo saca el CSS, ver
+                                        modulo3.css): la única tarjeta
+                                        visible es la de afuera.
                        .me-dotgrid#me-g1/g2 -> los puntos, dibujados por
                                         JS (ver modulo3.js) como <div>
                                         dentro de un grid CSS -- MISMA
                                         técnica que el waffle del
-                                        Capítulo 1, en vez de <svg> como
-                                        antes (más simple, un solo
-                                        lenguaje para los dos capítulos).
+                                        Capítulo 1.
 
-             Nota: le saqué el título repetido adentro de cada tarjeta
-             (antes decía dos veces "1.000 mujeres en control": una en
-             la pestaña rosa y otra abajo en blanco) para ahorrar alto.
-             Ahora aria-labelledby apunta directo al botón de la pestaña,
-             así los lectores de pantalla igual anuncian el título.
+             "Fuente" sigue siendo una por pestaña (adentro de cada
+             .ui-tabpanel): citan datos puntuales distintos del mismo
+             estudio, así que no tenía sentido unificarlas como al
+             .ui-sub de arriba.
              ============================================================ -->
             <div class="ui-wrap">
-              <p class="ui-lede">
-                115.973 mamografías del sistema público británico, releídas por inteligencia
-                artificial. Cada punto es una mujer.
-              </p>
+              <div class="ui-panel me-card">
+                <h3 class="ui-card-title">¿Cuánto cambia el diagnóstico con una segunda lectura?</h3>
+                <p class="ui-sub">
+                  115.973 mamografías del sistema público británico (estudio AIMS), releídas por
+                  inteligencia artificial. Cada punto es una mujer.
+                </p>
 
-              <div class="ui-tabs" role="tablist" aria-label="Elegí una visualización">
-                <button
-                  class="ui-tab"
-                  id="me-tabbtn-1"
-                  type="button"
-                  role="tab"
-                  aria-selected="true"
-                  aria-controls="me-tabpanel-1"
-                >
-                  1.000 mujeres en control
-                </button>
-                <button
-                  class="ui-tab"
-                  id="me-tabbtn-2"
-                  type="button"
-                  role="tab"
-                  aria-selected="false"
-                  aria-controls="me-tabpanel-2"
-                >
-                  Las que se escapaban
-                </button>
-              </div>
+                <div class="ui-tabs" role="tablist" aria-label="Elegí una visualización">
+                  <button
+                    class="ui-tab"
+                    id="me-tabbtn-1"
+                    type="button"
+                    role="tab"
+                    aria-selected="true"
+                    aria-controls="me-tabpanel-1"
+                  >
+                    1.000 mujeres en control
+                  </button>
+                  <button
+                    class="ui-tab"
+                    id="me-tabbtn-2"
+                    type="button"
+                    role="tab"
+                    aria-selected="false"
+                    aria-controls="me-tabpanel-2"
+                  >
+                    Las que se escapaban
+                  </button>
+                </div>
 
-              <!-- .ui-panels: envuelve los 2 paneles (grid-stack, ver CSS)
-               para que el rectángulo mida siempre el alto del panel
-               más alto de los dos, y no cambie de tamaño al cambiar
-               de pestaña. -->
-              <div class="ui-panels">
-                <!-- Panel 1: arranca visible (clase .active) -->
-                <div
-                  class="ui-tabpanel active"
-                  id="me-tabpanel-1"
-                  role="tabpanel"
-                  aria-labelledby="me-tabbtn-1"
-                >
-                  <div class="ui-panel">
-                    <p class="ui-sub">
-                      En el estudio AIMS (Reino Unido, 115.973 mamografías), la lectura con apoyo
-                      de IA detectó casi dos cánceres más cada 1.000 mujeres que un radiólogo solo.
-                    </p>
-
-                    <!-- Grupo de 2 botones: cambian qué puntos están encendidos
+                <!-- .ui-panels: envuelve los 2 paneles (grid-stack, ver CSS)
+                 para que el rectángulo mida siempre el alto del panel
+                 más alto de los dos, y no cambie de tamaño al cambiar
+                 de pestaña. -->
+                <div class="ui-panels">
+                  <!-- Panel 1: arranca visible (clase .active) -->
+                  <div
+                    class="ui-tabpanel active"
+                    id="me-tabpanel-1"
+                    role="tabpanel"
+                    aria-labelledby="me-tabbtn-1"
+                  >
+                    <div class="ui-panel">
+                      <!-- Grupo de 2 botones: cambian qué puntos están encendidos
                    en la grilla. "Proyección" ya no es un botón: ver más
                    abajo, siempre desplegada. -->
                     <div class="ui-seg" role="group" aria-label="Modo de lectura">
                       <button id="me-m-sin" type="button" aria-pressed="true">Un radiólogo</button>
-                      <button id="me-m-con" type="button" aria-pressed="false">Con apoyo de IA</button>
+                      <button id="me-m-con" type="button" aria-pressed="false">
+                        Con apoyo de IA
+                      </button>
                     </div>
 
                     <!-- Vista 1: la grilla de 1.000 puntos + leyenda + número.
@@ -285,8 +407,8 @@
                           <div class="ui-legend">
                             <span><i style="background: var(--flame)"></i>Cáncer detectado</span
                             ><span
-                              ><i style="background: var(--rose-strong)"></i>Diferencia atribuible
-                              a la IA</span
+                              ><i style="background: var(--rose-strong)"></i>Diferencia atribuible a
+                              la IA</span
                             >
                           </div>
                           <div class="ui-readout">
@@ -306,7 +428,8 @@
                     <div class="me-view" id="me-view-scale">
                       <div class="me-scale">
                         <label for="me-n"
-                          >Proyección sobre esta tasa: <strong id="me-nlab">40.000</strong> mujeres</label
+                          >Proyección sobre esta tasa:
+                          <strong id="me-nlab">40.000</strong> mujeres</label
                         >
                         <input
                           id="me-n"
@@ -359,15 +482,20 @@
                   aria-labelledby="me-tabbtn-2"
                 >
                   <div class="ui-panel">
+                    <div class="ui-seg" role="group" aria-label="Modo de lectura">
+                      <button id="me-m-sin2" type="button" aria-pressed="true">Un radiólogo</button>
+                      <button id="me-m-con2" type="button" aria-pressed="false">Con apoyo de IA</button>
+                    </div>
+                    <!-- Aclaración puntual de este panel (qué es un cáncer
+                   de intervalo): no es la bajada general del módulo
+                   -esa ya está arriba, una sola vez, en .ui-card-title
+                   + .ui-sub de la tarjeta- sino una nota corta que solo
+                   aplica a esta pestaña, por eso va acá y no arriba. -->
                     <p class="ui-sub">
                       Un cáncer de intervalo es el que aparece entre dos controles porque no se vio
                       en la mamografía anterior. Cada punto es uno de esos cánceres que se
                       escapaban.
                     </p>
-                    <div class="ui-seg" role="group" aria-label="Modo de lectura">
-                      <button id="me-m-sin2" type="button" aria-pressed="true">Un radiólogo</button>
-                      <button id="me-m-con2" type="button" aria-pressed="false">Con apoyo de IA</button>
-                    </div>
                     <!-- Grilla de 100 puntos: 20 columnas x 5 filas, más
                    achatada que la del panel 1 a propósito (mismo motivo
                    que antes: si esta grilla terminara siendo más alta
@@ -401,8 +529,8 @@
                       <p>
                         Kelly C.J., Wilson M. et al. Diagnostic accuracy, fairness and clinical
                         implementation of AI for breast cancer screening. <em>Nature Cancer</em>
-                        2026;7:494–506. Acceso abierto. La IA identificó el 25,0% de los cánceres
-                        de intervalo en la mamografía anterior (IC 95%: 20,4–30,0), hasta 39 meses
+                        2026;7:494–506. Acceso abierto. La IA identificó el 25,0% de los cánceres de
+                        intervalo en la mamografía anterior (IC 95%: 20,4–30,0), hasta 39 meses
                         antes de su diagnóstico real.
                       </p>
                     </details>
@@ -410,6 +538,8 @@
                 </div>
               </div>
               <!-- /.ui-panels -->
+              </div>
+              <!-- /.ui-panel.me-card -->
             </div>
           </section>
         </div>
@@ -455,6 +585,7 @@
 
     <script src="script.js"></script>
     <script src="modulo1.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
     <script src="modulo2.js"></script>
     <script src="modulo3.js"></script>
   </body>

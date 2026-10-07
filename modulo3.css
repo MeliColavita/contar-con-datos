@@ -1,28 +1,97 @@
 /* ============================================================
    MODULO3.CSS — Capítulo 3 "El futuro" — Meli — prefijo: me-
-   Solo estilos de este módulo, todos con prefijo "me-" (o con el id
-   del capítulo). Para tarjetas, pestañas, botones, etc. usá las clases
-   compartidas "ui-*" de style.css y las variables de :root.
+   ============================================================
+   QUÉ HACE ESTE ARCHIVO: los estilos propios de la tarjeta del
+   Capítulo 3 y de sus puntos/grillas. Igual que en modulo1.css, todo
+   lo que empieza con "me-" es propio de este módulo; todo lo que
+   empieza con "ui-" es un componente COMPARTIDO (style.css) que se
+   reutiliza tal cual -- acá eso incluye hasta la tarjeta y las
+   pestañas (.ui-panel, .ui-tabs, .ui-tab, .ui-tabpanel, .ui-seg,
+   .ui-visual, .ui-src...), porque el HTML del módulo 3 está armado
+   para aprovecharlos directamente, en vez de reinventarlos con otro
+   nombre como hace el módulo 1 con sus pestañas en píldora.
+
+   Convención de nombres de este archivo:
+     .me-card      -> la tarjeta completa (ver index.html: lleva las
+                      clases "ui-panel me-card" juntas)
+     .me-dotgrid   -> el contenedor CSS Grid de cada grilla de puntos
+     .me-dot       -> cada punto individual (y sus variantes .me-lit /
+                      .me-new, según qué representa)
+     .me-view      -> cada "sub-bloque" de contenido dentro del panel 1
+                      (la grilla, y la barra de proyección)
+     .me-scale*    -> el slider de proyección y sus resultados
    ============================================================ */
 
 /* ============================================================
      Ajuste SOLO para el capítulo 3: como este capítulo tiene
-     contenido extra (el módulo me-*), le achicamos el margen
-     inferior del título para ganar altura y que todo entre en
-     una pantalla. Al usar el selector "#chapter-3 .chapter-title"
-     (en vez de tocar .chapter-title en general), los capítulos
-     1 y 2 quedan exactamente como estaban.
+     contenido extra (el módulo me-*, más denso que los otros 2), le
+     achicamos el margen inferior del título para ganar altura y que
+     todo entre en una pantalla sin tener que scrollear. Al usar el
+     selector "#chapter-3 .chapter-title" (en vez de tocar
+     .chapter-title en general, que es compartida), los capítulos 1 y
+     2 quedan exactamente como estaban -- este ajuste NO los afecta.
      ============================================================ */
   #chapter-3 .chapter-title{ margin-bottom:4px; }
   #chapter-3 .chapter-header{ margin-bottom:2px; }
   #chapter-3 .chapter-eyebrow{ margin-bottom:2px; }
 
-  /* .me-view: la grilla y la barra de proyección ("Llevalo a más
-     mujeres") quedan siempre visibles, apiladas -- ninguna depende de
-     tocar un botón. El "+" separa la segunda de la primera con una
-     línea sutil, para que se lea como una sección aparte y no como un
-     bloque continuo de contenido. */
-  .me-view{display:block;}
+  /* ============ TARJETA PRINCIPAL ============
+     La tarjeta visible es la de AFUERA: en el HTML lleva las clases
+     "ui-panel me-card" juntas (mismo molde que .em-card del módulo
+     1 -- ver modulo1.css), así las dos tarjetas miden exactamente lo
+     mismo (ancho, padding, fondo con blur) sin que cada módulo tenga
+     que definir su propio tamaño. .me-card solo agrega el margen
+     inferior puntual de este módulo. */
+  .me-card{ margin-bottom:8px; }
+
+  /* Las 2 pestañas (.ui-tabpanel, "1.000 mujeres en control" / "Las
+     que se escapaban") YA NO tienen su propia tarjeta adentro: antes
+     cada una envolvía su contenido en un .ui-panel con fondo + borde
+     + blur PROPIOS -- lo que se veía como "una tarjeta adentro de
+     otra tarjeta" ahora que .me-card ya puso ese fondo una sola vez,
+     afuera de las dos. Esta regla les saca el fondo/borde/padding a
+     esos paneles internos, pero NO les toca position/display/height
+     (que .ui-panel sigue aportando, y que la pestaña 2 -- ver más
+     abajo -- todavía necesita para poder centrar su contenido
+     verticalmente dentro del espacio disponible). */
+  .me-card .ui-tabpanel > .ui-panel{
+    background:none;
+    border:none;
+    backdrop-filter:none;
+    padding:0;
+  }
+
+  /* .ui-tabpanel (la pestaña compartida, definida en style.css) pasa
+     de una pestaña a otra con un FUNDIDO de 0,35 segundos
+     (transition:opacity): mientras una se apaga, la otra se prende,
+     y por un instante las dos se ven parcialmente superpuestas.
+
+     Eso se veía bien ANTES, cuando cada pestaña tenía su propio
+     fondo/borde (ver la regla de arriba) que las separaba
+     visualmente incluso durante el cruce. Pero ahora que esa tarjeta
+     propia se sacó -- la única tarjeta visible es la de afuera --
+     durante esos 0,35s se ve el CONTENIDO de las 2 pestañas mezclado
+     sin nada que las separe (las 2 grillas de puntos superpuestas, 2
+     botones "Fuente" uno encima del otro): se lee como si el sitio
+     estuviera roto, aunque dure solo un instante.
+
+     Por eso, acá anulamos esa transición: el cambio de pestaña queda
+     INSTANTÁNEO (sin cruce/fundido) en este módulo. */
+  .me-card .ui-tabpanel{
+    transition:none;
+  }
+
+  /* .me-view: dentro del panel 1 hay 2 "sub-bloques" de contenido (la
+     grilla de 1.000 puntos, y la barra de proyección con el slider) y
+     los DOS quedan SIEMPRE visibles, apilados uno debajo del otro --
+     ninguno depende de clickear un botón para mostrarse/ocultarse (a
+     diferencia de las pestañas del panel 1 vs. panel 2, que sí se
+     alternan). El selector ".me-view + .me-view" apunta a un
+     ".me-view" que viene JUSTO DESPUÉS de otro ".me-view" (osea, el
+     segundo bloque en adelante) y le agrega una línea sutil arriba,
+     para que se lea como una sección aparte y no como un bloque
+     continuo de contenido. */
+  .me-view{ display:block; }
   .me-view + .me-view{
     margin-top:10px;
     padding-top:10px;
@@ -30,73 +99,153 @@
   }
 
   /* ============================================================
-     Grilla de puntos (paneles 1 y 2): antes se dibujaba con <svg>/
-     <circle>; ahora son <div class="me-dot"> dentro de un contenedor
-     CSS Grid, la misma técnica que ya usa el waffle del Capítulo 1
-     (.em-waffle-grid) -- así los dos capítulos comparten un solo
-     enfoque para "grilla que se pinta según datos". El número de
-     columnas se fija inline en el HTML (40 para el panel 1, 20 para
-     el panel 2) según cuántos puntos tiene cada visualización.
+     GRILLA DE PUNTOS (.me-dotgrid) -- paneles 1 y 2
+     Cada punto es un <div class="me-dot"> dentro de un contenedor
+     CSS Grid, la misma técnica que usa el waffle del Capítulo 1
+     (ver .em-waffle-grid en modulo1.css) -- en una versión anterior
+     de este módulo, los puntos se dibujaban con <svg>/<circle>; se
+     cambió a <div> para que los 2 capítulos compartan un solo
+     enfoque de "grilla que se pinta según datos", más simple.
+     El NÚMERO DE COLUMNAS de cada grilla se fija "inline" en el
+     atributo style del HTML (style="grid-template-columns:
+     repeat(40,1fr)" para el panel 1, repeat(20,1fr) para el panel 2),
+     porque depende de cuántos puntos tiene cada visualización
+     (1.000 vs. 100) -- no tendría sentido fijarlo acá en el CSS.
      ============================================================ */
   .me-dotgrid{
-    display:grid; gap:3px; width:100%;
+    display:grid;
+    gap:3px;
+    width:100%;
   }
-  /* Cada punto arranca "apagado" (--dot-off, variable compartida de
-     :root). aspect-ratio:1 lo mantiene cuadrado sin importar cuántas
-     columnas tenga la grilla; border-radius:50% lo hace circular. */
+  /* Cada punto individual arranca "apagado": usa la variable
+     compartida --dot-off (definida en :root, style.css) -- un blanco
+     bien translúcido, el mismo que usaría cualquier otro módulo para
+     representar "sin dato todavía".
+       aspect-ratio:1   -> mantiene cada punto cuadrado (y con
+                           border-radius:50%, circular) sin importar
+                           cuántas columnas tenga la grilla ni el
+                           ancho real en pantalla
+       transition:background -> cuando el JS le cambia la clase (a
+                           .me-lit o .me-new), el color cambia de a
+                           poco en vez de saltar de golpe */
   .me-dot{
-    width:100%; aspect-ratio:1; border-radius:50%;
-    background:var(--dot-off); transition:background .5s ease;
+    width:100%;
+    aspect-ratio:1;
+    border-radius:50%;
+    background:var(--dot-off);
+    transition:background .5s ease;
   }
-  /* "Cáncer detectado" (tasa base, sin IA): ámbar, con un resplandor
-     sutil del mismo color -- reemplaza el círculo .me-glow aparte que
-     existía con la versión en SVG; acá el brillo es un box-shadow en
-     el punto mismo, más simple. */
+  /* "Cáncer detectado" (la tasa BASE, sin IA): color ámbar
+     (--flame, variable compartida), con un resplandor sutil del
+     mismo color alrededor (box-shadow) -- reemplaza al círculo
+     ".me-glow" aparte que existía en la versión anterior con SVG;
+     acá, al ser más simple la técnica (div en vez de 2 círculos
+     superpuestos), el brillo es directamente un box-shadow en el
+     punto mismo. */
   .me-dot.me-lit{
     background:var(--flame);
     box-shadow:0 0 6px rgba(255,179,92,.7);
   }
-  /* "Detectado gracias a la IA": rosa fuerte, mismo resplandor en
-     rosa. Se usa tanto para los puntos nuevos del panel 1 como para
-     los cánceres de intervalo "recuperados" del panel 2. */
+  /* "Detectado gracias a la IA" (la diferencia que suma el apoyo de
+     IA por encima de la tasa base): rosa fuerte (--dot-pink), mismo
+     resplandor pero en rosa. Esta MISMA clase se usa en los 2
+     paneles: tanto para los puntos "nuevos" del panel 1 (los que se
+     encienden solo con IA activada) como para los cánceres de
+     intervalo "recuperados" del panel 2 -- en los dos casos
+     representan lo mismo conceptualmente: "esto lo encontró la IA". */
   .me-dot.me-new{
     background:var(--dot-pink);
     box-shadow:0 0 7px rgba(255,111,156,.8);
   }
 
-  .me-scale{margin-top:0; padding-top:0;}
-  .me-scale label{display:block; font-size:0.82rem; margin-bottom:4px; color:var(--text-dim);}
-  .me-scale input[type=range]{width:100%; accent-color:var(--rose-strong);}
-  .me-scale-out{display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:4px;}
-  .me-scale-out .ui-big{font-size:1.1rem;}
+  /* ============ SLIDER DE PROYECCIÓN (.me-scale) ============ */
+  /* .me-scale envuelve el slider + sus 3 resultados. margin/padding
+     en 0 porque, al ser su propio ".me-view" (ver arriba), el
+     espaciado entre ESTE bloque y el de arriba (la grilla) ya lo
+     resuelve la regla ".me-view + .me-view". */
+  .me-scale{ margin-top:0; padding-top:0; }
+  /* La etiqueta del slider ("Proyección sobre esta tasa: 40.000
+     mujeres"). display:block la separa del slider con su propio
+     renglón (en vez de quedar los dos en la misma línea). */
+  .me-scale label{
+    display:block;
+    font-size:0.82rem;
+    margin-bottom:4px;
+    color:var(--text-dim);
+  }
+  /* El <input type="range"> en sí. accent-color le cambia el color al
+     "pulgar" (el círculo que se arrastra) y a la barra ya recorrida,
+     para que combinen con la paleta rosa del sitio en vez de quedar
+     con el celeste/gris por defecto del navegador. */
+  .me-scale input[type=range]{
+    width:100%;
+    accent-color:var(--rose-strong);
+  }
+  /* Los 3 resultados (un radiólogo / con IA / diferencia), repartidos
+     en 3 columnas iguales. */
+  .me-scale-out{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:6px;
+    margin-top:4px;
+  }
+  /* Acá el número grande (.ui-big, la clase compartida) se achica a
+     1.1rem fijo -- más chico que su tamaño por defecto (1.4rem) --
+     porque acá van 3 números juntos en una fila angosta, y a tamaño
+     completo no entrarían prolijos. */
+  .me-scale-out .ui-big{ font-size:1.1rem; }
 
-  /* ---- Panel 2 ("Las que se escapaban"): tiene menos contenido que
-     el panel 1 (no tiene la barra de proyección) y la tarjeta mide el
-     alto del panel 1 -- el más alto de los dos, ver comentario de
-     .ui-panels en style.css -- así que sin estos ajustes queda un
-     hueco vacío grande abajo. ---- */
-  /* "Fuente" sale del flujo normal (position:absolute, apoyada en la
-     esquina inferior derecha del panel -- .ui-panel ya es
-     position:relative, así que es el punto de referencia). Así el
-     espacio libre completo queda solo para centrar .ui-visual, en vez
-     de competir con ella por el mismo lugar. */
-  #me-tabpanel-2 .ui-src{ position:absolute; right:20px; bottom:14px; margin-top:0; }
+  /* ============================================================
+     PANEL 2 ("Las que se escapaban"): ajustes puntuales de layout
+     Este panel tiene MENOS contenido que el panel 1 (no tiene la
+     barra de proyección/slider), pero la tarjeta -- al ser un
+     "grid-stack" (ver .ui-panels en style.css) -- siempre mide el
+     alto del panel MÁS alto de los dos. Sin estos ajustes, el panel 2
+     quedaría con toda su grilla pegada arriba y un hueco vacío grande
+     abajo, debajo de "Fuente".
+     ============================================================ */
+  /* "Fuente" se saca del flujo normal del documento
+     (position:absolute), apoyada en la esquina inferior derecha del
+     panel -- .ui-panel ya es position:relative (lo trae de fábrica,
+     ver style.css), así que es el punto de referencia para ese
+     "absolute". Al sacarla del flujo, el espacio libre que sobra
+     dentro del panel queda LIBRE por completo para centrar la
+     grilla (.ui-visual, regla de abajo), en vez de competir con
+     "Fuente" por el mismo espacio. */
+  #me-tabpanel-2 .ui-src{
+    position:absolute;
+    right:20px;
+    bottom:14px;
+    margin-top:0;
+  }
 
-  /* margin-top/bottom:auto en .ui-visual (hijo directo de .ui-panel,
-     que es flex-column) hace que absorba el espacio libre repartido
-     arriba y abajo suyo -- empujándola al centro vertical del espacio
-     disponible, sin mover .ui-sub/.ui-seg (quedan arriba) ni "Fuente"
-     (ya la sacamos del flujo, arriba). */
-  #me-tabpanel-2 .ui-visual{ margin-top:auto; margin-bottom:auto; }
+  /* margin-top/bottom:auto en .ui-visual (que es hijo directo de
+     .ui-panel, el cual es flex-column) hace que ese elemento absorba
+     TODO el espacio libre sobrante, repartido mitad arriba/mitad
+     abajo suyo -- empujándolo al CENTRO vertical del espacio
+     disponible dentro del panel. El texto de arriba (.ui-sub/.ui-seg)
+     no se mueve (queda pegado arriba, como siempre), y "Fuente" no
+     compite por este espacio porque ya la sacamos del flujo en la
+     regla de arriba. */
+  #me-tabpanel-2 .ui-visual{
+    margin-top:auto;
+    margin-bottom:auto;
+  }
 
   @media (min-width:680px){
-    /* 65% en vez del 42% que usa el panel 1: como acá no hay
-       .ui-stats compitiendo por texto largo (son 2 líneas nomás), la
-       grilla puede ocupar bastante más ancho -> cada punto sale más
-       grande. */
+    /* 65% en vez del 42% que usa la grilla del panel 1 (ver
+       .ui-visual .ui-field en style.css): como en este panel 2 no hay
+       .ui-stats compitiendo por texto largo al lado (son apenas 2
+       líneas de resultado), la grilla puede ocupar bastante más
+       ancho disponible -> cada punto individual sale más grande y
+       se ve mejor. */
     #me-tabpanel-2 .ui-visual .ui-field{ flex:0 0 65%; }
   }
 
+  /* Respeta la preferencia de accesibilidad "reducir movimiento" del
+     sistema operativo: si está activada, el cambio de color de los
+     puntos (apagado -> encendido) pasa a ser instantáneo, sin la
+     transición suave de .5s que tiene por defecto. */
   @media (prefers-reduced-motion: reduce){
-    .me-dot{transition:none;}
+    .me-dot{ transition:none; }
   }

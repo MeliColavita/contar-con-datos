@@ -348,6 +348,17 @@
     display:flex;
     flex-direction:column;
   }
+  /* Título DENTRO de la tarjeta (ej. "¿Cuál es la dimensión del cáncer
+     de mama en Argentina?" del módulo 1, o "¿Cuánto cambia el
+     diagnóstico con una segunda lectura?" del módulo 3). Cada módulo
+     escribe su propio texto, pero el tamaño/tipografía sale de acá,
+     de un solo lugar, para que no haya 2 módulos con letras de
+     distinto tamaño. */
+  .ui-card-title{
+    font-family:var(--serif); font-weight:500;
+    font-size:clamp(1.1rem,2.2vw,1.5rem);
+    color:var(--text); margin:0 0 8px;
+  }
   .ui-sub{color:var(--text-dim); margin:0 0 6px; font-size:0.84rem; line-height:1.28; max-width:64ch;}
 
   .ui-seg{display:inline-flex; justify-content:center; flex-wrap:wrap; border:1px solid var(--panel-border); border-radius:999px; padding:3px; gap:2px; margin-bottom:6px;}
