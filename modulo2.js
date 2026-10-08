@@ -1,19 +1,52 @@
 // ============================================================
-// MODULO2.JS — Brenda — prefijo: br-
-// Todo adentro de esta función para no chocar con los otros módulos.
-// Disponible desde script.js: UI.el(tag, attrs), UI.rng(seed), UI.fmt(n), UI.NS
-// Las pestañas (.ui-tab / .ui-tabpanel) ya funcionan solas.
+// MODULO2.JS — Capítulo 2 "El tiempo" — Brenda — prefijo: br-
 // ============================================================
-// ============================================================
-// MODULO2.JS — Brenda — prefijo: br-
-// Capítulo 2 "El tiempo": mapa por provincia y por año.
-// Requiere Chart.js (se carga en index.html antes de este archivo).
+// QUÉ HACE ESTE ARCHIVO: dibuja el mapa interactivo de Argentina por
+// provincia (con tooltip al pasar el mouse y un gráfico de barras que
+// cambia según la provincia elegida), y la pestaña "Por año" (un
+// segundo mapa + un gráfico de dispersión de la evolución 2005-2024).
+// Requiere Chart.js (se carga como <script> en index.html, ANTES que
+// este archivo, para que la variable global "Chart" ya exista).
+//
+// ESTRUCTURA DEL ARCHIVO (de arriba a abajo):
+//   (A) DATOS -- el objeto DATA.provinces: ~12.800 líneas de
+//       coordenadas SVG (una por cada provincia, el contorno + los
+//       "anillos" usados para calcular dónde caen los puntitos de
+//       densidad). Es DATO PURO, no lógica -- nunca se tocó ni hace
+//       falta tocarlo para nada de lo que se hizo hoy (fluidez, techo
+//       de alto del mapa, el fix del gráfico en blanco). Si alguna
+//       vez hay que actualizar el mapa en sí (otro año, otra fuente),
+//       es acá donde se reemplazarían esas coordenadas.
+//   (B) Pestaña "Por provincia" -- arma el mapa interactivo, el
+//       tooltip, los puntitos de densidad y el gráfico de barras.
+//       Corre apenas carga la página (esta pestaña está activa por
+//       defecto).
+//   (C) Pestañas + pestaña "Por año" -- el click de las 2 pestañas, y
+//       el segundo mapa + el gráfico de dispersión (que se arman
+//       recién la PRIMERA vez que se clickea "Por año" -- carga
+//       diferida, para no hacer ese trabajo si nadie la visita nunca).
+//
+// Todo vive adentro de una única función que se ejecuta sola (IIFE),
+// igual que los otros 2 módulos -- así ninguna variable de acá
+// (DATA, pathEls, provinceChart, etc.) queda visible para
+// modulo1.js/modulo3.js ni los pisa.
 // ============================================================
 (function () {
+  // root = el contenedor raíz del módulo (ver index.html:
+  // <div class="ui-wrap br-wrap">). Si no existe, esta página no
+  // tiene el módulo 2 cargado -- cortamos acá, sin error.
   const root = document.querySelector('.br-wrap');
   if (!root) return; // el módulo no está en la página
 
   // ---------- (A) DATOS ----------
+  // DATA.width/height: el tamaño del "lienzo" original del mapa (el
+  // viewBox que usan los 2 <svg class="br-map">, ver index.html).
+  // DATA.provinces: un objeto por provincia con su nombre, el path
+  // SVG completo ("d", el contorno dibujado) y "rings" (los mismos
+  // contornos pero como listas de puntos [x,y], que usa pickPoint()
+  // en la sección B para calcular dónde caen los puntitos de densidad
+  // sin que queden fuera de la silueta de la provincia). Es dato puro
+  // -- no se modificó ni hace falta tocarlo hoy.
   const DATA = {
     width: 520,
     height: 920,
@@ -12855,8 +12888,23 @@
   // ============================================================
   // (B) Pestaña "Por provincia"
   // ============================================================
+  // Todo esto corre adentro de su propia IIFE, apenas carga la
+  // página (esta pestaña está activa por defecto, a diferencia de
+  // "Por año" -- sección C -- que recién arma SU mapa/gráfico la
+  // primera vez que se clickea).
   (function () {
     // ---------- utilidades geométricas ----------
+    // Estas 4 funciones trabajan juntas para resolver un problema
+    // concreto: "¿en qué punto [x,y] DENTRO de la silueta de esta
+    // provincia dibujo cada puntito de densidad, sin que caiga afuera
+    // del contorno (por ejemplo, en el mar o en otra provincia)?"
+
+    // ringArea(ring)
+    // Calcula el ÁREA de un polígono (un "ring" = una lista de puntos
+    // [x,y] que forman un contorno cerrado), con la fórmula estándar
+    // del "shoelace". Se usa para elegir, en provincias con más de un
+    // contorno (islas, enclaves), cuál de ellos es más grande y por
+    // lo tanto dónde "le toca" proporcionalmente más puntos.
     function ringArea(ring) {
       let a = 0;
       for (let i = 0; i < ring.length; i++) {
@@ -12866,6 +12914,12 @@
       }
       return Math.abs(a / 2);
     }
+    // pointInRing(x, y, ring)
+    // ¿El punto [x,y] cae DENTRO del polígono "ring"? (algoritmo de
+    // "ray casting": cuenta cuántas veces una línea horizontal desde
+    // el punto hacia la derecha cruza los bordes del polígono -- un
+    // número impar de cruces = está adentro). Se usa para descartar
+    // puntos "candidatos" que caerían fuera de la silueta real.
     function pointInRing(x, y, ring) {
       let inside = false;
       for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
@@ -12876,6 +12930,14 @@
       }
       return inside;
     }
+    // mulberry32(seed)
+    // Generador de números "aleatorios" pero REPRODUCIBLES: con la
+    // misma seed, siempre da la misma secuencia de números. Así los
+    // puntitos de densidad de cada provincia quedan siempre en el
+    // mismo lugar entre una carga de página y la siguiente, en vez de
+    // "bailar" cada vez que se recarga (mismo concepto que UI.rng en
+    // script.js, usado por los otros 2 módulos -- acá está reescrito
+    // en vez de reutilizar ese helper, pero hace lo mismo).
     function mulberry32(seed) {
       return function () {
         seed |= 0;
@@ -12885,11 +12947,35 @@
         return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
       };
     }
+    // seedFromName(name)
+    // Convierte el NOMBRE de una provincia (ej. "Córdoba") en un
+    // número -- ese número se usa como "seed" de mulberry32(), así
+    // cada provincia tiene su propia secuencia reproducible de
+    // puntos (dos provincias nunca generan exactamente el mismo
+    // patrón, pero la MISMA provincia sí da siempre el mismo patrón).
     function seedFromName(name) {
       let h = 0;
       for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) | 0;
       return h;
     }
+    // pickPoint(province, rng)
+    // Elige UN punto [x,y] al azar (reproducible, usando "rng") que
+    // caiga DENTRO de la silueta real de "province" -- se llama una
+    // vez por cada puntito de densidad que haya que dibujar.
+    //   1. Si la provincia tiene más de un contorno (rings), elige
+    //      cuál de ellos usar, con más chance para el más grande
+    //      (ringArea) -- así los puntos se reparten proporcional al
+    //      tamaño real de cada parte, no 50/50 entre una isla chica
+    //      y el territorio principal.
+    //   2. Calcula el rectángulo que ENVUELVE ese contorno (minX/
+    //      maxX/minY/maxY).
+    //   3. Prueba hasta 250 puntos al azar DENTRO de ese rectángulo,
+    //      y se queda con el primero que caiga adentro del contorno
+    //      real (pointInRing) -- no todo rectángulo está lleno de
+    //      provincia, por eso hace falta probar varias veces.
+    //   4. Si ninguno de los 250 intentos cae adentro (provincia muy
+    //      angosta/irregular), devuelve un punto cerca del centroide
+    //      como respaldo, para no trabarse.
     function pickPoint(province, rng) {
       const rings = province.rings;
       if (!rings.length) return province.centroid;
@@ -12928,14 +13014,18 @@
     }
 
     // ---------- construir el mapa ----------
+    // svg = el <svg id="brMap"> vacío del HTML; le ponemos el viewBox
+    // acá por código (en vez de dejarlo fijo en el HTML) para que
+    // quede atado al mismo DATA.width/height que usa el resto del
+    // archivo, en un solo lugar.
     const svg = document.getElementById('brMap');
     svg.setAttribute('viewBox', `0 0 ${DATA.width} ${DATA.height}`);
-    const mapCard = document.querySelector('.br-map-card');
+    const mapCard = document.querySelector('.br-map-card'); // el <div> que envuelve este mapa (ver modulo2.css)
     const tooltip = document.getElementById('brTooltip');
     const ttName = document.getElementById('brTtName');
     const ttPct = document.getElementById('brTtPct');
 
-    const pathEls = [];
+    const pathEls = []; // referencia a cada <path> de provincia + sus datos, para no recorrer el DOM de nuevo después
     // Los datos de CABA ya están sumados dentro de "Buenos Aires":
     // acá solo definimos qué provincias se resaltan juntas.
     const GROUPED_PROVINCES = {
@@ -12943,6 +13033,11 @@
       CABA: ['Buenos Aires', 'CABA'],
     };
 
+    // Crea un <path> de SVG por cada provincia (usando su "d", el
+    // contorno ya calculado en DATA), y le conecta los eventos de
+    // mouse: entrar/clickear la resalta (y a su "grupo" -- ver
+    // GROUPED_PROVINCES) y actualiza el tooltip + el gráfico de
+    // barras; moverse adentro reposiciona el tooltip; salir lo oculta.
     DATA.provinces.forEach((p) => {
       const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       path.setAttribute('d', p.d);
@@ -12951,6 +13046,12 @@
       svg.appendChild(path);
       pathEls.push({ el: path, data: p });
 
+      // activate(e): resalta esta provincia (y las de su grupo, ej.
+      // Buenos Aires+CABA juntas) y actualiza el tooltip/gráfico con
+      // SUS datos -- si el grupo incluye Buenos Aires, siempre
+      // muestra los datos de Buenos Aires (no los de CABA por
+      // separado), porque CABA ya está sumada ahí (ver
+      // GROUPED_PROVINCES, arriba).
       const activate = (e) => {
         pathEls.forEach((o) => o.el.classList.remove('active'));
         const group = GROUPED_PROVINCES[p.name] || [p.name];
@@ -12970,12 +13071,19 @@
       path.addEventListener('pointerleave', () => tooltip.classList.remove('visible'));
     });
 
-    // puntos de densidad: 1 punto cada 100 muertes por cáncer de mama
+    // puntos de densidad: 1 punto cada 100 muertes por cáncer de mama.
+    // "g.br-dots" agrupa TODOS los puntos de TODAS las provincias en
+    // un solo <g> (ver .br-widget g.br-dots en modulo2.css,
+    // pointer-events:none para no interferir con el hover del mapa).
     const dotsGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     dotsGroup.setAttribute('class', 'br-dots');
     DATA.provinces.forEach((p) => {
+      // Math.round(cancer/100): 1 punto cada 100 muertes, redondeado;
+      // Math.max(1, ...): si una provincia tiene algún caso (cancer>0)
+      // pero menos de 50, igual le toca AL MENOS 1 punto (si no,
+      // desaparecería del mapa aunque tenga casos reales).
       const n = p.cancer > 0 ? Math.max(1, Math.round(p.cancer / 100)) : 0;
-      const rng = mulberry32(seedFromName(p.name));
+      const rng = mulberry32(seedFromName(p.name)); // posiciones reproducibles, propias de esta provincia
       for (let i = 0; i < n; i++) {
         const [x, y] = pickPoint(p, rng);
         const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
@@ -12987,7 +13095,21 @@
     });
     svg.appendChild(dotsGroup);
 
-    // Posición del tooltip (corregida para funcionar con la tarjeta escalada)
+    // positionTooltip(e)
+    // Calcula dónde poner el tooltip (el globo flotante) según la
+    // posición del mouse ("e", el evento), relativa a "mapCard" (el
+    // <div> que envuelve el mapa).
+    //   scale = rect.width / mapCard.offsetWidth: antes de hoy, la
+    //   tarjeta entera se "achicaba" con transform:scale() (ver el
+    //   "auto-escalado" que había en este archivo, ya eliminado) --
+    //   esta cuenta estaba pensada para DESHACER ese achicado al
+    //   calcular la posición. Ahora que ya no hay escalado, "rect.width"
+    //   y "mapCard.offsetWidth" son siempre iguales, así que "scale"
+    //   da 1 y la cuenta sigue funcionando igual, sin tener que tocar
+    //   esta función -- quedó "a prueba" del cambio de hoy sin querer.
+    //   half/margin: deja un margen para que el tooltip nunca se pase
+    //   del borde izquierdo/derecho de la tarjeta, aunque el mouse
+    //   esté pegado al borde.
     function positionTooltip(e) {
       const rect = mapCard.getBoundingClientRect();
       const scale = rect.width / mapCard.offsetWidth || 1;
@@ -13001,6 +13123,9 @@
       tooltip.style.left = x + 'px';
       tooltip.style.top = y + 'px';
     }
+    // showTooltip(p, e): pone el texto del tooltip (nombre de
+    // provincia + porcentaje) y lo hace visible, posicionándolo con
+    // positionTooltip().
     function showTooltip(p, e) {
       ttName.textContent = p.name;
       ttPct.innerHTML = `<b>${p.pct.toLocaleString('es-AR')}%</b> de las muertes totales`;
@@ -13009,9 +13134,18 @@
     }
 
     // ---------- Chart.js ----------
-    const chartCtx = document.getElementById('brProvinceChart').getContext('2d');
+    // El gráfico de barras ("Muertes totales vs. cáncer de mama") de
+    // la provincia seleccionada. Chart.js es una librería externa
+    // (cargada por CDN en index.html) -- acá solo se configura.
+    const chartCtx = document.getElementById('brProvinceChart').getContext('2d'); // Chart.js dibuja sobre el "2d context" del canvas, no sobre el canvas directamente
     const chartTitleEl = document.getElementById('brChartTitle');
 
+    // valueLabelsPlugin: un "plugin" de Chart.js hecho a mano, que
+    // dibuja el NÚMERO arriba de cada barra (Chart.js no lo hace
+    // solo). afterDatasetsDraw se ejecuta automáticamente cada vez
+    // que el gráfico termina de dibujar sus barras -- ahí, por cada
+    // barra de cada dataset ("Muertes totales" y "Muertes por cáncer
+    // de mama"), escribe su valor justo arriba.
     const valueLabelsPlugin = {
       id: 'valueLabels',
       afterDatasetsDraw(chart) {
@@ -13032,6 +13166,15 @@
       },
     };
 
+    // El gráfico en sí: arranca en 0/0 (sin datos todavía -- los
+    // carga updateProvinceChart(), más abajo, apenas termina de
+    // crearse). "labels:['']" = una sola "categoría" sin nombre
+    // (las 2 barras van juntas, una al lado de la otra, no una por
+    // categoría distinta -- por eso el eje X no necesita etiquetas).
+    //   responsive:true + maintainAspectRatio:false: el gráfico se
+    //   redibuja solo cuando cambia el tamaño de su <canvas> (el alto
+    //   lo fija un estilo inline en el HTML, el ancho lo da la
+    //   columna -- ver .br-grid-layout en modulo2.css).
     const provinceChart = new Chart(chartCtx, {
       type: 'bar',
       data: {
@@ -13079,7 +13222,15 @@
           x: { ticks: { color: '#a99aa6' }, grid: { display: false } },
           y: {
             min: 0,
-            max: 160000,
+            // Antes el techo era 160.000 -- justo encima del total más
+            // alto del dataset (Buenos Aires, 145.201), dejaba solo ~9%
+            // de aire arriba de esa barra. El número que dibuja
+            // valueLabelsPlugin (ver más arriba) queda pegado ARRIBA de
+            // la barra, así que con tan poco aire se superponía con la
+            // etiqueta del eje ("160.000"). 180.000 le da a Buenos Aires
+            // ~19% de aire -- suficiente para que el número y la
+            // etiqueta del eje no se toquen, en cualquier provincia.
+            max: 180000,
             afterBuildTicks: (axis) => {
               axis.ticks = [
                 { value: 0 },
@@ -13091,6 +13242,7 @@
                 { value: 120000 },
                 { value: 140000 },
                 { value: 160000 },
+                { value: 180000 },
               ];
             },
             ticks: { color: '#a99aa6' },
@@ -13100,6 +13252,11 @@
       },
     });
 
+    // updateProvinceChart(p)
+    // Reemplaza los datos del gráfico por los de la provincia "p" (el
+    // mismo objeto que viene de DATA.provinces) y lo redibuja
+    // (.update()). Se llama al activar una provincia (click/hover) y
+    // una vez al cargar la página, con Buenos Aires por defecto.
     function updateProvinceChart(p) {
       provinceChart.data.datasets[0].data = [p.total];
       provinceChart.data.datasets[1].data = [p.cancer];
@@ -13121,24 +13278,67 @@
   // ============================================================
   // (C) Pestañas + pestaña "Por año"
   // ============================================================
+  // Estas pestañas NO usan el mecanismo compartido .ui-tab/
+  // .ui-tabpanel (el que script.js maneja solo para los otros
+  // módulos): acá hace falta código propio porque, además de
+  // mostrar/ocultar un panel, clickear "Por año" tiene que disparar
+  // la construcción del segundo mapa + el gráfico de dispersión (ver
+  // initYearTab(), más abajo) -- y eso solo tiene que pasar UNA vez,
+  // la primera vez que se visita esa pestaña (carga diferida).
   (function () {
     const tabProvincia = document.getElementById('brTabProvincia');
     const tabAnio = document.getElementById('brTabAnio');
     const panelProvincia = document.getElementById('brPanelProvincia');
     const panelAnio = document.getElementById('brPanelAnio');
 
+    // animarEntrada(panel)
+    // Vuelve a disparar la animación .br-fade-in (ver @keyframes
+    // brFadeIn en modulo2.css) en "panel". Sacarle la clase y
+    // ponérsela de nuevo no alcanza por sí solo -- el navegador no
+    // "re-dispara" una animación CSS si la clase ya estaba puesta
+    // antes sin un reflow de por medio. "void panel.offsetWidth"
+    // fuerza ese reflow (lee una propiedad de layout, lo que obliga
+    // al navegador a procesar el cambio anterior antes de seguir) --
+    // mismo truco que usa script.js para reiniciar la animación de
+    // los puntitos del título al cambiar de capítulo.
     function animarEntrada(panel) {
       panel.classList.remove('br-fade-in');
       void panel.offsetWidth;
       panel.classList.add('br-fade-in');
     }
 
+    // Chart.getChart(id) busca, por el id de su <canvas>, la instancia
+    // de Chart.js ya creada -- sin esto hacía falta tener la variable
+    // "provinceChart"/"scatterChart" a mano, pero esas se declaran en
+    // otra IIFE (sección B, más arriba) que no es visible desde acá.
+    //
+    // resizeChart() fuerza a Chart.js a volver a medir su <canvas> y
+    // redibujarse. Hace falta porque, al ocultar un panel con
+    // "br-hidden" (display:none) y volver a mostrarlo, Chart.js no
+    // siempre vuelve a detectar solo el tamaño correcto del canvas
+    // (es un comportamiento conocido de la librería con contenedores
+    // que pasan por display:none) -- sin este resize manual, el
+    // gráfico podía quedar en blanco al volver a una pestaña ya
+    // visitada antes.
+    function resizeChart(canvasId) {
+      const chart = typeof Chart !== 'undefined' && Chart.getChart(canvasId);
+      if (chart) chart.resize();
+    }
+
+    // Click en cada pestaña: le saca/pone "active" a los 2 botones,
+    // muestra el panel que corresponde y oculta el otro (con
+    // "br-hidden"), dispara la animación de entrada, y fuerza que
+    // Chart.js vuelva a medir su gráfico (resizeChart -- ver más
+    // arriba por qué hace falta). "Por año" además llama a
+    // initYearTab(), que arma el segundo mapa + el gráfico de
+    // dispersión la primera vez (y no hace nada las veces siguientes).
     tabProvincia.addEventListener('click', () => {
       tabProvincia.classList.add('active');
       tabAnio.classList.remove('active');
       panelProvincia.classList.remove('br-hidden');
       panelAnio.classList.add('br-hidden');
       animarEntrada(panelProvincia);
+      resizeChart('brProvinceChart');
     });
     tabAnio.addEventListener('click', () => {
       tabAnio.classList.add('active');
@@ -13147,8 +13347,11 @@
       panelProvincia.classList.add('br-hidden');
       initYearTab();
       animarEntrada(panelAnio);
+      resizeChart('brAnioScatter');
     });
 
+    // YEAR_DATA: un dato por año (2005-2024) para el gráfico de
+    // dispersión y el mapa "Por año".
     // mama = muertes por cáncer de mama (mujeres)
     // total = muertes por cáncer total (mujeres)
     // tasa = muertes cada 100.000 mujeres
@@ -13175,12 +13378,20 @@
       { year: 2024, mama: 5832, total: 30006, tasa: 24.37 },
     ];
 
+    // yearInitDone: para que buildYearMap()/buildScatter() corran UNA
+    // sola vez (la primera vez que se entra a "Por año"), no cada vez
+    // que se vuelve a esa pestaña.
     let yearInitDone = false,
       scatterChart = null,
       currentYear = 2024,
       svgAnio;
 
-    // Dibuja el mapa gris/rosa de la pestaña "Por año"
+    // buildYearMap(): dibuja el segundo mapa (el "plano", todo del
+    // mismo color -- ver .br-province-plain en modulo2.css) que sirve
+    // de fondo decorativo detrás del texto grande (.br-map-overlay).
+    // Reutiliza el mismo DATA.provinces que el mapa interactivo de la
+    // sección B, pero sin eventos de mouse ni resaltado por provincia
+    // (acá no hace falta: este mapa no es clickeable).
     function buildYearMap() {
       svgAnio = document.getElementById('brMapAnio');
       svgAnio.setAttribute('viewBox', `0 0 ${DATA.width} ${DATA.height}`);
@@ -13192,7 +13403,14 @@
       });
     }
 
-    // Actualiza textos, overlay del mapa y resalta el punto del año elegido
+    // selectYear(year)
+    // Cambia el "año elegido": actualiza el texto grande sobre el
+    // mapa (.br-map-overlay) y los 2 datos sueltos de abajo
+    // (.br-stat-row), y si el gráfico de dispersión ya existe, mueve
+    // el punto resaltado (más grande y rosa fuerte) al año nuevo, y
+    // apaga el resto (vuelven a su radio/color normal) -- "update('none')"
+    // le pide a Chart.js que redibuje SIN animación, para que el
+    // resaltado siga al mouse sin ningún retraso perceptible.
     function selectYear(year) {
       currentYear = year;
       const yd = YEAR_DATA.find((d) => d.year === year);
@@ -13216,11 +13434,17 @@
       }
     }
 
-    // Gráfico de tasa de mortalidad (puntos + línea rosa)
+    // buildScatter()
+    // Arma el gráfico de dispersión (un punto por año, 2005-2024,
+    // conectados por una línea) con la tasa de mortalidad. Se llama
+    // UNA sola vez, desde initYearTab().
     function buildScatter() {
       const ctx = document.getElementById('brAnioScatter').getContext('2d');
 
-      // Plugin: línea vertical punteada en el año seleccionado
+      // Plugin hecho a mano (Chart.js no trae esto de fábrica): dibuja
+      // una línea vertical punteada en la posición X del año
+      // actualmente seleccionado (currentYear), para marcarlo
+      // visualmente además del punto agrandado/rosa.
       const lineaVerticalPlugin = {
         id: 'lineaVertical',
         afterDatasetsDraw(chart) {
@@ -13309,7 +13533,15 @@
         },
       });
 
-      // Hover sobre las etiquetas de año del eje X
+      // Hover sobre las etiquetas de año del eje X: Chart.js detecta
+      // el hover sobre los PUNTOS del gráfico solo (eso ya lo cubre
+      // "onHover" de arriba), pero no sobre las etiquetas de texto
+      // del eje ("2005", "2006"...). Este listener lo agrega a mano:
+      // si el mouse está en la franja justo debajo del área del
+      // gráfico (donde están esas etiquetas, rotadas) busca el año
+      // cuya posición X esté más cerca del mouse, y si está a menos
+      // de 15px lo selecciona -- así pasar el mouse por la etiqueta
+      // "2010" también resalta ese año, no solo tocar el puntito.
       const canvasAnio = document.getElementById('brAnioScatter');
       canvasAnio.addEventListener('mousemove', (evt) => {
         const rect = canvasAnio.getBoundingClientRect();
@@ -13332,6 +13564,13 @@
       });
     }
 
+    // initYearTab()
+    // El "gatillo" de la carga diferida: se llama CADA VEZ que se
+    // clickea la pestaña "Por año", pero "if (yearInitDone) return"
+    // hace que todo lo de adentro (armar el mapa, armar el gráfico,
+    // posicionar en el año actual) corra UNA sola vez, la primera.
+    // Las veces siguientes, el click solo muestra lo que ya estaba
+    // armado (ver el handler de tabAnio, más arriba).
     function initYearTab() {
       if (yearInitDone) return;
       yearInitDone = true;
@@ -13342,31 +13581,28 @@
   })();
 
   // ============================================================
-  // (D) Auto-escalado: la tarjeta entra exacta en .br-frame
+  // (D) [ELIMINADO] Antes había acá un "auto-escalado": la tarjeta se
+  // armaba a un tamaño fijo (.br-stage) y JS la achicaba con
+  // transform:scale() para que entrara justa dentro de .br-frame
+  // (que tenía un alto fijo, calc(100vh - 200px)).
+  //
+  // Se sacó para que el módulo sea FLUIDO como el módulo 1 y el 3 (se
+  // recalcula solo al ancho real de la tarjeta, no a un tamaño fijo
+  // reescalado). No hizo falta tocar nada más del mapa/gráficos para
+  // que esto funcione:
+  //   - positionTooltip() (sección B, más arriba) ya calculaba un
+  //     factor "scale = rect.width / mapCard.offsetWidth" pensado
+  //     justamente para funcionar con la tarjeta escalada -- sin el
+  //     escalado, ese factor da 1 solo, y la cuenta sigue siendo
+  //     correcta sin cambiar una línea.
+  //   - Los 2 gráficos de Chart.js (provinceChart y scatterChart) ya
+  //     tienen "responsive:true" en sus opciones: se redimensionan
+  //     solos al tamaño real del <canvas>, con su propio
+  //     ResizeObserver interno (de la librería).
+  //   - El mapa (<svg id="brMap">) ya escala solo vía su "viewBox" +
+  //     el CSS "width:100%; height:auto" (ver modulo2.css).
+  // Por eso alcanzó con borrar este bloque y achicar el CSS de
+  // .br-frame/.br-stage/.br-widget (ver modulo2.css) -- nada de la
+  // lógica del mapa, el tooltip o los gráficos se tocó.
   // ============================================================
-  (function () {
-    const frame = document.getElementById('brFrame');
-    const stage = document.getElementById('brStage');
-
-    function fit() {
-      if (!frame.clientWidth || !frame.clientHeight) return; // capítulo oculto: no medir
-
-      stage.style.transform = 'scale(1)';
-
-      const naturalWidth = stage.offsetWidth;
-      const naturalHeight = stage.offsetHeight;
-      const frameWidth = frame.clientWidth;
-      const frameHeight = frame.clientHeight;
-
-      const scale = Math.min(frameWidth / naturalWidth, frameHeight / naturalHeight);
-      stage.style.transform = `scale(${scale})`;
-
-      stage.style.left = (frameWidth - naturalWidth * scale) / 2 + 'px';
-      stage.style.top = (frameHeight - naturalHeight * scale) / 2 + 'px';
-    }
-
-    new ResizeObserver(fit).observe(frame);
-    new ResizeObserver(fit).observe(stage);
-    fit();
-  })();
 })();

@@ -1,35 +1,55 @@
 /* ============================================================
    MODULO2.CSS — Capítulo 2 "El tiempo" — Brenda — prefijo: br-
-   Solo estilos de este módulo, todos con prefijo "br-" (o con el id
-   del capítulo). Para tarjetas, pestañas, botones, etc. usá las clases
-   compartidas "ui-*" de style.css y las variables de :root.
+   ============================================================
+   QUÉ HACE ESTE ARCHIVO: los estilos de la tarjeta del Capítulo 2 —
+   el mapa interactivo de Argentina por provincia, el mapa + overlay
+   "Por año", los 2 gráficos de Chart.js (barras y dispersión), el
+   tooltip del mapa y las pestañas propias de este módulo.
+
+   Convención de nombres de este archivo:
+     .br-widget      -> la tarjeta completa (lleva también la clase
+                        compartida "ui-panel", ver index.html — lo que
+                        da el fondo/borde/padding es ESA, no .br-widget)
+     .br-tabs/.br-tab-btn -> las 2 pestañas propias ("Por provincia"/"Por año")
+     .br-map-card    -> el contenedor del mapa (cualquiera de los 2)
+     .br-map-overlay -> el texto grande ("2024 / 19,4%") sobre el mapa
+                        de la pestaña "Por año"
+     .br-chart-col   -> (solo "Por provincia") columna 1: agrupa el
+                        texto de bajada + .br-panel, ver más abajo
+     .br-panel       -> la tarjeta chica con el gráfico de Chart.js
+                        (barras o dispersión) -- en "Por provincia" va
+                        en la columna 1 (izquierda); en "Por año" ocupa
+                        las 2 columnas (ver "#brPanelAnio .br-grid-layout"
+                        y "#brPanelAnio .br-map-card", más abajo: el mapa
+                        de esa pestaña está OCULTO por CSS, no borrado)
+     .br-tooltip     -> el globo flotante que sigue al mouse sobre el mapa
+     .br-stat-*      -> los 2 datos sueltos debajo del gráfico de "Por año"
    ============================================================ */
 
-/* Ejemplo: .br-algo{ color:var(--rose); } */
-
-/* ============================================================
-   MODULO2.CSS — Capítulo 2 "El tiempo" — Brenda — prefijo: br-
-   ============================================================ */
-
-/* Marco: ocupa el ancho de la columna y un alto acotado a la pantalla.
-   La tarjeta (.br-stage) se escala sola para entrar (ver modulo2.js). */
+/* Antes acá .br-frame tenía un alto fijo acotado a la pantalla
+   (calc(100vh - 200px)) y .br-stage era position:absolute +
+   transform:scale() (ver el "auto-escalado" que JS armaba y achicaba
+   -- ESE bloque se borró de modulo2.js, era lo único que dependía de
+   este tamaño fijo).
+   Ahora los dos son simples contenedores de FLUJO NORMAL: .br-frame
+   ya no define ningún alto/ancho especial (ocupa el 100% que le da su
+   padre, .ui-wrap br-wrap, igual que .em-wrap/.me-wrap de los otros
+   2 módulos) y .br-stage ya no necesita position/transform-origin
+   porque no se lo escala más -- fluye en el documento como un <div>
+   cualquiera. */
 .br-frame {
-  position: relative;
   width: 100%;
-  height: calc(100vh - 200px);
-  min-height: 360px;
-  max-height: 600px;
-  overflow: hidden;
 }
 .br-stage {
-  position: absolute;
-  top: 0;
-  left: 0;
-  transform-origin: top left;
+  width: 100%;
 }
 
+/* ============ TARJETA PRINCIPAL ============ */
 .br-widget {
-  /* Colores compartidos (vienen de :root en style.css) */
+  /* --br-*: "alias" locales de las variables compartidas de :root
+     (style.css) -- existen para que el resto de este archivo escriba
+     var(--br-rose) en vez de var(--rose) directamente. No cambian
+     nada, es solo una capa de nombres propia del módulo. */
   --br-panel: var(--panel);
   --br-panel-border: var(--panel-border);
   --br-rose: var(--rose);
@@ -39,26 +59,46 @@
   --br-text-dim: var(--text-dim);
   --br-serif: var(--serif);
   --br-sans: var(--sans);
-  /* Colores propios del mapa (no existen en :root) */
+  /* Estos 3, en cambio, son colores PROPIOS del mapa -- no existen
+     como variable compartida en :root porque no los usa ningún otro
+     módulo del sitio. */
   --br-bg: #0e0a13;
   --br-land: #1c1220;
   --br-land-border: #3a2438;
 
-  background: var(--br-bg);
+  /* Fondo, borde, border-radius y padding de la tarjeta ya NO se
+     definen acá: en index.html esta misma tarjeta ahora lleva
+     también la clase compartida "ui-panel" (igual que .em-card del
+     módulo 1 y .me-card del módulo 3), que ya trae el fondo
+     semitransparente + blur, el borde rosa apenas visible y el
+     padding -- antes .br-widget tenía los suyos propios (fondo
+     sólido #0e0a13, borde blanco bien marcado, padding más grande),
+     que la hacían ver distinta a las otras 2 tarjetas del sitio.
+     --br-bg sigue definida más arriba por si hace falta en el
+     futuro, pero ya no se usa acá. */
   color: var(--br-text);
   font-family: var(--br-sans);
-  padding: 32px 32px 36px;
   box-sizing: border-box;
-  overflow: hidden;
-  max-width: 900px;
-  width: fit-content;
+  overflow: hidden; /* recorta cualquier cosa que se pase del borde redondeado */
+  /* Antes: max-width:900px + width:fit-content -- un ancho "natural"
+     fijo que después JS achicaba entero con transform:scale() para
+     que entrara en la columna. Ahora que se sacó ese escalado (ver
+     modulo2.js), la tarjeta tiene que ocupar directamente el ancho
+     real disponible: width:100% (fluido, igual criterio que
+     .ui-panel/.em-card/.me-card de los otros 2 módulos). */
+  width: 100%;
   margin: 0;
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  border-radius: 20px;
 }
+/* Fuerza box-sizing:border-box en TODOS los descendientes de la
+   tarjeta (padding/border cuentan adentro del ancho declarado, no se
+   suman aparte) -- aunque ya existe un reset global igual en
+   style.css, se deja explícito acá porque el resto de este archivo
+   calcula medidas (anchos de columnas, paddings) asumiéndolo. */
 .br-widget * {
   box-sizing: border-box;
 }
+
+/* Pregunta/título de la tarjeta ("¿Con qué herramientas..."). */
 .br-title {
   font-family: var(--br-serif);
   font-weight: 500;
@@ -66,6 +106,10 @@
   margin: 0 0 6px;
   color: var(--br-text);
 }
+/* Bajada corta debajo del título y arriba de las pestañas. min-height
+   reserva 2 líneas y media de alto SIEMPRE, aunque el texto real sea
+   más corto -- así la tarjeta no "salta" de tamaño al pasar de una
+   pestaña a otra si una bajada es más larga que la otra. */
 .br-subhead {
   font-size: 0.9rem;
   color: var(--br-text-dim);
@@ -74,7 +118,21 @@
   line-height: 1.5;
   min-height: 2.7em;
 }
+/* "Por año": acá .br-subhead ("Evolución de la tasa...") sigue SUELTO
+   arriba de la tarjeta del gráfico (a diferencia de "Por provincia",
+   que lo movió adentro de .br-chart-col, con su propio recorte -- ver
+   más abajo). Bren pidió menos distancia entre ese texto y la
+   tarjeta: de 32px (el valor de base, pensado para cuando había mapa
+   al lado) a 10px. */
+#brPanelAnio .br-subhead {
+  margin-bottom: 10px;
+}
 
+/* El segundo mapa (pestaña "Por año") es "plano": todas las
+   provincias pintadas del mismo rosa fuerte (no interactivo, no
+   cambia de color al pasar el mouse) -- es solo el fondo decorativo
+   detrás del overlay de texto grande. pointer-events:none para que
+   ni siquiera capture el mouse. */
 .br-widget path.br-province-plain {
   fill: var(--br-rose-strong);
   stroke: var(--br-rose-strong);
@@ -82,6 +140,13 @@
   pointer-events: none;
 }
 
+/* El texto grande ("2024 / 19,4% / de las muertes...") que flota
+   ENCIMA del mapa plano de la pestaña "Por año". position:absolute
+   con top/left en % + transform:translate(-50%,-50%) lo centra en un
+   punto específico del mapa (31% desde arriba, 44% desde la
+   izquierda -- elegido a mano para caer sobre la silueta del país).
+   pointer-events:none para que no tape los clicks/hovers de nada que
+   pudiera haber debajo. */
 .br-map-overlay {
   position: absolute;
   top: 31%;
@@ -91,44 +156,237 @@
   pointer-events: none;
   width: 80%;
 }
+/* Los tamaños de letra de acá abajo (2.8rem, 2rem...) se calcularon
+   para el mapa "grande" de antes. Ahora que el mapa tiene un techo de
+   alto (ver .br-map-card, más abajo) se achicó bastante (de ~520px
+   de ancho natural a ~147-230px según pantalla), y ese texto quedaba
+   desbordando el mapa en vez de quedar prolijo adentro.
+   En vez de un tamaño fijo, "cqw" (container query width: 1cqw = 1%
+   del ANCHO del contenedor más cercano marcado como "container" --
+   acá, .br-map-card, ver su "container-type:inline-size" más abajo)
+   hace que el texto escale junto con el mapa, pase lo que pase con su
+   tamaño en el futuro. clamp(piso, tamaño-real, techo) le pone un
+   mínimo y un máximo para que nunca quede ilegible ni gigante. */
 .br-overlay-year {
   font-family: var(--br-serif);
   font-weight: 600;
-  font-size: 2.8rem;
-  color: #160f1b;
-  text-shadow: 0 0 20px rgba(255, 255, 255, 0.55);
+  font-size: clamp(1rem, 15cqw, 2.8rem);
+  color: #160f1b; /* bordó bien oscuro: contraste sobre el rosa fuerte del mapa debajo */
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.55); /* resplandor blanco para que no se pierda contra el rosa */
 }
 .br-overlay-pct {
   font-family: var(--br-serif);
   font-weight: 600;
-  font-size: 2rem;
+  font-size: clamp(0.75rem, 10cqw, 2rem);
   color: #7a2c46;
   margin-top: 4px;
 }
 .br-overlay-label {
-  font-size: 0.75rem;
+  font-size: clamp(0.5rem, 4.5cqw, 0.75rem);
   color: #3a1c28;
   opacity: 0.75;
   margin-top: 6px;
   line-height: 1.4;
 }
 
+/* ============ GRILLA MAPA + GRÁFICO (lado a lado) ============
+   Antes: columnas en píxeles fijos (320px + 500px) -- no se achicaban
+   solas, dependían de que TODO el widget se escalara con JS para
+   entrar en la columna (ver modulo2.js). Ahora, sin ese escalado,
+   necesitan ser fluidas de verdad: los "fr" reparten el ancho
+   disponible como fracción del espacio real -- cada columna se
+   achica/agranda sola según el ancho de pantalla. El minmax(0, ...)
+   es necesario para que el mapa/gráfico (que por sí solos "quieren"
+   ocupar su ancho natural) no fuercen que la grilla se desborde en
+   vez de achicarse: sin el "0" como piso, una grid-column "fr" nunca
+   baja de su contenido más ancho.
+
+   Esta regla de base (320:500... ahora 400:460) es la que queda
+   puesta tal cual sin que nada la pise. Las 2 pestañas tienen hoy su
+   PROPIA proporción de columnas, pisada más abajo: "Por provincia"
+   (ver "#brPanelProvincia .br-grid-layout") porque el gráfico de
+   barras necesita más ancho para que sus etiquetas no se superpongan
+   (ver esa regla para el detalle), y "Por año" (ver "#brPanelAnio
+   .br-grid-layout") porque ahí el mapa está oculto y el gráfico pasa
+   a ocupar las 2 columnas solo. */
 .br-grid-layout {
   display: grid;
-  grid-template-columns: 320px 500px;
+  grid-template-columns: minmax(0, 400fr) minmax(0, 460fr);
   gap: 28px;
   align-items: start;
 }
+/* "Por provincia": acá el gráfico de barras (columna 1) necesita más
+   ancho que el de "Por año" -- con las 2 barras + sus números + la
+   leyenda ("Muertes totales/Muertes por cáncer de mama") puestos en
+   una columna angosta, el número de arriba de cada barra quedaba
+   pegado contra la etiqueta del eje ("180.000"). Achicando la
+   columna del mapa (400fr en vez de 460fr) y agrandando la del
+   gráfico (460fr en vez de 400fr) el gráfico gana el ancho que le
+   faltaba -- el mapa no se achica por esto (ver justify-self:center
+   más abajo: su tamaño lo da su ALTO, no el ancho de la columna).
 
-.br-map-card {
-  position: relative;
+   Esto va adentro de un @media (min-width:881px): "#brPanelProvincia
+   .br-grid-layout" tiene más especificidad que ".br-grid-layout" sola
+   (lleva un #id), así que si no lo limitamos a pantallas anchas,
+   GANABA incluso dentro del @media(max-width:880px) de más abajo (el
+   que apila mapa y gráfico en 1 columna en pantallas angostas) y
+   rompía el apilado -- quedaban siempre lado a lado, aunque no
+   entraran. */
+@media (min-width: 881px) {
+  #brPanelProvincia .br-grid-layout {
+    grid-template-columns: minmax(0, 460fr) minmax(0, 400fr);
+  }
 }
+
+/* "Por año": acá el mapa queda OCULTO (ver "#brPanelAnio .br-map-card"
+   más abajo), así que ya no hace falta repartir el ancho en 2
+   columnas -- 1 sola columna, y el gráfico (único hijo visible de la
+   grilla) la ocupa entera. No necesita el @media(min-width:881px)
+   que sí lleva "Por provincia" de arriba: acá el valor (1fr) es el
+   MISMO que ya usa el @media(max-width:880px) de más abajo para
+   apilar en pantallas angostas, así que no hay nada que "ganarle" ahí
+   -- da lo mismo a cualquier ancho. */
+#brPanelAnio .br-grid-layout {
+  grid-template-columns: 1fr;
+}
+
+/* Columna 1 de "Por provincia": el texto de bajada (.br-subhead) +
+   la tarjeta del gráfico (.br-panel), apiladas. Antes .br-subhead
+   vivía SUELTO arriba de las 2 columnas (ocupando todo el ancho); al
+   moverlo acá adentro, este wrapper simple (sin fondo/borde propio)
+   es lo que hace que quede "pegado" al gráfico en vez de abarcar las
+   2 columnas. */
+.br-chart-col {
+  display: flex;
+  flex-direction: column;
+}
+/* Mismo texto, mismo tamaño -- achicamos el margen inferior (antes
+   32px) porque ahora el texto se lee pegado a SU gráfico (una sola
+   columna angosta), no como una bajada general arriba de todo el
+   bloque mapa+gráfico: un espacio tan grande se sentía de más en
+   este contexto más chico. */
+.br-chart-col .br-subhead {
+  margin-bottom: 12px;
+}
+/* Mismo motivo que arriba: en esta columna más angosta, el texto de
+   abajo del título del gráfico (.br-sub, compartida con "Por año")
+   no necesita tanto aire debajo como cuando ese panel tenía toda su
+   propia columna ancha para él solo. Se achica SOLO acá (scoped a
+   #brPanelProvincia) para no tocar el espaciado de "Por año". */
+#brPanelProvincia .br-panel .br-sub {
+  margin-bottom: 16px;
+}
+
+/* ============ EL MAPA (los 2: "Por provincia" y "Por año") ============
+   El mapa (viewBox 520x920: más alto que ancho) antes escalaba por
+   ANCHO (width:100%; height:auto, puesto en el <svg> directamente) --
+   sin techo, así que cuanto más ancha la columna, más y más ALTO se
+   ponía. En el layout de 1 sola columna (pantallas angostas, mapa y
+   gráfico apilados en vez de lado a lado) terminaba inflando tanto
+   la tarjeta que aparecía la barra de scroll de toda la página.
+
+   Primer intento: poner "aspect-ratio + height fijo + width:auto"
+   directamente en el <svg>. Funcionaba para el mapa de "Por
+   provincia" (#brMap, que ya tiene contenido al cargar la página)
+   pero NO para el de "Por año" (#brMapAnio, que modulo2.js arma
+   recién la primera vez que se clickea esa pestaña): a ese el
+   navegador le calculaba 0px de ancho. No se encontró timing de
+   por medio (se probó forzar un reflow y medir de nuevo, mismo
+   resultado) -- parece un caso donde el navegador no logra resolver
+   "aspect-ratio" sobre un <svg> de forma confiable en todos los
+   casos.
+
+   Solución más robusta: el "aspect-ratio" + alto fijo se pone en
+   .br-map-card (un <div> común, no un <svg>) -- eso SÍ se resuelve
+   bien siempre -- y el <svg> de adentro simplemente lo llena al
+   100%/100%, sin ningún cálculo de proporción propio. */
+.br-map-card {
+  position: relative; /* punto de referencia para .br-map-overlay y .br-tooltip, que son position:absolute */
+  /* container-type:inline-size convierte a este div en la referencia
+     para las unidades "cqw" que usa el texto de .br-map-overlay (ver
+     más arriba) -- así ese texto escala según el ancho REAL de esta
+     tarjeta en cada momento, en vez de un tamaño fijo en rem. */
+  container-type: inline-size;
+  aspect-ratio: 520 / 920; /* misma proporción que el viewBox del mapa */
+  /* min(260px, 42vh): 260px de techo en cualquier pantalla con alto
+     "normal" (probado contra laptops comunes, tipo 1366x768, sin que
+     aparezca la barra de scroll) -- y en pantallas realmente bajas de
+     alto (celular acostado, ventana muy achicada), el "42vh" achica
+     el mapa todavía más, proporcional al alto real disponible, en
+     vez de quedarse siempre fijo en 260px pase lo que pase. */
+  height: min(260px, 42vh);
+  width: auto; /* el ancho sale solo del alto de arriba + el aspect-ratio */
+  /* (el techo de 260px de acá sigue rigiendo el mapa de "Por año";
+     el de "Por provincia" lo pisa la regla de abajo, que le da más
+     alto porque ahora tiene toda una columna ancha solo para él) */
+  /* justify-self:start (en vez del "stretch" por defecto de los items
+     de un grid) = esta tarjeta YA NO se estira a lo ancho de toda su
+     columna del grid -- toma el ancho real que le da su alto (ver
+     arriba), en vez de ensancharse hasta ocupar toda la columna
+     (que ahora, en "Por provincia", es bastante más ancha que el
+     mapa mismo). */
+  justify-self: start;
+  max-width: 100%; /* resguardo: en pantallas MUY angostas, nunca se desborda aunque eso baje el alto por debajo del techo */
+}
+/* "Por provincia" (#brMap): este mapa tiene toda una columna para él
+   solo (ver .br-grid-layout, más arriba).
+
+   justify-self:center (pisa el "start" de la regla compartida de
+   arriba) -- centra el mapa DENTRO del ancho de su columna, en vez
+   de pegarlo contra el borde izquierdo (que dejaba un hueco vacío a
+   la derecha, contra el video de fondo).
+
+   margin-top negativo -- la columna 1 (texto + gráfico) arranca más
+   abajo que las pestañas "Por provincia/Por año" (que están arriba
+   de las 2 columnas, compartidas con "Por año"), porque tiene el
+   párrafo de bajada (.br-subhead) antes del gráfico. El mapa, en
+   cambio, no tiene nada propio a esa altura -- así que "lo subimos"
+   con un margen negativo para que arranque a la MISMA altura que las
+   pestañas, en vez de dejar ese espacio vacío arriba. El valor
+   (-62px) sale de medir la distancia real entre el techo de las
+   pestañas y el techo de la grilla a 1366x768; .br-widget (la
+   tarjeta entera) tiene overflow:hidden pero el mapa se queda
+   adentro de sus bordes, así que no se corta.
+
+   height: con el mapa ya arrancando más arriba, le subimos el techo
+   de 440px a 447px -- así termina (con su leyenda "=100 muertes..."
+   debajo) un poco ANTES de donde termina la tarjeta del gráfico (a
+   la izquierda), como pidió Bren, en vez de parejo o más abajo.
+   Probado contra 1366x768: sigue sin aparecer la barra de scroll. */
+#brPanelProvincia .br-map-card {
+  justify-self: center;
+  margin-top: -62px;
+  height: min(447px, 62vh);
+}
+/* "Por año": Bren pidió sacar el mapa rosa de acá y que el gráfico de
+   abajo ocupe toda la tarjeta. display:none lo saca de la vista Y del
+   cálculo del grid (deja de contar como columna) -- pero el <svg> y
+   su texto grande (.br-map-overlay) siguen en el HTML, nada más
+   ocultos: modulo2.js sigue dibujando el mapa "plano" adentro
+   (buildYearMap()) y escribiendo el año/porcentaje en
+   #brOverlayYear/#brOverlayPct (selectYear()) en cada hover, como
+   siempre -- solo que ya no se ve. Si en vez de ocultarlo lo
+   hubiéramos borrado del HTML, esas funciones (que también son las
+   que mueven el puntito resaltado del gráfico) se habrían roto al no
+   encontrar esos elementos. */
+#brPanelAnio .br-map-card {
+  display: none;
+}
+/* El <svg> en sí: llena su contenedor (.br-map-card) por completo, sin
+   ningún cálculo de tamaño propio -- toda la proporción/el techo de
+   alto ya los resuelve .br-map-card, de arriba. */
 .br-widget svg.br-map {
   width: 100%;
-  height: auto;
+  height: 100%;
   display: block;
   overflow: hidden;
 }
+/* Cada provincia del mapa INTERACTIVO (el de "Por provincia" -- el
+   "plano" de "Por año" usa su propia clase, .br-province-plain, más
+   arriba). Empieza en un gris-violeta oscuro (--br-land) y se pone
+   rosa fuerte al pasar el mouse O si tiene la clase .active (la
+   seleccionada -- ver modulo2.js). transition:fill hace que ese
+   cambio de color se vea animado. */
 .br-widget path.br-province {
   fill: var(--br-land);
   stroke: var(--br-land-border);
@@ -140,6 +398,10 @@
 .br-widget path.br-province.active {
   fill: var(--br-rose-strong);
 }
+/* Los puntitos de densidad (1 cada 100 muertes, ver modulo2.js) que
+   se dibujan encima de cada provincia. pointer-events:none para que
+   no interfieran con el hover/click de las provincias que están
+   debajo. */
 .br-widget g.br-dots {
   pointer-events: none;
 }
@@ -148,6 +410,9 @@
   opacity: 0.9;
 }
 
+/* Referencia chica debajo del mapa interactivo ("● = 100 muertes por
+   cáncer de mama"). flex-wrap:wrap por si en una tarjeta angosta el
+   punto y el texto no entran en un solo renglón. */
 .br-legend {
   display: flex;
   align-items: center;
@@ -165,6 +430,15 @@
   display: inline-block;
 }
 
+/* ============ TOOLTIP DEL MAPA ============
+   El globo que sigue al mouse al pasar por una provincia (ver
+   positionTooltip() en modulo2.js). Arranca invisible (opacity:0) y
+   la clase .visible (que le agrega/saca el JS) lo muestra -- con la
+   transition, ese cambio se ve como un fundido corto en vez de un
+   salto. transform:translate(-50%,-115%) lo centra horizontalmente
+   sobre el punto del mouse y lo apoya JUSTO ARRIBA (no tapa el cursor
+   ni la provincia que se está mirando). pointer-events:none para que
+   nunca "robe" el mouse de lo que hay debajo. */
 .br-tooltip {
   position: absolute;
   pointer-events: none;
@@ -198,6 +472,11 @@
   font-weight: 600;
 }
 
+/* ============ PANEL DEL GRÁFICO (columna derecha) ============
+   La tarjeta chica que envuelve cada gráfico de Chart.js (barras en
+   "Por provincia", dispersión en "Por año"). Tiene su PROPIO fondo
+   (un degradé sutil, distinto al de .ui-panel) porque es una tarjeta
+   "adentro" de la tarjeta principal, no la tarjeta en sí. */
 .br-panel {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
   border: 1px solid var(--br-panel-border);
@@ -216,13 +495,50 @@
   color: var(--br-text-dim);
   margin: 0 0 22px;
 }
+/* "Por año": con el mapa oculto, este panel (ver #brPanelAnio
+   .br-map-card, más arriba) tiene que medir LO MISMO que la tarjeta
+   de "Por provincia" -- si no, al cambiar de pestaña la tarjeta
+   entera salta de alto (se agranda/achica de golpe). Pero ahora
+   también tiene que entrar un gráfico bien más grande (pedido de
+   Bren) en ese mismo alto -- así que acá se recorta el padding y los
+   márgenes "sueltos" (título, bajada, separación antes de los 2
+   datos de abajo) para hacerle lugar al gráfico, en vez de sacárselo
+   AL gráfico. Solo en esta pestaña (#brPanelAnio): "Por provincia" ya
+   tiene su propio recorte, parecido pero no igual, más arriba. */
+#brPanelAnio .br-panel {
+  padding: 12px 20px 10px;
+}
+#brPanelAnio .br-panel h2 {
+  margin-bottom: 2px;
+}
+/* Separación entre "Pasá el cursor..." (la bajada DENTRO de la
+   tarjeta del gráfico) y el gráfico en sí: 4px. (La otra separación
+   que mencionó Bren -- entre ESTA tarjeta entera y la bajada de
+   arriba, "Evolución de la tasa..." -- es #brPanelAnio .br-subhead,
+   más arriba, no esta regla.) */
+#brPanelAnio .br-panel .br-sub {
+  margin-bottom: 4px;
+}
 
+/* Los 2 datos sueltos ("5.832 muertes..." / "24,37 muertes cada...")
+   debajo del gráfico de dispersión, en la pestaña "Por año".
+   flex-wrap:nowrap + justify-content:center los mantiene siempre en
+   una sola fila, centrados. */
 .br-stat-row {
   display: flex;
   gap: 24px;
   margin-bottom: 22px;
   flex-wrap: nowrap;
   justify-content: center;
+}
+/* "Por año": el margin-top de .br-stat-row (puesto inline en
+   index.html) creció para separarlo de los años del eje X -- este
+   margin-bottom, en cambio, se achica para compensar ese alto extra
+   (nada depende de este espacio: es lo último del panel, antes de su
+   padding-bottom) y que la tarjeta entera no termine más alta que la
+   de "Por provincia". */
+#brPanelAnio .br-stat-row {
+  margin-bottom: 10px;
 }
 .br-stat-block .br-num {
   font-family: var(--br-serif);
@@ -239,16 +555,37 @@
   max-width: 150px;
 }
 
+/* El <canvas> de Chart.js nunca se desborda de su contenedor (su alto
+   real lo fija un estilo inline en el HTML, ver index.html). */
 .br-widget canvas {
   max-width: 100%;
 }
 
+/* Por debajo de 880px de ancho, mapa y gráfico dejan de ir lado a
+   lado y pasan a apilarse (una sola columna) -- el mismo criterio
+   "angosto = apilado" que usa .ui-visual para los otros 2 módulos. */
 @media (max-width: 880px) {
   .br-grid-layout {
     grid-template-columns: 1fr;
   }
+  /* El margen negativo de #brPanelProvincia .br-map-card (ver arriba)
+     solo tiene sentido con mapa y gráfico lado a lado: "sube" el
+     mapa para que alcance la altura de las pestañas, que están
+     AFUERA de la columna de al lado. Apilados en una sola columna,
+     ese mismo margen haría que el mapa se superponga con el texto
+     de arriba (.br-subhead) -- acá se anula. */
+  #brPanelProvincia .br-map-card {
+    margin-top: 0;
+  }
 }
 
+/* ============ PESTAÑAS PROPIAS ("Por provincia" / "Por año") ============
+   Look en píldora (parecido al de .em-tab del módulo 1, pero con su
+   propia clase: estas pestañas se manejan con JS propio en
+   modulo2.js, no con el mecanismo compartido .ui-tab/.ui-tabpanel,
+   porque clickear "Por año" tiene que disparar además la
+   inicialización del segundo mapa + el gráfico de dispersión -- ver
+   initYearTab() en modulo2.js). */
 .br-tabs {
   display: flex;
   gap: 10px;
@@ -270,6 +607,9 @@
   color: var(--br-text);
   border-color: rgba(255, 255, 255, 0.3);
 }
+/* Pestaña activa: el JS le agrega/saca la clase "active" al clickear
+   (mismo mecanismo que .em-tab.active del módulo 1 -- una clase, no
+   el atributo aria-selected que usa .ui-tab). */
 .br-tab-btn.active {
   background: var(--br-rose-strong);
   color: #160f1b;
@@ -277,10 +617,18 @@
   font-weight: 600;
   box-shadow: 0 6px 18px rgba(255, 111, 156, 0.35);
 }
+/* El panel de la pestaña NO activa se oculta con esto (display:none,
+   !important para ganarle a cualquier otro display que pudiera
+   tener) -- lo agrega/saca modulo2.js al cambiar de pestaña. */
 .br-hidden {
   display: none !important;
 }
 
+/* Animación de entrada del panel que se acaba de mostrar: un fundido
+   corto + un pequeño desliz hacia arriba (parecido a animateIn() del
+   módulo 1, pero hecho con una clase CSS + @keyframes en vez de JS
+   puro). modulo2.js se la agrega/saca (animarEntrada()) cada vez que
+   se cambia de pestaña. */
 @keyframes brFadeIn {
   from {
     opacity: 0;

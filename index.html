@@ -180,7 +180,7 @@
             <div class="ui-wrap br-wrap">
               <div class="br-frame" id="brFrame">
                 <div class="br-stage" id="brStage">
-                  <div class="br-widget">
+                  <div class="ui-panel br-widget">
                     <h1 class="br-title">¿Con qué herramientas contamos para detectarlo?</h1>
 
                     <div class="br-tabs">
@@ -191,11 +191,34 @@
                     </div>
 
                     <div id="brPanelProvincia">
-                      <p class="br-subhead">
-                        Muertes por cáncer de mama por provincia, 2018–2022. Pasá el cursor sobre
-                        una provincia para resaltarla y ver sus datos.
-                      </p>
                       <div class="br-grid-layout">
+                        <!-- Columna 1: el gráfico interactivo + su bajada de
+                             texto (antes el texto iba arriba de las 2
+                             columnas; ahora queda junto al gráfico, ver
+                             .br-chart-col en modulo2.css). El título de
+                             arriba (h1 "¿Con qué herramientas...") NO está
+                             acá adentro: sigue siendo uno solo, compartido
+                             arriba de las 2 columnas. -->
+                        <div class="br-chart-col">
+                          <p class="br-subhead">
+                            Muertes por cáncer de mama por provincia, 2018–2022. Pasá el cursor
+                            sobre una provincia para resaltarla y ver sus datos.
+                          </p>
+                          <div class="br-panel">
+                            <h2 id="brChartTitle">
+                              Defunciones totales vs. cáncer de mama — Buenos Aires
+                            </h2>
+                            <p class="br-sub">
+                              Cada barra corresponde a la provincia seleccionada en el mapa.
+                            </p>
+                            <div style="width: 100%; height: 210px; position: relative">
+                              <canvas id="brProvinceChart"></canvas>
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Columna 2: solo el mapa (y su leyenda/tooltip,
+                             que van pegados a él). -->
                         <div class="br-map-card">
                           <svg
                             class="br-map"
@@ -212,18 +235,6 @@
                             <p class="br-t-pct" id="brTtPct">—</p>
                           </div>
                         </div>
-
-                        <div class="br-panel" style="max-width: 520px; justify-self: start">
-                          <h2 id="brChartTitle">
-                            Defunciones totales vs. cáncer de mama — Buenos Aires
-                          </h2>
-                          <p class="br-sub">
-                            Cada barra corresponde a la provincia seleccionada en el mapa.
-                          </p>
-                          <div style="width: 100%; height: 200px; position: relative">
-                            <canvas id="brProvinceChart"></canvas>
-                          </div>
-                        </div>
                       </div>
                     </div>
 
@@ -233,6 +244,19 @@
                         2005–2024.
                       </p>
                       <div class="br-grid-layout">
+                        <!-- El mapa "plano" (#brMapAnio) y su texto grande
+                             (.br-map-overlay, año/%) siguen ACÁ, sin tocar --
+                             solo se ocultan por CSS (ver "#brPanelAnio
+                             .br-map-card" en modulo2.css). No se borran del
+                             HTML porque selectYear(), en modulo2.js, escribe
+                             en #brOverlayYear/#brOverlayPct cada vez que se
+                             pasa el mouse por el gráfico; si estos elementos
+                             no existieran, esa función cortaría ahí (error de
+                             "null") y nunca llegaría a la parte de abajo que
+                             mueve el puntito resaltado en el gráfico -- se
+                             rompería el hover. Ocultarlo en vez de borrarlo
+                             evita tocar esa lógica (que es frágil) por
+                             completo. -->
                         <div class="br-map-card">
                           <svg
                             class="br-map"
@@ -248,16 +272,22 @@
                             </div>
                           </div>
                         </div>
-                        <div class="br-panel" style="max-width: 520px; justify-self: start">
+                        <!-- Con el mapa oculto, este panel pasa a ocupar
+                             TODA la tarjeta (ver "#brPanelAnio
+                             .br-grid-layout" en modulo2.css): por eso ya no
+                             lleva el "max-width:520px; justify-self:start"
+                             que antes lo achicaba para convivir con el mapa
+                             al lado. -->
+                        <div class="br-panel">
                           <h2>
                             Tasa de mortalidad por cáncer de mama — Argentina,
                             <span id="brAnioYear">2024</span>
                           </h2>
                           <p class="br-sub">Pasá el cursor sobre un año para ver su valor.</p>
-                          <div style="width: 100%; height: 190px; position: relative">
+                          <div style="width: 100%; height: 212px; position: relative">
                             <canvas id="brAnioScatter"></canvas>
                           </div>
-                          <div class="br-stat-row" style="margin-top: 20px">
+                          <div class="br-stat-row" style="margin-top: 22px">
                             <div class="br-stat-block">
                               <div class="br-num" id="brStatMama">—</div>
                               <div class="br-lbl">muertes por cáncer de mama</div>
@@ -446,7 +476,7 @@
                           </div>
                           <div>
                             <div class="ui-big" id="me-s-con">373</div>
-                            <div class="ui-lab">con IA</div>
+                            <div class="ui-lab">con apoyo de IA</div>
                           </div>
                           <div>
                             <div class="ui-big ui-pinktext" id="me-s-dif">+71</div>

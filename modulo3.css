@@ -22,18 +22,12 @@
      .me-scale*    -> el slider de proyección y sus resultados
    ============================================================ */
 
-/* ============================================================
-     Ajuste SOLO para el capítulo 3: como este capítulo tiene
-     contenido extra (el módulo me-*, más denso que los otros 2), le
-     achicamos el margen inferior del título para ganar altura y que
-     todo entre en una pantalla sin tener que scrollear. Al usar el
-     selector "#chapter-3 .chapter-title" (en vez de tocar
-     .chapter-title en general, que es compartida), los capítulos 1 y
-     2 quedan exactamente como estaban -- este ajuste NO los afecta.
-     ============================================================ */
-  #chapter-3 .chapter-title{ margin-bottom:4px; }
-  #chapter-3 .chapter-header{ margin-bottom:2px; }
-  #chapter-3 .chapter-eyebrow{ margin-bottom:2px; }
+/* El ajuste de espaciado título->tarjeta que antes vivía acá, SOLO
+   para el capítulo 3 (porque tenía más contenido y necesitaba ganar
+   altura), ahora es el valor COMPARTIDO por los 3 capítulos -- ver
+   .chapter-title/.chapter-header/.chapter-eyebrow en style.css. Se
+   sacó el override de acá porque ya no hace falta: el valor general
+   es el mismo que este capítulo necesitaba. */
 
   /* ============ TARJETA PRINCIPAL ============
      La tarjeta visible es la de AFUERA: en el HTML lleva las clases
