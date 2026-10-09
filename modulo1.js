@@ -169,8 +169,8 @@
   // chapter1Stats: los 2 datos sueltos que acompañan al gráfico
   // "Casos por tipo de cáncer" (no cambian con la interacción).
   const chapter1Stats = [
-    { valor: '66,2', label: 'casos cada 100.000 mujeres (tasa ajustada por edad)' },
     { valor: '1°', label: 'Cáncer más frecuente en mujeres' },
+    { valor: '66,2', label: 'casos cada 100.000 mujeres' },
   ];
 
   // TIPO_MAX / EDAD_MAX: techo del eje (en casos) que usa cada
@@ -357,7 +357,7 @@
     // salvo que se aprete "Volver a adivinar").
     const prompt = document.createElement('div');
     prompt.className = 'em-prompt';
-    prompt.innerHTML = '<span class="em-prompt-dot" aria-hidden="true"></span>¿Hasta dónde creés que llega mama? Arrastrá la barra.';
+    prompt.innerHTML = '<span class="em-prompt-dot" aria-hidden="true"></span>¿Hasta dónde creés que llega el cancer de mama? Arrastrá la barra.';
     prompt.hidden = tipoState.revealed;
     container.appendChild(prompt);
 
@@ -949,7 +949,13 @@
     },
     porcentaje: function (container) {
       renderWaffleChart(container, chapter1Data.porcentaje, {
-        subtitle: 'Distribución de los casos nuevos estimados de cáncer en mujeres. Argentina, 2024. Cada cuadrado es el 1% de los casos.',
+        // La frase final ("Pasá el cursor...") es la pista de que los
+        // cuadrados grises son interactivos -- igual que "Pasá el
+        // cursor sobre una provincia..." en el mapa de módulo 2. Sin
+        // esto no hay ninguna señal visual de que, al pasar el mouse
+        // por un cuadrado, el texto grande cambia a esa categoría
+        // (ver updateHeadline/setActive más abajo).
+        subtitle: 'Distribución de los casos nuevos estimados de cáncer en mujeres. Argentina, 2024. Cada cuadrado es el 1% de los casos. Mueva el cursor por un cuadrado para ver a qué categoría corresponde.',
       });
     },
   };

@@ -542,3 +542,46 @@
     .ui-panel{padding:8px 16px;}
     .ui-lede{margin-bottom:3px;}
   }
+
+  /* ============ PANTALLAS MUY BAJAS (segundo escalón) ============
+     El techo de 760px de arriba alcanza hasta las notebooks "comunes"
+     con escalado -- pero una compañera (Brenda) reportó barra de
+     scroll en TODOS los módulos con una ventana de apenas 601px de
+     alto útil, bastante por debajo de lo que se había probado. A esa
+     altura, el techo de 760px solo no alcanza: hace falta un segundo
+     achique, más agresivo, encima del primero (los dos @media se
+     acumulan: a 601px aplican los dos a la vez, no uno u otro).
+
+     La causa principal, nueva, que no existía en el primer escalón:
+     .chapter-media (la vela de fondo, columna 3) usa aspect-ratio:9/16
+     SIN ningún techo de alto -- en una ventana ancha pero baja, esa
+     proporción la hace calcular una altura enorme (una vela angosta de
+     300px de ancho pide 533px de alto), y esa altura termina fijando
+     el alto de TODA la fila del grid (.layout), aunque la tarjeta de
+     al lado sea mucho más baja. max-height:70vh la achica en
+     proporción al alto real de pantalla (el ancho se recalcula solo,
+     por el aspect-ratio, no hace falta tocarlo aparte).
+
+     El resto (layout/panel/título un poco más chicos todavía) es el
+     mismo criterio que el escalón de 760px, solo que llevado un poco
+     más lejos -- probado a mano contra 601px (el caso real de Brenda):
+     módulo 2, módulo 3 y "Porcentaje" de módulo 1 ya no desbordan.
+     "Casos por tipo" y "Casos por edad" (módulo 1) tenían su propio
+     problema aparte (sus gráficos no tenían ningún techo de alto) --
+     resuelto en modulo1.css, ver el @media (max-height:760px) y el
+     @media (max-height:660px) de ese archivo.
+
+     El corte de este escalón está en 660px, no en 620px: probando
+     alturas intermedias encontré que entre 621px y ~650px ninguno de
+     los 2 escalones achicaba lo suficiente (quedaba una "grieta" de
+     hasta 31px de desborde ahí, en CUALQUIER módulo, no solo en el
+     1) -- 620px se había elegido mirando nomás el caso de Brenda
+     (601px) y se quedaba corto apenas por encima. Subiendo el corte a
+     660px, el segundo escalón cubre toda esa franja floja. */
+  @media (max-height:660px){
+    .chapter-media{max-height:70vh;}
+    .layout{padding-top:6px; padding-bottom:6px; gap:10px;}
+    .ui-panel{padding:4px 12px;}
+    .chapter-title{font-size:1.6rem; margin-bottom:0;}
+    .chapter-eyebrow{margin-bottom:0;}
+  }
