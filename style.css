@@ -181,21 +181,34 @@
   .chapter.active .dot:nth-child(6){ animation-delay:0.4s; }
 
   /* ============ COLUMNA DE VIDEOS (3ra de 4) ============
-     Reemplaza el viejo esquema de "un <video class=bg-video> adentro de
-     cada .chapter, a pantalla completa detrás del texto". Ahora los 3
-     videos (uno por capítulo) están juntos acá, apilados uno sobre el
-     otro dentro de esta caja angosta; solo se ve el que tiene .active
-     (JS decide cuál, según el capítulo abierto). El fade entre uno y
-     otro es con opacity+transition, no con display:none, para que el
-     cambio sea suave en vez de un salto brusco. */
+     Los 3 videos (uno por capítulo) están juntos acá, apilados uno
+     sobre el otro dentro de esta caja; solo se ve el que tiene
+     .active (JS decide cuál, según el capítulo abierto). El fade
+     entre uno y otro es con opacity+transition, no con display:none,
+     para que el cambio sea suave en vez de un salto brusco.
+
+     aspect-ratio:9/16 -- los videos son verticales (720x1280, mismo
+     ratio 9:16). Antes esta caja usaba min-height:420px y quedaba
+     SIN una proporción fija: el grid la estiraba para igualar el
+     alto de .main-col (el contenido del capítulo al lado), así que
+     terminaba con un alto distinto según cuánto contenido tuviera
+     cada capítulo -- nunca calzaba con la forma real del video.
+     Con aspect-ratio, la caja toma la proporción del video según el
+     ancho que le toque en cada pantalla, sin depender del contenido
+     vecino (para que el grid no la vuelva a estirar, ver
+     align-self:start más abajo). */
   .chapter-media{
     grid-column: 3 / 4;
     position:relative;
     border-radius:16px;
     overflow:hidden; /* recorta las esquinas redondeadas del video */
-    min-height:420px;
+    aspect-ratio: 9 / 16;
+    align-self: start; /* sin esto, el "stretch" por defecto del grid le gana al aspect-ratio y la estira igual */
     background:var(--bg-soft); /* se ve un instante mientras carga el 1er video */
   }
+  /* object-fit:cover queda como resguardo (por si algún video no es
+     EXACTAMENTE 9:16) -- con .chapter-media ya en esa misma
+     proporción, no debería tener que recortar casi nada. */
   .chapter-video{
     position:absolute; inset:0;
     width:100%; height:100%;
@@ -243,7 +256,14 @@
        flujo normal (auto) y usamos "order" para que la vela quede
        arriba del texto, aunque en el HTML esté después del .main-col. */
     .main-col{ grid-column:auto; }
-    .chapter-media{ grid-column:auto; order:-1; min-height:220px; }
+    /* Acá .chapter-media pasa a ocupar el ANCHO COMPLETO de la
+       pantalla (ya no comparte fila con .main-col) -- si mantuviera
+       el aspect-ratio:9/16 de arriba, a ese ancho completo saldría
+       altísima (media pantalla de celular, o más). max-height la
+       frena: sigue siendo 9:16 hasta ese techo, y a partir de ahí se
+       la recorta con object-fit:cover (ver .chapter-video) en vez de
+       seguir creciendo. */
+    .chapter-media{ grid-column:auto; order:-1; max-height:340px; }
     .side-nav{flex-direction:row; position:static; overflow-x:auto; grid-column:auto;}
     .nav-item{min-width:110px;}
   }
@@ -488,7 +508,12 @@
   }
   @media (max-width:600px){
     .layout{gap:14px; padding-top:16px;}
-    .chapter-media{min-height:170px;}
+    /* El min-height:170px que antes vivía acá ya no hace falta: con
+       .chapter-media en aspect-ratio:9/16 + max-height:340px (ver el
+       @media max-width:900px, más arriba), el alto mínimo real ronda
+       los ~191px (lo que da 340px de alto a 9:16) en cualquier
+       celular -- ese "piso" viejo, pensado para el min-height fijo de
+       antes, ya no aporta nada. */
     .chapter{min-height:0;}
     .nav-item{min-width:88px;}
     .nav-item .label{font-size:.74rem;}
