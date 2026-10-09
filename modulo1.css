@@ -789,8 +789,8 @@
   .em-waffle-grid{max-width:min(195px,29vh);} /* bajado de 210px/30vh: el subtítulo con la pista de "pasá el cursor" agregó una línea más de alto */
   .em-waffle-hltext{margin:4px 0 2px;}
   .em-waffle-hlmeta{margin:0 0 8px;}
-  .em-chart-tipo{height:min(203px,31vh);} /* 242px/38vh se quedaba corto cerca del límite de abajo de este escalón (probado a 661px) */
-  .em-chart-edad{height:min(150px,22vh);} /* mismo motivo */
+  .em-chart-tipo{height:min(193px,30vh);} /* bajado de 203px/31vh: el .chapter-header ahora deja más aire antes del título (ver style.css), así que el gráfico tiene que ceder esos px */
+  .em-chart-edad{height:min(140px,21vh);} /* mismo motivo */
 }
 
 /* ============ PANTALLAS MUY BAJAS (segundo escalón) ============
@@ -803,6 +803,6 @@
    (seguían pasándose 57-77px) porque sus barras no se achicaban lo
    suficiente. */
 @media (max-height:660px){
-  .em-chart-tipo{height:min(193px,32vh);}
-  .em-chart-edad{height:min(143px,24vh);}
+  .em-chart-tipo{height:min(186px,31vh);} /* bajado de 193px/32vh: el .chapter-header ahora deja más aire antes del título (ver style.css), así que el gráfico tiene que ceder esos px */
+  .em-chart-edad{height:min(136px,23vh);} /* mismo motivo */
 }

@@ -116,7 +116,14 @@
      tarjeta arrancaba mucho más lejos del título que la del 3. Unificado
      ahora: los 3 capítulos usan este mismo espaciado chico -- el
      override de #chapter-3 en modulo3.css ya no hace falta, se sacó.) */
-  .chapter-header{position:relative; z-index:1; margin-bottom:2px;}
+  /* margin-bottom subido de 2px a 20px: los puntitos rosa del título
+     (.title-dots, ver más abajo) se extienden 14px por debajo del
+     borde inferior del texto -- con solo 2px de margen acá (+ los 4px
+     de .chapter-title y los 2px de .ui-wrap, ver más abajo) quedaban
+     apenas 8px de aire real, así que los puntos de abajo (nth-child 5
+     y 6) terminaban superpuestos sobre la tarjeta. 20px deja los 14px
+     de los puntos con margen de sobra. */
+  .chapter-header{position:relative; z-index:1; margin-bottom:20px;}
   .chapter-eyebrow{
     font-family:var(--sans);
     font-size:1rem;
@@ -536,7 +543,7 @@
      comunes, descontando barra de tareas/navegador. */
   @media (max-height:760px){
     .layout{padding-top:14px; padding-bottom:14px; gap:16px;}
-    .chapter-header{margin-bottom:0;}
+    .chapter-header{margin-bottom:12px;} /* antes 0: volvía a juntar el título con la tarjeta y los puntitos (ver el margin-bottom:20px de arriba) quedaban otra vez superpuestos en pantallas bajas */
     .chapter-title{font-size:clamp(1.8rem,4vw,2.6rem);}
     .chapter{min-height:0;} /* el piso fijo de 500px podía por sí solo pasarse del alto disponible */
     .ui-panel{padding:8px 16px;}
@@ -584,4 +591,5 @@
     .ui-panel{padding:4px 12px;}
     .chapter-title{font-size:1.6rem; margin-bottom:0;}
     .chapter-eyebrow{margin-bottom:0;}
+    .chapter-header{margin-bottom:8px;} /* pisa el 12px del escalón de 760px: todavía menos aire, pero nunca 0 -- misma razón que ahí */
   }
