@@ -12,9 +12,19 @@
      .em-card         -> la tarjeta completa
      .em-tabs/.em-tab -> las 3 pestañas de arriba
      .em-panel        -> el contenedor donde se dibuja el gráfico activo
-     .em-svg          -> el <svg> de los gráficos de barras
+     .em-chart-tipo/
+     .em-chart-edad   -> la fila de columnas de cada gráfico interactivo
+     .em-col          -> una columna (barra + valor + etiqueta)
+     .em-bar          -> la barra en sí (dentro de .em-col)
+     .em-guess-*       -> la zona de arrastre para "adivinar" (Casos por tipo)
+     .em-stack/.em-fly -> la pila "los otros 4 juntos" y sus clones voladores
+     .em-chips/.em-chip -> los 3 botones de rango rápido (Casos por edad)
+     .em-btn           -> "Sumá los otros 4" / "Ver por separado" / "Volver a adivinar"
+     .em-prompt        -> la invitación a interactuar, con el punto que pulsa
+     .em-feedback      -> el mensaje de resultado (Casos por tipo)
+     .em-tip           -> el tooltip compartido, hover sobre cualquier barra
      .em-stat*        -> los "datos sueltos" (número grande + etiqueta)
-     .em-waffle-*     -> todo lo del gráfico de 100 cuadrados
+     .em-waffle-*     -> todo lo del gráfico de 100 cuadrados (Porcentaje)
      .em-caption      -> texto chico al pie (hoy sin uso en ningún
                          gráfico puntual, queda por si hace falta)
    ============================================================ */
@@ -106,22 +116,11 @@
 .em-panel{
   width:100%;
 }
-/* El <svg> en sí (los gráficos de barras, no el waffle que usa <div>
-   normales). width:100% + height:auto hace que el SVG escale
-   manteniendo su proporción según el viewBox que le puso el JS, sin
-   importar el ancho real de la tarjeta. display:block saca un
-   pequeño espacio "fantasma" que los navegadores agregan por defecto
-   debajo de los elementos inline (como <svg> lo es por default) --
-   sin esto, quedaba un hueco de unos pocos píxeles abajo del gráfico.
-   El JS le agrega esta clase al crear el SVG (createChartSVG en
-   modulo1.js) en vez de poner esos mismos 3 valores como estilo
-   inline -- más prolijo: el estilo vive en el CSS, no "pegoteado" en
-   el JS. */
-.em-svg{
-  width:100%;
-  height:auto;
-  display:block;
-}
+/* (Acá vivía .em-svg, el estilo del <svg> de los gráficos de barras
+   viejos. Se borró junto con todo el dibujado por SVG de modulo1.js:
+   "Casos por tipo" y "Casos por edad" ahora se arman con <div>
+   normales -- ver las reglas nuevas más abajo, desde "GRÁFICOS DE
+   BARRAS INTERACTIVOS".) */
 
 /* El párrafo de bajada ARRIBA de cada gráfico (ej. "Casos nuevos
    estimados en mujeres, por tipo de cáncer. Argentina, 2024.") no
@@ -133,6 +132,417 @@
    GRÁFICO que viene justo debajo, no de otro párrafo de texto. */
 .em-panel .ui-sub{
   margin-bottom:10px;
+}
+
+/* ============================================================
+   GRÁFICOS DE BARRAS INTERACTIVOS ("Casos por tipo" / "Casos por edad")
+   Reemplazan a los <svg> viejos: ahora cada barra es un <div> normal,
+   lo que permite animar con Web Animations API (el.animate(), en
+   modulo1.js) para la fusión/separación de columnas y el "clon
+   volador" -- mucho más simple que manejar esas mismas animaciones
+   con coordenadas de SVG. Comparten estas clases las 2 pestañas,
+   salvo donde se aclara "solo tipo" / "solo edad".
+   ============================================================ */
+
+/* Invitación a interactuar ("¿Hasta dónde creés..." / "Tocá o
+   arrastrá..."), con un puntito que pulsa al lado -- la misma idea
+   que ya usa el prototipo de referencia. display:none cuando
+   modulo1.js le pone [hidden] (ej. apenas se revela la respuesta de
+   "Casos por tipo"). */
+.em-prompt{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:var(--rose-strong);
+  font-weight:600;
+  font-size:0.85rem;
+  margin-bottom:12px;
+}
+/* .em-prompt-dot, NO ".dot" a secas: style.css ya tiene una clase
+   ".dot" (los puntitos decorativos alrededor del título del
+   capítulo) con sus propias reglas -- entre ellas, position:absolute
+   y, mientras el capítulo está activo, "animation:dotPop" (un pop que
+   aparece una vez y se desvanece). Como ese ".dot" general tiene MÁS
+   especificidad (.chapter.active .dot) que la que tenía acá
+   (.em-prompt .dot), le ganaba a esta animación cada vez que se
+   recreaba el punto (en cada cambio de pestaña) -- el puntito se veía
+   "saltar"/parpadear en vez de pulsar suave, y encima quedaba
+   position:absolute en vez de alineado con el texto. Con un nombre de
+   clase propio, sin nada en común con ".dot", no hay ningún choque. */
+.em-prompt-dot{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:var(--rose-strong);
+  flex:none;
+  animation:em-dot-pulse 1.4s infinite;
+}
+@keyframes em-dot-pulse{
+  0%,100%{ box-shadow:0 0 0 0 var(--rose-glow); }
+  50%{ box-shadow:0 0 0 8px rgba(255,111,156,0); }
+}
+
+/* .em-col y .em-tipo-actions definen su propio "display" (flex, ver
+   abajo) -- eso empata en especificidad contra el estilo por defecto
+   del navegador para el atributo [hidden] (que normalmente alcanza
+   solo con poner hidden="" para ocultar cualquier cosa) y, al
+   empatar, GANA la regla más nueva en el archivo, o sea la nuestra:
+   sin esto, modulo1.js podía marcar un elemento hidden=true y
+   igual se seguía viendo. Se fuerza acá explícitamente. */
+.em-col[hidden],
+.em-tipo-actions[hidden],
+.em-prompt[hidden]{
+  display:none;
+}
+
+/* Fila de columnas: mismo criterio para "tipo" (6 columnas posibles,
+   la 6ta -- la pila -- oculta hasta fusionar) y "edad" (5 fijas).
+   align-items:flex-end = todas las barras "paran" sobre el mismo
+   piso, sin importar su alto individual. height fija (en vez de
+   depender del contenido) porque la escala de los datos es lo que
+   define cuánto crece cada barra, no el layout. */
+.em-chart-tipo,
+.em-chart-edad{
+  display:flex;
+  align-items:flex-end;
+  gap:clamp(8px,2.5vw,24px);
+  height:220px;
+  padding-top:30px; /* aire arriba para que el número más alto no se pegue al borde */
+  position:relative;
+  touch-action:none; /* evita que el navegador interprete el arrastre como scroll en celular */
+}
+/* Antes "Casos por tipo" compensaba la diferencia de alto con
+   "El tiempo" (módulo 2) con un margen vacío grande antes de los 2
+   datos de abajo (ver .em-inline-stats-tipo) -- Bren pidió aprovechar
+   ese espacio en vez de dejarlo vacío. Gran parte de ese alto pasa
+   ACÁ: barras más grandes/presentes (250px en vez de 220px). El
+   resto (no todo: así no vuelve a quedar un hueco vacío) se lo queda
+   .em-inline-stats-tipo, que empuja los 2 datos de abajo un poco más
+   -- entre las dos cosas, la tarjeta sigue midiendo lo mismo que
+   módulo 2, sin crecer. "Casos por edad" se queda en 220px -- esa
+   pestaña ya medía lo que tenía que medir, no hacía falta tocarla. */
+.em-chart-tipo{
+  height:250px;
+}
+/* "Sumá los otros 4" (solo tipo): el grid pasa a 2 columnas
+   centradas, del mismo ancho que tenía Mama sola -- --em-colw lo fija
+   modulo1.js al momento de fusionar, leyendo el ancho real de Mama en
+   ese instante. */
+.em-chart-tipo.em-merged{
+  justify-content:center;
+}
+.em-chart-tipo.em-merged .em-col{
+  flex:0 0 var(--em-colw);
+}
+
+/* Una columna (barra + valor + etiqueta). flex:1 = todas se reparten
+   el ancho disponible por igual (salvo en modo "fusionado", ver
+   arriba). position:relative porque la zona de arrastre de Mama
+   (.em-guess-zone) se posiciona absolute adentro suyo. */
+.em-col{
+  flex:1;
+  min-width:0;
+  height:100%;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+  align-items:center;
+  position:relative;
+  transition:opacity .35s ease;
+}
+/* "Ver por separado" en pleno vuelo: mientras cada bloque vuela de
+   vuelta a su columna, el número/etiqueta de ESA columna arrancan
+   invisibles (onLand, en modulo1.js, les saca esta clase apenas
+   aterriza su bloque -- así el dato "aparece" recién cuando el
+   bloque llega, no antes). */
+.em-col.em-ghost .em-val,
+.em-col.em-ghost .em-lbl{
+  opacity:0;
+}
+
+.em-val{
+  font-weight:700;
+  font-variant-numeric:tabular-nums;
+  font-size:clamp(0.78rem,2vw,0.95rem);
+  color:var(--text);
+  margin-bottom:6px;
+  white-space:nowrap;
+  transition:opacity .3s ease;
+}
+.em-lbl{
+  margin-top:10px;
+  font-size:clamp(0.7rem,1.8vw,0.85rem);
+  color:var(--text);
+  text-align:center;
+  transition:opacity .3s ease;
+}
+
+/* La barra en sí. Color por defecto = rosa apagado (el mismo que ya
+   usaba este sitio para "lo no destacado" -- PANEL.barMuted en
+   modulo1.js); .em-bar-mama (siempre, la columna de Mama en "Casos
+   por tipo") y .em-bar-sel (el rango elegido en "Casos por edad") la
+   pasan a rosa fuerte. height la fija modulo1.js en cada barra según
+   su valor -- acá solo se anima el CAMBIO (el crecimiento al revelar
+   la respuesta real, o al cambiar de rango de edad). */
+.em-bar{
+  width:min(100%,96px);
+  border-radius:7px 7px 3px 3px;
+  background:rgba(255,182,206,0.4);
+  cursor:pointer;
+  transition:height .5s ease, background .25s ease;
+}
+.em-bar-mama,
+.em-bar-sel{
+  background:var(--rose-strong);
+}
+.em-col-age{ cursor:pointer; } /* toda la columna (no solo la barra) responde al clic/arrastre en "Casos por edad" */
+
+.em-axis-note{
+  text-align:center;
+  color:var(--text-dim);
+  font-style:italic;
+  font-size:0.85rem;
+  margin-top:-4px;
+}
+/* Solo "Casos por tipo": acá sí hace falta más aire que el -4px base
+   -- "Cuello uterino" se parte en 2 líneas, y con el margen negativo
+   esta nota quedaba prácticamente pisando esa segunda línea ("se ve
+   apretado"). "Casos por edad" usa la misma clase .em-axis-note pero
+   sus etiquetas ("15-29", "30-44"...) nunca se parten en 2 líneas, así
+   que ahí el -4px de base sigue andando bien -- no se tocó. */
+.em-chart-tipo + .em-axis-note{
+  margin-top:9px;
+}
+
+/* ---- "Casos por tipo": zona de arrastre + línea "Tu respuesta" ---- */
+/* Capa invisible sobre la columna de Mama, desde la etiqueta hacia
+   arriba -- ahí es donde se puede arrastrar para adivinar.
+   cursor:ns-resize = el ícono del mouse avisa "esto se mueve
+   vertical", aunque en celular el touch lo ignora (no hace falta). */
+.em-guess-zone{
+  position:absolute;
+  left:0;
+  right:0;
+  top:0;
+  cursor:ns-resize;
+}
+/* La barra punteada que sigue al arrastre, con la manija "↕" arriba. */
+.em-guess-bar{
+  position:absolute;
+  bottom:0;
+  left:50%;
+  transform:translateX(-50%);
+  width:min(100%,96px);
+  border:2px dashed var(--rose-strong);
+  border-radius:7px 7px 3px 3px;
+  background:rgba(255,111,156,0.18);
+}
+.em-handle{
+  position:absolute;
+  left:50%;
+  top:-13px;
+  transform:translateX(-50%);
+  width:38px;
+  height:20px;
+  border-radius:999px;
+  background:var(--rose-strong);
+  color:#1a0510;
+  font-size:0.75rem;
+  font-weight:700;
+  display:grid;
+  place-items:center;
+}
+/* Línea punteada que marca dónde quedó la respuesta adivinada, una
+   vez revelada la real -- queda puesta ahí de forma permanente (hasta
+   "Volver a adivinar"), para poder comparar a simple vista. */
+.em-guess-line{
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  width:min(130%,130px);
+  border-top:2px dashed var(--text);
+  pointer-events:none;
+}
+.em-guess-line span{
+  position:absolute;
+  right:0;
+  top:-1.4em;
+  font-size:0.72rem;
+  color:var(--text);
+  white-space:nowrap;
+  background:var(--panel);
+  padding:0 4px;
+}
+
+/* ---- "Casos por tipo": la pila "Los otros 4 juntos" ---- */
+/* Cada segmento de la pila mide "flex:<valor>" (puesto inline por
+   modulo1.js) -- así el alto de cada franja es proporcional a su
+   propio valor, sin tener que calcular porcentajes a mano. */
+.em-stack{
+  width:min(100%,96px);
+  display:flex;
+  flex-direction:column;
+  border-radius:7px 7px 3px 3px;
+  overflow:hidden;
+}
+.em-stack > div{
+  background:rgba(255,182,206,0.4);
+  border-top:2px solid var(--panel);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  font-size:clamp(0.58rem,1.5vw,0.68rem);
+  font-weight:600;
+  line-height:1.1;
+  color:var(--text);
+  overflow:hidden;
+  padding:0 3px;
+  cursor:pointer;
+}
+.em-stack > div:first-child{ border-top:0; }
+
+/* El clon "volador" durante la fusión/separación: una copia temporal
+   que modulo1.js anima de una posición a otra con el.animate() y
+   saca del DOM al llegar -- mismo look que una barra/segmento, para
+   que el "viaje" se vea continuo. */
+.em-fly{
+  position:absolute;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  line-height:1.1;
+  font-size:clamp(0.58rem,1.5vw,0.68rem);
+  font-weight:600;
+  color:var(--text);
+  background:rgba(255,182,206,0.4);
+  border-radius:7px 7px 3px 3px;
+  overflow:hidden;
+  z-index:3;
+  pointer-events:none;
+}
+
+/* Mensaje de resultado ("¡Muy cerca!", "Colorrectal + ... = ..."),
+   debajo del gráfico. min-height reserva 1 línea siempre, para que no
+   "salte" el layout cuando pasa de vacío a tener texto. */
+.em-feedback{
+  min-height:1.5em;
+  font-size:0.95rem;
+  color:var(--text);
+}
+.em-feedback b{ color:var(--rose-strong); }
+
+/* Botones "Sumá los otros 4" / "Ver por separado" / "Volver a
+   adivinar". Mismo look de píldora que .em-tab, pero CONTORNEADOS
+   (fondo transparente) en vez de rellenos -- para que se lean como
+   una acción secundaria, no como otra pestaña más. */
+.em-tipo-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+}
+.em-btn{
+  font-family:var(--sans);
+  font-size:0.85rem;
+  font-weight:600;
+  background:transparent;
+  color:var(--text);
+  border:1px solid var(--rose-strong);
+  border-radius:999px;
+  padding:8px 16px;
+  cursor:pointer;
+  transition:background .2s;
+}
+.em-btn:hover{ background:rgba(255,111,156,0.12); }
+.em-btn:disabled{ opacity:0.5; cursor:default; }
+.em-btn-ghost{
+  border-color:var(--panel-border);
+  color:var(--text-dim);
+}
+
+/* ---- "Casos por edad": chips de acceso rápido ---- */
+.em-chips{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.em-chip{
+  font-family:var(--sans);
+  font-size:0.8rem;
+  font-weight:600;
+  background:rgba(255,255,255,0.04);
+  color:var(--text-dim);
+  border:1px solid var(--panel-border);
+  border-radius:999px;
+  padding:6px 14px;
+  cursor:pointer;
+  transition:all .2s;
+}
+.em-chip:hover{ border-color:rgba(255,255,255,0.3); color:var(--text); }
+/* El chip activo lo marca modulo1.js con aria-pressed="true" cuando
+   el rango elegido coincide EXACTO con el de ese chip (si el usuario
+   arrastra un rango "suelto", ningún chip queda marcado). */
+.em-chip[aria-pressed="true"]{
+  background:var(--rose-strong);
+  border-color:var(--rose-strong);
+  color:#1a0510;
+}
+
+/* Nota chica debajo de "Casos por edad" ("Cantidad de casos, no
+   riesgo..."). Mismo tamaño/color que .ui-sub, para que se lea como
+   una aclaración secundaria, no como el cuerpo principal del texto. */
+.em-note{
+  font-size:0.8rem;
+  color:var(--text-dim);
+  margin:0;
+}
+
+/* ---- Tooltip compartido (hover sobre cualquier barra/segmento) ----
+   Mismo criterio visual que .br-tooltip en módulo 2 (tarjeta chica
+   con fondo + borde + sombra), pero vive en <body> -- modulo1.js lo
+   reposiciona con JS en cada pointermove en vez de depender de un
+   contenedor position:relative fijo, porque puede aparecer sobre
+   CUALQUIERA de las columnas o segmentos de la pila. */
+.em-tip{
+  position:absolute;
+  z-index:30;
+  pointer-events:none;
+  background:var(--panel);
+  border:1px solid var(--panel-border);
+  border-radius:12px;
+  padding:10px 12px;
+  font-size:0.85rem;
+  min-width:170px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.5);
+  font-variant-numeric:tabular-nums;
+}
+.em-tip strong{
+  font-family:var(--serif);
+  color:var(--rose-strong);
+  font-size:1rem;
+  display:block;
+  margin-bottom:4px;
+}
+.em-tip div{
+  display:flex;
+  justify-content:space-between;
+  gap:14px;
+  color:var(--text-dim);
+}
+.em-tip div span:last-child{
+  color:var(--text);
+  font-weight:600;
+}
+
+/* Respeta "reducir movimiento": apaga las transiciones CSS de los
+   elementos nuevos (el.animate(), en modulo1.js, ya se salta solo con
+   duration:0 cuando corresponde -- ver reduceMotion ahí). */
+@media (prefers-reduced-motion:reduce){
+  .em-bar, .em-val, .em-lbl, .em-col, .em-prompt-dot{
+    transition:none !important;
+    animation:none !important;
+  }
 }
 
 /* Texto chico ABAJO del gráfico -- hoy ningún gráfico puntual lo usa,
@@ -188,6 +598,19 @@
   padding-top:10px;
   border-top:1px solid var(--panel-border);
 }
+/* "Casos por tipo" únicamente: un poco más de separación que la base
+   (10px) antes de estos 2 datos y su línea divisoria (el border-top
+   de .em-inline-stats se mueve con el bloque, al moverse con
+   margin-top). Antes este valor era mucho más grande (92px) para
+   compensar la diferencia de alto con "El tiempo" (módulo 2) -- eso
+   dejaba un hueco vacío grande que no se veía bien. Ahora esa
+   diferencia la absorbe el GRÁFICO en sí (más alto, ver
+   .em-chart-tipo más arriba), así que acá alcanza con un empujón
+   chico. No se tocó "Casos por edad": esa pestaña ya medía
+   prácticamente lo mismo que módulo 2 de entrada. */
+.em-inline-stats-tipo{
+  margin-top:49px;
+}
 
 /* ============================================================
    GRÁFICO DE "WAFFLE" (pestaña Porcentaje)
@@ -198,38 +621,22 @@
    ============================================================ */
 
 /* .em-waffle-body envuelve la grilla de cuadrados + el texto
-   informativo de al lado (headline + detalle).
-   Por defecto (mobile / tarjeta angosta) van APILADOS, uno debajo del
-   otro. Desde 680px de ancho pasan a ir LADO A LADO -- mismo criterio
-   responsivo que usa .ui-visual (la clase compartida del módulo 3)
-   para su propia grilla de puntos + estadísticas. Este cambio es el
-   que más bajó la altura de la tarjeta en pantallas grandes: antes la
-   grilla y el texto se sumaban en altura (uno arriba del otro);
-   ahora, lado a lado, la altura total es la del más alto de los dos,
-   no la suma. */
+   informativo de abajo (headline + detalle).
+   Antes, desde 680px de ancho, la grilla y el texto pasaban a ir LADO
+   A LADO (como .ui-visual del módulo 3) para que la tarjeta no
+   quedara más alta que las otras dos pestañas de este módulo -- pero
+   quedaba chica y con la grilla relegada a un costado. Ahora se pide
+   lo contrario a propósito: SIEMPRE apilados (grilla arriba,
+   centrada, bien grande; texto abajo) para que la tarjeta llegue a la
+   misma altura que "Casos por tipo"/"Casos por edad" en vez de
+   quedar mucho más baja -- el tamaño de la grilla (ver
+   .em-waffle-grid más abajo) es lo que ahora se encarga de ganar esa
+   altura. */
 .em-waffle-body{
   display:flex;
   flex-direction:column;
-  gap:16px;
-}
-@media (min-width:680px){
-  .em-waffle-body{
-    flex-direction:row;
-    align-items:center;
-    gap:28px;
-  }
-  /* flex:0 0 180px = la grilla queda con un ancho FIJO de 180px (no
-     crece ni se achica) cuando hay espacio de sobra en pantallas
-     grandes -- así no queda gigante en monitores muy anchos. */
-  .em-waffle-body .em-waffle-grid{
-    flex:0 0 180px;
-    margin:0;
-  }
-  /* flex:1 1 auto = el texto informativo ocupa TODO el ancho que
-     sobra al lado de la grilla. */
-  .em-waffle-body .em-waffle-info{
-    flex:1 1 auto;
-  }
+  align-items:center;
+  gap:20px;
 }
 
 /* La grilla en sí: 10 columnas iguales (con 10 filas automáticas se
@@ -238,19 +645,34 @@
      aspect-ratio:1 -> fuerza que la grilla sea siempre un cuadrado
                        perfecto, sin importar cuánto espacio tenga
                        disponible
-     max-width:220px -> techo de tamaño en mobile/pantallas angostas
-                        (en pantallas de 680px o más, manda el
-                        "flex:0 0 180px" de arriba en vez de esto)
-     margin:0 auto    -> la centra horizontalmente cuando está sola en
-                        su fila (en el modo apilado de mobile) */
+     max-width:290px  -> techo de tamaño en pantallas de alto
+                       "normal": ese valor es el que deja la tarjeta a
+                       la misma altura que las otras 2 pestañas,
+                       medido a mano. En pantallas BAJAS de alto, este
+                       techo se pisa con uno más chico (ver
+                       @media max-height:760px, al final del archivo)
+                       -- mismo criterio que .br-map-card de módulo 2
+                       (modulo2.css), para no romper la adaptabilidad
+                       resuelta en style.css.
+     margin:0 auto    -> la centra horizontalmente. */
 .em-waffle-grid{
   display:grid;
   grid-template-columns:repeat(10,1fr);
-  gap:5px;
+  gap:6px;
   aspect-ratio:1;
   width:100%;
-  max-width:220px;
+  max-width:290px;
   margin:0 auto;
+}
+/* El texto informativo, ahora abajo de la grilla (ver .em-waffle-body
+   más arriba): centrado, para que quede alineado con la grilla
+   centrada de arriba en vez de pegado contra el borde izquierdo de la
+   tarjeta. max-width lo acota a un bloque de lectura cómodo, no a
+   todo el ancho de la tarjeta. */
+.em-waffle-info{
+  width:100%;
+  max-width:360px;
+  text-align:center;
 }
 /* Cada cuadrado individual arranca INVISIBLE y achicado (opacity:0,
    scale .4) -- es el estado INICIAL de la animación de entrada: el JS
@@ -309,12 +731,18 @@
    min-height reserva el espacio de 1 línea SIEMPRE, aunque el
    contenido cambie de largo al pasar de una categoría a otra -- así
    el layout no "salta" (no empuja al resto de la tarjeta hacia abajo
-   o arriba) cada vez que cambia el texto. */
+   o arriba) cada vez que cambia el texto.
+   text-wrap:balance reparte el texto entre líneas de forma pareja en
+   vez de dejar "huérfana" una sola palabra sola en la última línea
+   (ej. "...son de / mama" en vez de "...son de\nmama" con "mama"
+   solísima) -- soportado en los navegadores modernos; donde no lo
+   esté, el texto simplemente se envuelve normal (sin romper nada). */
 .em-waffle-hltext{
   font-size:0.95rem;
   color:var(--text);
   margin:8px 0 2px;
   min-height:1.3em;
+  text-wrap:balance;
 }
 .em-waffle-hlmeta{
   font-size:0.8rem;
@@ -334,4 +762,47 @@
    activa). */
 .em-card .ui-src{
   margin-top:12px;
+}
+
+/* ============ PANTALLAS BAJAS (alto chico) ============
+   Complemento del @media (max-height:760px) de style.css (ver ahí la
+   explicación general y modulo2.css para el mismo criterio aplicado
+   al mapa de módulo 2). Acá se achica específicamente la grilla de
+   "Porcentaje", que al agrandarse (ver .em-waffle-grid más arriba,
+   290px de techo) podía volver a empujar la tarjeta por encima de
+   pantallas bajas -- 30vh deja la grilla chica pero cuadrada en
+   cualquier alto de pantalla, en vez de quedarse fija en un tamaño
+   pensado para pantallas normales.
+
+   .em-chart-tipo/.em-chart-edad (la fila de barras de las otras 2
+   pestañas) NUNCA habían recibido este tratamiento -- a diferencia
+   del waffle de acá arriba o del mapa de módulo 2, tenían una altura
+   fija en px (220px/250px, ver más arriba en este archivo) sin ningún
+   techo por vh. Por eso esas 2 pestañas seguían con barra de scroll
+   en pantallas bajas aunque el resto del sitio ya no la tuviera.
+   min(242px,38vh)/min(210px,34vh): valores medidos a mano para que,
+   sumados al resto de la tarjeta, entren justo por debajo de 760px de
+   alto (mismo método que ya usamos en .br-map-card y acá arriba en
+   .em-waffle-grid). */
+@media (max-height:760px){
+  .em-waffle-body{gap:12px;}
+  .em-waffle-grid{max-width:min(195px,29vh);} /* bajado de 210px/30vh: el subtítulo con la pista de "pasá el cursor" agregó una línea más de alto */
+  .em-waffle-hltext{margin:4px 0 2px;}
+  .em-waffle-hlmeta{margin:0 0 8px;}
+  .em-chart-tipo{height:min(193px,30vh);} /* bajado de 203px/31vh: el .chapter-header ahora deja más aire antes del título (ver style.css), así que el gráfico tiene que ceder esos px */
+  .em-chart-edad{height:min(140px,21vh);} /* mismo motivo */
+}
+
+/* ============ PANTALLAS MUY BAJAS (segundo escalón) ============
+   Complemento del @media (max-height:660px) de style.css (ver ahí la
+   explicación general: el corte quedó en 660px, no en 620px, para
+   cubrir también la franja intermedia donde ningún escalón alcanzaba
+   del todo). Acá va la segunda vuelta de achique para
+   .em-chart-tipo/.em-chart-edad, medida contra los 601px reales de
+   Brenda -- a esa altura, el escalón de 760px solo no alcanzaba
+   (seguían pasándose 57-77px) porque sus barras no se achicaban lo
+   suficiente. */
+@media (max-height:660px){
+  .em-chart-tipo{height:min(186px,31vh);} /* bajado de 193px/32vh: el .chapter-header ahora deja más aire antes del título (ver style.css), así que el gráfico tiene que ceder esos px */
+  .em-chart-edad{height:min(136px,23vh);} /* mismo motivo */
 }

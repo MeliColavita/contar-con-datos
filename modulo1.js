@@ -2,42 +2,52 @@
 // MODULO1.JS — Capítulo 1 "Argentina hoy" — Emi — prefijo: em-
 // ============================================================
 // QUÉ HACE ESTE ARCHIVO: dibuja los 3 gráficos de la tarjeta del
-// Capítulo 1 (barras "Casos por tipo de cáncer", barras "Casos por
-// edad", y el waffle de "Porcentaje"), y maneja el click de las 3
-// pestañas que eligen cuál se ve.
+// Capítulo 1 y maneja las 3 pestañas que eligen cuál se ve:
+//   - "Casos por tipo de cáncer": INTERACTIVO. El usuario arrastra
+//     una barra para ADIVINAR cuánto cree que vale "Mama" antes de
+//     ver el valor real (que crece animado + cuenta desde 0), y
+//     después puede comparar "Mama" contra la suma de los otros 4
+//     cánceres (animación de fusión/separación de columnas).
+//   - "Casos por edad": INTERACTIVO. El usuario elige un rango de
+//     edad (clic o arrastre sobre las barras, o 3 chips de acceso
+//     rápido) y los 2 datos de abajo se recalculan en vivo.
+//   - "Porcentaje": el waffle de 100 cuadrados (sin cambios).
 //
 // CÓMO ESTÁ ORGANIZADO (de arriba a abajo):
 //   1. Guarda de entrada (si el HTML del módulo no está, no hace nada)
-//   2. Paleta/tipografía (leída de las variables CSS de :root)
-//   3. Herramientas genéricas para dibujar SVG a mano (sin librerías)
-//   4. Los datos del gráfico (números de GLOBOCAN 2024)
-//   5. Las funciones que "renderizan" (dibujan) cada tipo de gráfico
-//   6. El "despachador": qué función llamar según la pestaña activa
-//   7. El arranque: conecta los clicks de las pestañas y hace el
+//   2. Paleta/tipografía + "reduceMotion" (leído de prefers-reduced-motion)
+//   3. Herramientas genéricas (formatNumber, pctLabel, countUp, animateIn)
+//   4. Tooltip compartido (lo usan los 2 gráficos de barras)
+//   5. Los datos del gráfico (números de GLOBOCAN 2024)
+//   6. Las funciones que "renderizan" cada gráfico
+//   7. El "despachador": qué función llamar según la pestaña activa
+//   8. El arranque: conecta los clicks de las pestañas y hace el
 //      primer dibujo apenas carga la página
 //
 // Todo el archivo vive adentro de una única función que se ejecuta
 // sola -- una "IIFE" (Immediately Invoked Function Expression) -- así
-// ninguna de las variables/funciones de acá (THEME, scaleLinear,
-// renderBarChart, etc.) queda visible para los otros módulos
-// (modulo2.js, modulo3.js). Es la forma de que cada módulo tenga su
-// propio "cajón" de JavaScript sin pisarse entre sí.
+// ninguna de las variables/funciones de acá queda visible para los
+// otros módulos (modulo2.js, modulo3.js). Es la forma de que cada
+// módulo tenga su propio "cajón" de JavaScript sin pisarse entre sí.
 //
-// Qué deja disponible script.js (el archivo general, compartido):
-//   - UI.el(tag, attrs): crea un elemento SVG (no se usa en este
-//     archivo porque acá se armó un helper propio, svgEl, muy similar)
-//   - UI.rng(seed): generador de números pseudo-aleatorios reproducibles
-//   - UI.fmt(n): formatea un número con puntos de miles (estilo AR)
-//   - El manejo genérico de pestañas .ui-tab/.ui-tabpanel (no se usa
-//     acá: las pestañas de este módulo son .em-tab, con su propio
-//     look en píldora -- ver el por qué más abajo, en el arranque)
+// NOTA PARA QUIEN LEA ESTE ARCHIVO DESPUÉS DE CONOCER UNA VERSIÓN
+// VIEJA: antes "Casos por tipo" y "Casos por edad" se dibujaban con
+// <svg> a mano (rects + escalas tipo d3, sin ninguna librería). Se
+// sacó TODO ese mecanismo (svgEl, createChartSVG, scaleLinear,
+// scaleBand, y los 2 renderBarChart*) porque las animaciones nuevas
+// (arrastrar, clones "volando" de una columna a otra, una pila que se
+// arma/desarma) son mucho más simples con <div> normales + Web
+// Animations API (el.animate()) que con coordenadas SVG -- es además
+// el mismo enfoque que ya usaba el waffle de "Porcentaje" en este
+// mismo archivo. También se sacó el breakpoint que pasaba "Casos por
+// tipo" a barras horizontales en pantallas angostas (HORIZONTAL_
+// BREAKPOINT): la interacción de arrastrar necesita que la barra sea
+// SIEMPRE vertical, en cualquier ancho de pantalla.
 // ============================================================
 (function () {
   // root = el contenedor raíz de TODO el módulo (ver index.html:
-  // <div class="ui-wrap em-wrap">). Si esta página no tiene ese div
-  // (por ejemplo, si alguna vez el HTML del módulo se saca de
-  // index.html), root va a ser "null" y cortamos acá mismo: así este
-  // script nunca tira un error en páginas donde el módulo no existe.
+  // <div class="ui-wrap em-wrap">). Si esta página no tiene ese div,
+  // root va a ser "null" y cortamos acá mismo.
   const root = document.querySelector('.em-wrap');
   if (!root) return; // el módulo no está en la página
 
@@ -47,184 +57,66 @@
   if (!panel1) return;
 
   // ============================================================
-  // 2. PALETA Y TIPOGRAFÍA
+  // 2. PALETA, TIPOGRAFÍA Y "REDUCIR MOVIMIENTO"
   // ============================================================
-  // Los gráficos se dibujan con elementos <svg> puros (sin ninguna
-  // librería de gráficos), y los atributos de color de SVG (fill,
-  // stroke) necesitan un valor de color YA RESUELTO (ej. "#ff6f9c"),
-  // no pueden usar "var(--rose-strong)" directamente como sí se puede
-  // en una propiedad de CSS normal.
-  //
-  // Para no duplicar los colores como texto suelto acá (lo que
-  // violaría la regla del equipo de "nada de colores sueltos, usar
-  // las variables de :root"), usamos getComputedStyle para LEER el
-  // valor real que tiene cada variable en este momento. Si alguna vez
-  // se cambia un color en :root (style.css), estos gráficos lo siguen
-  // solos, sin tener que tocar este archivo.
   const rootStyle = getComputedStyle(document.documentElement);
-  // cssVar('--rose-strong') -> "#ff6f9c" (como string, listo para usar
-  // en un atributo fill/stroke de SVG).
+  // cssVar('--rose-strong') -> "#ff6f9c" (leído de :root, para no
+  // repetir colores sueltos -- si algún día cambia en style.css, acá
+  // se actualiza solo).
   const cssVar = (name) => rootStyle.getPropertyValue(name).trim();
 
   const THEME = {
     colors: {
-      roseStrong: cssVar('--rose-strong'), // rosa fuerte: barras/puntos destacados
-      text: cssVar('--text'),              // texto principal (blanco hueso)
-      textDim: cssVar('--text-dim'),       // texto secundario (gris rosado apagado)
-    },
-    fonts: {
-      // Mismas familias tipográficas que el resto del sitio (ver
-      // --serif/--sans en :root). Google Fonts no siempre se puede
-      // "leer" igual que un color con getComputedStyle en todos los
-      // navegadores, así que acá se escriben directo (son solo 2
-      // nombres, no una paleta de muchos colores que mantener).
-      serif: "'Fraunces', Georgia, serif",
-      sans: "'Inter', system-ui, sans-serif",
+      roseStrong: cssVar('--rose-strong'),
+      text: cssVar('--text'),
+      textDim: cssVar('--text-dim'),
     },
   };
 
-  // PANEL: un segundo objeto más chico, con los colores puntuales que
-  // usan los gráficos de barras (texto de las barras + el rosa
-  // "difuminado" para las barras que NO están resaltadas).
-  const PANEL = {
-    text: THEME.colors.text,
-    textDim: THEME.colors.textDim,
-    barMuted: 'rgba(255,182,206,0.4)', // rosa difuminado para las barras no resaltadas
-  };
+  // reduceMotion: preferencia de accesibilidad del sistema operativo
+  // ("reducir movimiento"). Se lee UNA sola vez acá (antes el waffle
+  // la leía por su cuenta, ahora la comparten los 3 gráficos) y se
+  // usa para saltear tanto las animaciones CSS (ver modulo1.css, el
+  // @media al final) como las armadas a mano con requestAnimationFrame
+  // / el.animate() de este archivo.
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // ============================================================
-  // 3. HERRAMIENTAS GENÉRICAS PARA DIBUJAR SVG A MANO
+  // 3. HERRAMIENTAS GENÉRICAS
   // ============================================================
-  // SVG no es HTML normal: sus elementos (<svg>, <rect>, <text>, <g>)
-  // pertenecen a un "namespace" (espacio de nombres) distinto. Por
-  // eso no alcanza con document.createElement('rect') -- hay que usar
-  // document.createElementNS(...) pasándole esta URL fija que indica
-  // "esto es SVG, no HTML".
-  const SVG_NS = 'http://www.w3.org/2000/svg';
 
-  // svgEl(tag, attrs)
-  // Crea UN elemento SVG (ej. 'rect', 'text', 'g') y le aplica todos
-  // los atributos que vengan en el objeto "attrs" de un saque.
-  // Ejemplo: svgEl('rect', {x:10, y:20, width:5, height:5, fill:'red'})
-  // devuelve un <rect x="10" y="20" width="5" height="5" fill="red">
-  // (todavía sin agregar al documento -- eso lo hace quien lo llama,
-  // con container.appendChild(...)).
-  function svgEl(tag, attrs) {
-    attrs = attrs || {}; // si no pasan attrs, usamos un objeto vacío
-    const el = document.createElementNS(SVG_NS, tag);
-    for (const key in attrs) el.setAttribute(key, attrs[key]);
-    return el;
-  }
-
-  // createChartSVG(container, opts)
-  // Prepara un <svg> en blanco, listo para dibujar adentro, y lo deja
-  // puesto dentro de "container". Devuelve ese <svg> para que quien
-  // llamó siga agregándole elementos (rects, texts, etc.).
-  //   opts.width / opts.height: tamaño "lógico" del dibujo (el
-  //     viewBox) -- después el CSS (.em-svg) lo escala a lo que mida
-  //     realmente en pantalla, así siempre se ve nítido sin importar
-  //     el tamaño de la ventana.
-  function createChartSVG(container, opts) {
-    opts = opts || {};
-    const width = opts.width != null ? opts.width : 600;
-    const height = opts.height != null ? opts.height : 340;
-    container.innerHTML = ''; // limpia cualquier gráfico anterior (al cambiar de pestaña)
-    const svg = svgEl('svg', {
-      viewBox: `0 0 ${width} ${height}`,
-      preserveAspectRatio: 'xMidYMid meet', // mantiene la proporción al escalar
-    });
-    svg.classList.add('em-svg'); // le da el tamaño responsivo real (ver modulo1.css)
-    container.appendChild(svg);
-    return svg;
-  }
-
-  // scaleLinear(domain, range)
-  // Una "regla de 3" envuelta en función, igual al concepto de
-  // d3.scaleLinear() (pero escrito a mano, sin depender de ninguna
-  // librería externa). Sirve para convertir un VALOR DE DATOS (ej.
-  // "6213 casos") en una POSICIÓN EN PÍXELES dentro del dibujo.
-  //
-  //   domain = [valorMínimo, valorMáximo] de los datos reales
-  //            (ej. [0, 8000] casos)
-  //   range  = [pixelMínimo, pixelMáximo] donde tiene que caer
-  //            (ej. [alturaDelGráfico, 0] -- invertido, porque en
-  //            pantalla "0" arriba y la altura máxima está abajo)
-  //
-  // Devuelve una FUNCIÓN que, dado un valor del dominio, calcula su
-  // posición en el rango. Ejemplo de uso:
-  //   const y = scaleLinear([0, 8000], [300, 0]);
-  //   y(6213)  // -> algo cerca de 67 (6213 es casi el máximo, así
-  //               que su "y" queda cerca del 0 = arriba del gráfico)
-  function scaleLinear(domain, range) {
-    const d0 = domain[0], d1 = domain[1];
-    const r0 = range[0], r1 = range[1];
-    return function (value) {
-      // (value - d0) / (d1 - d0): en qué proporción (0 a 1) está
-      // "value" dentro del dominio. El "|| 1" evita dividir por 0 si
-      // d0 y d1 fueran iguales (dominio de un solo valor).
-      return r0 + ((value - d0) / (d1 - d0 || 1)) * (r1 - r0);
-    };
-  }
-
-  // scaleBand(categories, range, padding)
-  // El equivalente a d3.scaleBand(): reparte un conjunto de
-  // CATEGORÍAS (ej. ["Mama","Colorrectal",...]) en "bandas" (franjas)
-  // del mismo ancho dentro de un rango de píxeles -- es lo que define
-  // dónde empieza cada barra y qué tan ancha es.
-  //
-  //   categories = lista de nombres (ej. las 5 categorías del gráfico)
-  //   range      = [pixelInicio, pixelFin] del eje donde se reparten
-  //   padding    = 0 a 1: qué porcentaje del ancho de cada "banda" se
-  //                deja vacío (de aire) en vez de ser barra. Un
-  //                padding más grande = barras más angostas y más
-  //                separadas entre sí (ver el ajuste de 0.35 -> 0.55
-  //                más abajo, en renderBarChart).
-  //
-  // Devuelve un objeto con:
-  //   .position(categoria) -> en qué píxel (x o y) empieza esa banda
-  //   .bandwidth            -> ancho (en píxeles) de cada barra
-  function scaleBand(categories, range, padding) {
-    padding = padding != null ? padding : 0.3; // 30% de aire por defecto
-    const r0 = range[0], r1 = range[1];
-    const step = (r1 - r0) / categories.length; // ancho total de CADA banda (barra + aire)
-    const bandwidth = step * (1 - padding);     // ancho que ocupa SOLO la barra
-    const positions = {};
-    categories.forEach(function (cat, i) {
-      // (step - bandwidth) / 2: centra la barra dentro de su banda,
-      // repartiendo el aire mitad a la izquierda, mitad a la derecha.
-      positions[cat] = r0 + step * i + (step - bandwidth) / 2;
-    });
-    return {
-      position: function (cat) { return positions[cat]; },
-      bandwidth: bandwidth,
-    };
-  }
-
-  // formatNumber(n)
-  // Convierte un número en un string con el formato de la Argentina
-  // (punto como separador de miles): 20750 -> "20.750".
+  // formatNumber(n): 20750 -> "20.750" (separador de miles argentino).
   function formatNumber(n) {
     return new Intl.NumberFormat('es-AR').format(n);
   }
 
-  // animateIn(el, delay)
-  // Hace aparecer un elemento con un fundido + un pequeño desliz hacia
-  // arriba (de 8px abajo a su posición final), en vez de aparecer de
-  // golpe. Se usa después de terminar de armar cada gráfico, para que
-  // la tarjeta completa (no cada barra suelta) entre con un efecto
-  // prolijo.
-  //   1. Lo pone invisible y corrido 8px hacia abajo (el "antes" de
-  //      la animación).
-  //   2. requestAnimationFrame espera al próximo frame de pintado del
-  //      navegador, para asegurarse de que el "antes" realmente se
-  //      haya pintado una vez antes de animar (si no, el navegador
-  //      podría saltearse directo al estado final y no se vería
-  //      ninguna animación).
-  //   3. setTimeout (con el delay que le pasen, 0 si no se especifica)
-  //      recién ahí cambia a opacity:1 y transform:none -- como esos
-  //      dos valores tienen "transition" puesta, el cambio se ve
-  //      animado en vez de instantáneo.
+  // pctLabel(x): 0.602 -> "60,2" (1 decimal, coma argentina). Se usa
+  // para los porcentajes de "Casos por edad".
+  function pctLabel(x) {
+    return (Math.round(x * 1000) / 10).toLocaleString('es-AR', {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    });
+  }
+
+  // countUp(el, to): escribe en "el" los números de 0 a "to", en unos
+  // 600ms, dando la sensación de un contador sumando en vivo. Se usa
+  // en los momentos en que un dato "se revela" (la respuesta real de
+  // Mama, el total de los otros 4 cánceres sumados).
+  function countUp(el, to) {
+    if (reduceMotion) { el.textContent = formatNumber(to); return; }
+    const t0 = performance.now();
+    (function tick(t) {
+      const p = Math.min(1, (t - t0) / 600);
+      el.textContent = formatNumber(Math.round(to * p));
+      if (p < 1) requestAnimationFrame(tick);
+    })(t0);
+  }
+
+  // animateIn(el, delay): fundido + desliz hacia arriba de 8px, para
+  // que una tarjeta recién dibujada no aparezca de golpe.
   function animateIn(el, delay) {
+    if (reduceMotion) return;
     delay = delay || 0;
     el.style.opacity = '0';
     el.style.transform = 'translateY(8px)';
@@ -238,43 +130,69 @@
   }
 
   // ============================================================
-  // 4. DATOS (verificados contra el Excel de la fuente)
+  // 4. TOOLTIP COMPARTIDO
+  // ============================================================
+  // Un único globo flotante, reusado por "Casos por tipo" Y "Casos
+  // por edad" (se crea una sola vez, se reposiciona/rellena en cada
+  // hover). Vive en <body> -- no adentro de la tarjeta -- porque
+  // puede aparecer sobre CUALQUIER barra o segmento de la pila, sin
+  // importar qué tan abajo esté en la página. Mismo patrón que
+  // .br-tooltip en módulo 2 (globo con fondo + borde, position
+  // absolute siguiendo al mouse), adaptado a JS puro en vez de CSS
+  // position:absolute relativo a un contenedor fijo.
+  const tip = document.createElement('div');
+  tip.className = 'em-tip';
+  tip.hidden = true;
+  document.body.appendChild(tip);
+
+  function showTip(e, html) {
+    tip.innerHTML = html;
+    tip.hidden = false;
+    // Math.min(...): si el tooltip apareciera pegado al mouse cerca
+    // del borde derecho de la pantalla, se saldría -- lo recorta para
+    // que siempre quede adentro.
+    const x = Math.min(e.clientX + 14, window.innerWidth - 200);
+    tip.style.left = x + window.scrollX + 'px';
+    tip.style.top = e.clientY + window.scrollY - 10 + 'px';
+  }
+  function hideTip() {
+    tip.hidden = true;
+  }
+
+  // ============================================================
+  // 5. DATOS (verificados contra el Excel de la fuente)
   // ============================================================
   // Fuente de TODOS los números de este módulo: GLOBOCAN 2024
-  // (IARC/OMS) — archivo CancerGlobalMujeres2024.xlsx.
-  // Si algún día cambia un número, se cambia ACÁ, en un solo lugar
-  // (nunca escrito "a mano" repetido dentro de las funciones de abajo).
+  // (IARC/OMS) — archivo CancerGlobalMujeres2024.xlsx. Si algún día
+  // cambia un número, se cambia ACÁ, en un solo lugar.
 
   // chapter1Stats: los 2 datos sueltos que acompañan al gráfico
-  // "Casos por tipo de cáncer" (se muestran con renderInlineStats).
-  //   - 66,2 = ASR (World) de "Breast" (6623 ÷ 100 = 66,23 casos cada
-  //     100.000 mujeres, tasa ajustada por edad).
+  // "Casos por tipo de cáncer" (no cambian con la interacción).
   const chapter1Stats = [
-    { valor: '66,2', label: 'casos cada 100.000 mujeres (tasa ajustada por edad)' },
     { valor: '1°', label: 'Cáncer más frecuente en mujeres' },
+    { valor: '66,2', label: 'casos cada 100.000 mujeres' },
   ];
 
-  // chapter1EdadStats: los 2 datos sueltos que acompañan al gráfico
-  // "Casos por edad".
-  //   - 60,2% = (6.213 + 6.278) ÷ 20.750 → grupos 45-59 y 60-74
-  //   - 21,85% = (549 + 3.984) ÷ 20.750 → grupos 15-29 y 30-44
-  const chapter1EdadStats = [
-    { valor: '60,2%', label: 'de los casos estimados ocurren entre los 45 y 74 años.' },
-    { valor: '21,85%', label: 'de los casos estimados ocurren antes de los 45 años.' },
-  ];
+  // TIPO_MAX / EDAD_MAX: techo del eje (en casos) que usa cada
+  // gráfico de barras para calcular la altura -- antes era
+  // "opts.maxValue" al llamar a renderBarChart; ahora, sin esa
+  // función, quedan como constantes nombradas.
+  const TIPO_MAX = 25000;
+  const EDAD_MAX = 8000;
 
-  // chapter1Data: los datos de cada uno de los 3 gráficos, agrupados
-  // bajo la misma clave ("casosPorTipo", "casosPorEdad", "porcentaje")
-  // que usan los botones de pestaña (atributo data-chart en el HTML)
-  // para saber cuál les toca dibujar.
   const chapter1Data = {
     // Top 5 cánceres más frecuentes en mujeres en Argentina, 2024.
+    // "tasa" = tasa ajustada por edad (ASR, cada 100.000 mujeres) de
+    // CADA tipo -- antes solo existía el de Mama (66,2, en
+    // chapter1Stats); se agrega acá el resto porque el tooltip nuevo
+    // de cada barra la necesita (mismos valores de referencia que el
+    // prototipo).
     casosPorTipo: [
-      { categoria: 'Mama', valor: 20750 },
-      { categoria: 'Colorrectal', valor: 7698 },
-      { categoria: 'Cuello uterino', valor: 4679 },
-      { categoria: 'Pulmón', valor: 4469 },
-      { categoria: 'Tiroides', valor: 3370 },
+      { categoria: 'Mama', valor: 20750, tasa: 66.2 },
+      { categoria: 'Colorrectal', valor: 7698, tasa: 20.5 },
+      { categoria: 'Cuello uterino', valor: 4679, tasa: 16.5 },
+      { categoria: 'Pulmón', valor: 4469, tasa: 12.5 },
+      { categoria: 'Tiroides', valor: 3370, tasa: 12.4 },
     ],
     // Casos de cáncer de mama por grupo etario en Argentina, 2024.
     casosPorEdad: [
@@ -285,12 +203,7 @@
       { categoria: '+75', valor: 3726 },
     ],
     // Distribución de TODOS los cánceres en mujeres, AR 2024 (69.449
-    // casos en total), para el gráfico de waffle (los 100 cuadrados):
-    //   - "sq" = cuántos de los 100 cuadrados le tocan a esa categoría
-    //     (los 6 valores de "sq" suman exactamente 100).
-    //   - "key" = identificador corto, se usa en el HTML/CSS para
-    //     saber qué cuadrados pertenecen a cada categoría al hacer
-    //     hover/click.
+    // casos en total), para el waffle de 100 cuadrados.
     porcentaje: [
       { key: 'mama', categoria: 'Mama', porcentaje: 29.9, sq: 30, casos: 20750, headline: '3 de cada 10', text: 'cánceres diagnosticados en mujeres son de mama' },
       { key: 'crc', categoria: 'Colorrectal', porcentaje: 11.1, sq: 11, casos: 7698, text: 'son colorrectales' },
@@ -301,259 +214,607 @@
     ],
   };
 
+  // tipoState / edadState: el estado de cada gráfico interactivo,
+  // declarado FUERA de las funciones de render (así sobrevive a un
+  // redibujado). Hace falta porque el panel se vuelve a dibujar de
+  // cero cada vez que se cambia de pestaña y se vuelve -- sin este
+  // estado "afuera", el usuario perdería su respuesta adivinada o el
+  // rango de edad elegido apenas mira otra pestaña y vuelve.
+  let tipoState = { revealed: false, guess: null, merged: false };
+  let edadState = { sel: [2, 3] }; // índices en casosPorEdad: "45-59".."60-74" (45 a 74 años)
+
+  // edadDragEnd: a qué función avisarle cuando se suelta el mouse/dedo
+  // durante un arrastre en "Casos por edad". Se declara acá (no
+  // adentro de renderCasosPorEdad) porque el listener de
+  // "pointerup" se registra UNA sola vez en <document> (ver el
+  // arranque, al final) -- si se registrara adentro de la función de
+  // render, cada redibujado apilaría un listener nuevo sin sacar el
+  // anterior.
+  let edadDragEnd = function () {};
+
   // ============================================================
-  // 5. RENDERIZADO DE GRÁFICOS
+  // 6. RENDERIZADO DE GRÁFICOS
   // ============================================================
 
-  // renderSubtitle(container, subtitle, beforeEl)
-  // Crea el párrafo de bajada ("Casos nuevos estimados en mujeres...")
-  // arriba de cada gráfico, usando la clase compartida .ui-sub (ver
-  // style.css) para que el tamaño de letra sea igual al del módulo 3.
-  //   container = dónde insertarlo
-  //   subtitle  = el texto (si viene vacío/undefined, no crea nada)
-  //   beforeEl  = opcional: un elemento de referencia para insertar el
-  //               párrafo JUSTO ANTES de él (se usa para que quede
-  //               antes del <svg>, en vez de al final del contenedor)
-  function renderSubtitle(container, subtitle, beforeEl) {
+  // renderSubtitle(container, subtitle): el párrafo de bajada
+  // ("Casos nuevos estimados en mujeres...") arriba de cada gráfico,
+  // con la clase compartida .ui-sub (mismo tamaño que el módulo 3).
+  function renderSubtitle(container, subtitle) {
     if (!subtitle) return;
-    const subtitleEl = document.createElement('p');
-    subtitleEl.className = 'ui-sub'; // componente compartido, mismo tamaño que el módulo 3
-    subtitleEl.textContent = subtitle;
-    if (beforeEl) container.insertBefore(subtitleEl, beforeEl);
-    else container.appendChild(subtitleEl);
+    const el = document.createElement('p');
+    el.className = 'ui-sub';
+    el.textContent = subtitle;
+    container.appendChild(el);
   }
 
-  // renderBarChart(container, data, opts)
-  // Dibuja un gráfico de BARRAS VERTICALES dentro de "container",
-  // usando los puntos "data" (cada uno con {categoria, valor}).
-  // Se usa para "Casos por edad" siempre, y para "Casos por tipo de
-  // cáncer" cuando la tarjeta tiene ancho suficiente (si no, se usa
-  // la versión horizontal de más abajo).
-  //
-  //   opts.highlightFirst       -> si es true, resalta en rosa fuerte
-  //                                 SOLO la primera categoría de la
-  //                                 lista (el resto en rosa apagado)
-  //   opts.highlightCategories  -> en vez de "la primera", una lista
-  //                                 puntual de categorías a resaltar
-  //                                 (ej. ["45-59","60-74"])
-  //   opts.maxValue             -> valor máximo fijo del eje Y (si no
-  //                                 se pasa, se calcula del dato más
-  //                                 alto de "data")
-  //   opts.subtitle             -> texto de bajada (ver renderSubtitle)
-  //   opts.xAxisLabel           -> título chico debajo del eje X
-  //                                 (ej. "Años")
-  function renderBarChart(container, data, opts) {
+  // renderInlineStats(container, stats): la fila de "datos sueltos"
+  // al pie de un gráfico (ej. "66,2 casos cada 100.000..."). "stats"
+  // es un array de {valor, label}.
+  function renderInlineStats(container, stats) {
+    const wrap = document.createElement('div');
+    wrap.className = 'em-inline-stats';
+    stats.forEach(function (stat) {
+      const item = document.createElement('div');
+      item.className = 'em-stat';
+      const value = document.createElement('span');
+      value.className = 'em-stat-value';
+      value.textContent = stat.valor;
+      const label = document.createElement('span');
+      label.className = 'em-stat-label';
+      label.textContent = stat.label;
+      item.appendChild(value);
+      item.appendChild(label);
+      wrap.appendChild(item);
+    });
+    container.appendChild(wrap);
+    return wrap;
+  }
+
+  // fly(from, to, opts): anima "clones volando" de una posición a
+  // otra -- la técnica atrás de la fusión/separación de columnas en
+  // "Casos por tipo". Por cada posición en "from" crea un <div
+  // class="em-fly">, lo anima (con el.animate(), Web Animations API)
+  // hasta la posición de "to" que le toque (mismo índice), y lo saca
+  // del DOM al terminar. "opts.stagger" es el retraso entre un clon y
+  // el siguiente (efecto "en cadena" en vez de todos a la vez).
+  // "opts.onLand(k)" se llama apenas ATERRIZA el clon k-ésimo (antes
+  // de que terminen los demás) -- lo usa "Ver por separado" para que
+  // el número/etiqueta de cada columna aparezca apenas llega su
+  // bloque, no recién cuando terminan los 4.
+  function fly(chartEl, from, to, opts) {
     opts = opts || {};
-    const highlightFirst = !!opts.highlightFirst;
-    const highlightCategories = opts.highlightCategories || null;
-    const maxValue = opts.maxValue != null ? opts.maxValue : null;
-    const subtitle = opts.subtitle || null;
-    const xAxisLabel = opts.xAxisLabel || null;
+    const duration = opts.duration != null ? opts.duration : 750;
+    const stagger = opts.stagger != null ? opts.stagger : 110;
+    const easing = opts.easing || 'cubic-bezier(.3,.7,.2,1)';
+    const labels = opts.labels || [];
+    const onLand = opts.onLand || function () {};
+    return Promise.all(from.map(function (f, k) {
+      const d = document.createElement('div');
+      d.className = 'em-fly';
+      if (labels[k]) d.textContent = labels[k];
+      Object.assign(d.style, f);
+      chartEl.appendChild(d);
+      const anim = d.animate([f, to[k]], {
+        duration: reduceMotion ? 0 : duration,
+        delay: reduceMotion ? 0 : k * stagger,
+        easing: easing,
+        fill: 'forwards',
+      });
+      return anim.finished.then(function () {
+        onLand(k);
+        d.remove();
+      });
+    }));
+  }
 
-    // ---- Medidas del dibujo ----
-    // width = ancho real que tiene el contenedor en este momento
-    // (clientWidth se recalcula solo cada vez que se llama a esta
-    // función, así el gráfico queda siempre ajustado al ancho actual
-    // de pantalla -- ver el ResizeObserver al final del archivo).
-    //
-    // height: antes era ancho×0.58 con un piso de 220px (un gráfico
-    // bastante alto). Se achicó a ancho×0.3 con piso de 160px para
-    // que la tarjeta de este capítulo quedara pareja en altura con la
-    // del capítulo 3 (que no tiene un gráfico tan grande).
-    const width = container.clientWidth || 600;
-    const height = Math.max(160, Math.round(width * 0.3)) + (xAxisLabel ? 18 : 0);
-    // margin = el "marco" interno del dibujo: espacio reservado
-    // arriba/derecha/abajo/izquierda ANTES de empezar a dibujar las
-    // barras, para que entren las etiquetas de valor, categoría y el
-    // título del eje X sin cortarse.
-    const margin = { top: 16, right: 16, bottom: xAxisLabel ? 38 : 26, left: 8 };
-    const innerW = width - margin.left - margin.right;   // ancho útil para las barras
-    const innerH = height - margin.top - margin.bottom;  // alto útil para las barras
+  // slide(el, dx): técnica FLIP (First-Last-Invert-Play) para que un
+  // elemento que "saltó" de posición por un cambio de layout (ej.
+  // Mama pasando de estar a la izquierda a quedar centrada) se vea
+  // DESLIZARSE hasta ahí en vez de teletransportarse. Se llama JUSTO
+  // DESPUÉS de aplicar el cambio de layout, con "dx" = la diferencia
+  // entre la posición vieja y la nueva (ya recalculada) -- el
+  // elemento arranca visualmente en la posición vieja (transform) y
+  // anima hacia transform:none (la posición nueva, real).
+  function slide(el, dx) {
+    if (!dx || reduceMotion) return;
+    el.animate(
+      [{ transform: 'translateX(' + dx + 'px)' }, { transform: 'translateX(0)' }],
+      { duration: 800, easing: 'cubic-bezier(.3,.7,.2,1)' }
+    );
+  }
 
-    const svg = createChartSVG(container, { width: width, height: height });
-    renderSubtitle(container, subtitle, svg); // el subtítulo se inserta ANTES del <svg>
-    // <g> = un "grupo" de SVG. Mover el grupo entero con un solo
-    // transform:translate(...) es más simple que sumarle margin.left/
-    // margin.top a la posición de cada barra/texto por separado.
-    const g = svgEl('g', { transform: 'translate(' + margin.left + ',' + margin.top + ')' });
-    svg.appendChild(g);
+  // rel(el, relativeTo): posición/tamaño de "el" en píxeles RELATIVOS
+  // al contenedor "relativeTo" (no a la pantalla) -- lo que hace
+  // falta para poder animar un clon que vive adentro de ese
+  // contenedor con position:absolute.
+  function rel(el, relativeTo) {
+    const r = el.getBoundingClientRect();
+    const c = relativeTo.getBoundingClientRect();
+    return { left: (r.left - c.left) + 'px', top: (r.top - c.top) + 'px', width: r.width + 'px', height: r.height + 'px' };
+  }
 
-    const categories = data.map(function (d) { return d.categoria; });
-    // Si no se pasó un maxValue fijo, lo calculamos como el mayor
-    // valor de los datos (con un piso de 1, para nunca dividir por 0
-    // si todos los valores fueran 0).
-    const maxVal = maxValue != null ? maxValue : Math.max(1, Math.max.apply(null, data.map(function (d) { return d.valor; })));
+  // ------------------------------------------------------------
+  // "Casos por tipo de cáncer"
+  // ------------------------------------------------------------
+  // renderCasosPorTipo(container): arma el gráfico desde cero, en el
+  // estado que corresponda según tipoState (recién llegando/a medio
+  // adivinar, revelado, o revelado+fusionado). Las animaciones de
+  // "revelar" y "fusionar/separar" NUNCA se repiten acá -- solo se
+  // disparan una vez, desde el evento que las originó (soltar el
+  // arrastre, o clickear el botón) -- así que reconstruir el gráfico
+  // (ej. al volver de otra pestaña) siempre muestra el estado YA
+  // decidido, de una, sin repetir nada.
+  function renderCasosPorTipo(container) {
+    const data = chapter1Data.casosPorTipo;
+    const real = data[0].valor; // 20.750, el valor real de Mama
+    const otherTotal = data.slice(1).reduce(function (s, d) { return s + d.valor; }, 0); // 20.216
 
-    // x: ESCALA DE BANDA -> en qué posición horizontal (y qué ancho)
-    // le toca a cada categoría. padding 0.55 (antes 0.35) = barras
-    // más angostas y más separadas entre sí, en vez de ocupar casi
-    // todo el ancho de su "banda".
-    const x = scaleBand(categories, [0, innerW], 0.55);
-    // y: ESCALA LINEAL -> convierte un valor de datos en una altura
-    // en píxeles. Range invertido [innerH, 0] porque en pantalla
-    // "y=0" es ARRIBA: un valor chico tiene que terminar con una "y"
-    // grande (cerca del piso del gráfico), uno grande con una "y"
-    // chica (cerca de la parte de arriba).
-    const y = scaleLinear([0, maxVal], [innerH, 0]);
+    container.innerHTML = '';
+    renderSubtitle(container, 'Casos nuevos estimados en mujeres, por tipo de cáncer. Argentina, 2024.');
 
-    // Dibuja una barra + su etiqueta de categoría + su valor, por
-    // cada elemento de "data".
-    data.forEach(function (d) {
-      const barX = x.position(d.categoria);
-      const barY = y(d.valor);       // dónde empieza (arriba) la barra
-      const barH = innerH - barY;    // alto de la barra (desde "barY" hasta el piso)
+    // Invitación a jugar, con el punto rosa que pulsa -- se oculta en
+    // cuanto se revela la respuesta (y se queda oculta para siempre,
+    // salvo que se aprete "Volver a adivinar").
+    const prompt = document.createElement('div');
+    prompt.className = 'em-prompt';
+    prompt.innerHTML = '<span class="em-prompt-dot" aria-hidden="true"></span>¿Hasta dónde creés que llega el cancer de mama? Arrastrá la barra.';
+    prompt.hidden = tipoState.revealed;
+    container.appendChild(prompt);
 
-      // Elige el color: si hay highlightCategories, resalta esas
-      // puntuales; si no, si highlightFirst, resalta solo la primera;
-      // si ninguna de las dos, TODAS las barras van en rosa fuerte.
-      let color;
-      if (highlightCategories) {
-        color = highlightCategories.indexOf(d.categoria) !== -1 ? THEME.colors.roseStrong : PANEL.barMuted;
-      } else if (highlightFirst) {
-        color = categories.indexOf(d.categoria) === 0 ? THEME.colors.roseStrong : PANEL.barMuted;
+    const chart = document.createElement('div');
+    chart.className = 'em-chart-tipo';
+    container.appendChild(chart);
+
+    // tipoTipHTML(d): contenido del tooltip de una barra/segmento.
+    function tipoTipHTML(d) {
+      return '<strong>' + d.categoria + '</strong>' +
+        '<div><span>Casos</span><span>' + formatNumber(d.valor) + '</span></div>' +
+        '<div><span>Por día</span><span>' + Math.round(d.valor / 365) + '</span></div>' +
+        '<div><span>Tasa ajustada</span><span>' + d.tasa.toLocaleString('es-AR') + '</span></div>';
+    }
+
+    // Las 5 columnas (Mama primero). La de Mama arranca en 0/"?" si
+    // todavía no se reveló; si ya se reveló (reconstruyendo estado),
+    // arranca directo mostrando el valor real.
+    const cols = data.map(function (d, i) {
+      const isMama = i === 0;
+      const showReal = !isMama || tipoState.revealed;
+      const pct = (showReal ? d.valor : 0) / TIPO_MAX * 100;
+      const col = document.createElement('div');
+      col.className = 'em-col';
+      col.innerHTML =
+        '<div class="em-val">' + (showReal ? formatNumber(d.valor) : '?') + '</div>' +
+        '<div class="em-bar' + (isMama ? ' em-bar-mama' : '') + '" style="height:' + pct + '%"></div>' +
+        '<div class="em-lbl">' + d.categoria + '</div>';
+      const bar = col.querySelector('.em-bar');
+      bar.addEventListener('pointermove', function (e) {
+        if (!isMama || tipoState.revealed) showTip(e, tipoTipHTML(d));
+      });
+      bar.addEventListener('pointerleave', hideTip);
+      chart.appendChild(col);
+      return col;
+    });
+    const mama = cols[0];
+
+    // Columna de la suma ("Los otros 4 juntos"), oculta hasta que se
+    // aprieta "Sumá los otros 4". La pila va de ABAJO hacia ARRIBA en
+    // este orden: Colorrectal, Cuello uterino, Pulmón, Tiroides.
+    const sumCol = document.createElement('div');
+    sumCol.className = 'em-col';
+    sumCol.id = 'em-sum-col';
+    sumCol.hidden = true;
+    sumCol.innerHTML =
+      '<div class="em-val">' + formatNumber(otherTotal) + '</div>' +
+      '<div class="em-stack" style="height:' + (otherTotal / TIPO_MAX * 100) + '%">' +
+      [1, 2, 3, 4].map(function (i) {
+        return '<div data-i="' + i + '" style="flex:' + data[i].valor + '">' + data[i].categoria + '</div>';
+      }).join('') +
+      '</div>' +
+      '<div class="em-lbl">Los otros 4 juntos</div>';
+    sumCol.querySelectorAll('.em-stack > div').forEach(function (seg) {
+      const d = data[+seg.dataset.i];
+      seg.addEventListener('pointermove', function (e) { showTip(e, tipoTipHTML(d)); });
+      seg.addEventListener('pointerleave', hideTip);
+    });
+    mama.after(sumCol);
+
+    const axisNote = document.createElement('div');
+    axisNote.className = 'em-axis-note';
+    axisNote.textContent = 'Top 5 cánceres frecuentes';
+    container.appendChild(axisNote);
+
+    const feedback = document.createElement('div');
+    feedback.className = 'em-feedback';
+    container.appendChild(feedback);
+
+    const actions = document.createElement('div');
+    actions.className = 'em-tipo-actions';
+    actions.hidden = !tipoState.revealed;
+    const btnSum = document.createElement('button');
+    btnSum.type = 'button';
+    btnSum.className = 'em-btn';
+    btnSum.textContent = tipoState.merged ? 'Ver por separado' : 'Sumá los otros 4';
+    const btnReset = document.createElement('button');
+    btnReset.type = 'button';
+    btnReset.className = 'em-btn em-btn-ghost';
+    btnReset.textContent = 'Volver a adivinar';
+    actions.appendChild(btnSum);
+    actions.appendChild(btnReset);
+    container.appendChild(actions);
+
+    // Clase extra (además de la que ya pone renderInlineStats) para
+    // poder empujar ESTOS datos más abajo sin tocar los de "Casos por
+    // edad" -- ver .em-inline-stats-tipo en modulo1.css.
+    renderInlineStats(container, chapter1Stats).classList.add('em-inline-stats-tipo');
+
+    // reveal(doAnimate): muestra la respuesta real de Mama. Se llama
+    // con doAnimate=true SOLO desde el soltar del arrastre (la ÚNICA
+    // vez que tiene sentido animar el crecimiento+conteo); con false
+    // al reconstruir un estado que YA estaba revelado (reafirma el
+    // resultado final sin repetir la animación).
+    function reveal(doAnimate) {
+      tipoState.revealed = true;
+      prompt.hidden = true;
+      actions.hidden = false;
+
+      const bar = mama.querySelector('.em-bar');
+      const valEl = mama.querySelector('.em-val');
+      const lblH = mama.querySelector('.em-lbl').offsetHeight;
+      const guess = tipoState.guess;
+      const pct = (real / TIPO_MAX) * 100;
+
+      // Dónde ubicar la línea "Tu respuesta": NO alcanza con calcular
+      // "guess/TIPO_MAX" a mano y asumirlo como % del alto de la
+      // columna -- .em-bar comparte ese flex-column con .em-val y
+      // .em-lbl, así que flexbox la encoge un poco para que los 3
+      // entren (su alto real termina siendo MENOS que un % puro del
+      // alto de la columna, y cuánto menos no es algo fácil de
+      // predecir a mano). Antes esto hacía que, con una adivinanza
+      // bastante más alta que el valor real, la línea terminara muy
+      // arriba de donde debía -- pisando el número ("20.750").
+      // Solución: en vez de recalcular la proporción, le preguntamos
+      // al navegador cuánto mide la barra YA puesta en su alto real
+      // (sin transición, por un instante) y ubicamos la línea en
+      // proporción a ESA medida real -- así, cuando la adivinanza es
+      // igual al valor real, la línea cae exactamente sobre la punta
+      // de la barra, siempre.
+      bar.style.transition = 'none';
+      bar.style.height = pct + '%';
+      const finalBarH = bar.getBoundingClientRect().height;
+      const barBottomOffset = lblH + 10; // 10 = margin-top de .em-lbl (ver modulo1.css)
+      const guessPx = finalBarH * (guess / real);
+
+      // Línea punteada "Tu respuesta" (si ya había una de un render
+      // anterior, se saca).
+      const oldLine = mama.querySelector('.em-guess-line');
+      if (oldLine) oldLine.remove();
+      const line = document.createElement('div');
+      line.className = 'em-guess-line';
+      line.style.bottom = (barBottomOffset + guessPx) + 'px';
+      line.innerHTML = '<span>Tu respuesta</span>';
+      mama.appendChild(line);
+
+      if (doAnimate && !reduceMotion) {
+        // La medición de arriba ya dejó la barra en su alto final,
+        // sin transición -- la volvemos a 0 y recién ahí la animamos,
+        // para que el crecimiento se siga viendo igual que antes.
+        bar.style.height = '0%';
+        void bar.offsetWidth; // fuerza un reflow: sin esto, el navegador podría saltearse el 0% y no animar nada
+        requestAnimationFrame(function () {
+          bar.style.transition = 'height .9s cubic-bezier(.2,.8,.2,1)';
+          bar.style.height = pct + '%';
+        });
+        countUp(valEl, real);
       } else {
-        color = THEME.colors.roseStrong;
+        valEl.textContent = formatNumber(real);
       }
 
-      // La barra arranca con height:0 (invisible, "aplastada" contra
-      // el piso) y recién en el próximo frame (requestAnimationFrame)
-      // se le pone su height/y reales CON transición -- por eso crece
-      // animada desde abajo en vez de aparecer ya dibujada.
-      const rect = svgEl('rect', { x: barX, y: innerH, width: x.bandwidth, height: 0, rx: 4, fill: color });
-      g.appendChild(rect);
-
-      requestAnimationFrame(function () {
-        rect.style.transition = 'y .7s ease, height .7s ease';
-        rect.setAttribute('y', barY);
-        rect.setAttribute('height', barH);
-      });
-
-      // Etiqueta de categoría, debajo de la barra (ej. "Mama").
-      const label = svgEl('text', {
-        x: barX + x.bandwidth / 2, y: innerH + 16,
-        'text-anchor': 'middle', fill: PANEL.text,
-        'font-family': THEME.fonts.sans, 'font-size': 11,
-      });
-      label.textContent = d.categoria;
-      g.appendChild(label);
-
-      // Etiqueta de valor, arriba de la barra (ej. "20.750").
-      const value = svgEl('text', {
-        x: barX + x.bandwidth / 2, y: barY - 8,
-        'text-anchor': 'middle', fill: PANEL.text,
-        'font-family': THEME.fonts.sans, 'font-size': 13, 'font-weight': 600,
-      });
-      value.textContent = formatNumber(d.valor);
-      g.appendChild(value);
-    });
-
-    // Título chico del eje X (ej. "Años"), solo si se pidió uno.
-    if (xAxisLabel) {
-      // y:innerH+34 -- adentro de margin.bottom:38 (con un poco de
-      // aire antes del borde), ya no del margin.bottom:54 original.
-      const axisLabel = svgEl('text', {
-        x: innerW / 2, y: innerH + 34,
-        'text-anchor': 'middle', fill: PANEL.textDim,
-        'font-family': THEME.fonts.sans, 'font-size': 11, 'font-style': 'italic',
-      });
-      axisLabel.textContent = xAxisLabel;
-      g.appendChild(axisLabel);
+      const ratio = real / guess;
+      let msg;
+      if (Math.abs(ratio - 1) < 0.1) {
+        msg = 'Dijiste <b>' + formatNumber(guess) + '</b>. ¡Muy cerca! Son <b>' + formatNumber(real) + '</b> casos por año.';
+      } else if (ratio > 1) {
+        const cuanto = ratio >= 2.9 ? 'más del triple' : ratio >= 1.9 ? 'más del doble' : 'bastantes más';
+        msg = 'Dijiste <b>' + formatNumber(guess) + '</b>. Son <b>' + formatNumber(real) + '</b>: ' + cuanto + ' de lo que pensabas.';
+      } else {
+        msg = 'Dijiste <b>' + formatNumber(guess) + '</b>. Son <b>' + formatNumber(real) + '</b>, menos de lo que pensabas, pero casi el triple que el segundo.';
+      }
+      feedback.innerHTML = msg + ' Eso es <b>' + Math.round(real / 365) + ' diagnósticos por día</b>.';
     }
 
-    animateIn(container); // fundido + desliz de entrada de la tarjeta completa
-  }
+    // setupDrag(): arma la zona de arrastre sobre la columna de Mama
+    // (desde la etiqueta hacia arriba) + la barra punteada + la
+    // manija "↕". Pointer Events (pointerdown/move/up) cubren mouse Y
+    // touch con el mismo código, sin ramas separadas para celular.
+    function setupDrag() {
+      const valEl = mama.querySelector('.em-val');
+      const lblH = mama.querySelector('.em-lbl').offsetHeight;
+      const zone = document.createElement('div');
+      zone.className = 'em-guess-zone';
+      zone.style.bottom = (lblH + 10) + 'px';
+      zone.innerHTML = '<div class="em-guess-bar"><div class="em-handle">↕</div></div>';
+      mama.appendChild(zone);
+      const gb = zone.querySelector('.em-guess-bar');
 
-  // renderBarChartHorizontal(container, data, opts)
-  // La misma idea que renderBarChart, pero con las barras acostadas
-  // (categoría a la izquierda, barra creciendo hacia la derecha). Se
-  // usa SOLO para "Por tipo de cáncer" cuando el ancho de la tarjeta
-  // es angosto (ver HORIZONTAL_BREAKPOINT más abajo) -- así
-  // "Cuello uterino" (el nombre más largo) nunca se aprieta ni se
-  // corta en 2 líneas.
-  // Mismos "opts" que renderBarChart, excepto que acá highlightFirst
-  // es la única opción de resaltado (no se usa highlightCategories
-  // en ningún gráfico horizontal del sitio).
-  function renderBarChartHorizontal(container, data, opts) {
-    opts = opts || {};
-    const highlightFirst = !!opts.highlightFirst;
-    const maxValue = opts.maxValue != null ? opts.maxValue : null;
-    const subtitle = opts.subtitle || null;
-    const xAxisLabel = opts.xAxisLabel || null;
-
-    // rowH reducido (antes 40) y padding de scaleBand más grande (antes
-    // 0.3) para el mismo objetivo que renderBarChart: tarjeta más baja
-    // y barras más finas, parejo con el Capítulo 3.
-    const width = container.clientWidth || 320;
-    const rowH = 30; // alto fijo de cada fila (una por categoría)
-    const margin = { top: 6, right: 54, bottom: xAxisLabel ? 28 : 6, left: 96 };
-    const innerW = width - margin.left - margin.right;
-    const innerH = rowH * data.length; // el alto total depende de CUÁNTAS categorías hay
-    const height = innerH + margin.top + margin.bottom;
-
-    const svg = createChartSVG(container, { width: width, height: height });
-    renderSubtitle(container, subtitle, svg);
-    const g = svgEl('g', { transform: 'translate(' + margin.left + ',' + margin.top + ')' });
-    svg.appendChild(g);
-
-    const categories = data.map(function (d) { return d.categoria; });
-    const maxVal = maxValue != null ? maxValue : Math.max(1, Math.max.apply(null, data.map(function (d) { return d.valor; })));
-
-    // Acá se invierten los roles respecto al gráfico vertical: "y" es
-    // la escala de BANDA (una fila por categoría) y "x" es la escala
-    // LINEAL (el largo de la barra según el valor).
-    const y = scaleBand(categories, [0, innerH], 0.5);
-    const x = scaleLinear([0, maxVal], [0, innerW]);
-
-    data.forEach(function (d) {
-      const barY = y.position(d.categoria);
-      const barW = x(d.valor);
-      const color = highlightFirst ? (categories.indexOf(d.categoria) === 0 ? THEME.colors.roseStrong : PANEL.barMuted) : THEME.colors.roseStrong;
-
-      // Igual que en el gráfico vertical: arranca con width:0 y crece
-      // animada hacia la derecha.
-      const rect = svgEl('rect', { x: 0, y: barY, width: 0, height: y.bandwidth, rx: 4, fill: color });
-      g.appendChild(rect);
-
+      function setFromPx(px) {
+        px = Math.max(6, Math.min(zone.clientHeight, px));
+        gb.style.height = px + 'px';
+        tipoState.guess = Math.max(100, Math.round((px / zone.clientHeight) * TIPO_MAX / 100) * 100);
+        valEl.textContent = formatNumber(tipoState.guess);
+      }
       requestAnimationFrame(function () {
-        rect.style.transition = 'width .7s ease';
-        rect.setAttribute('width', barW);
+        setFromPx(zone.clientHeight * 0.3);
+        valEl.textContent = '?'; // el valor arranca oculto -- recién se ve al mover el dedo/mouse
       });
 
-      // Etiqueta de categoría, a la IZQUIERDA de la barra (text-anchor
-      // "end" = el texto termina justo en el punto x que le dimos).
-      const label = svgEl('text', {
-        x: -10, y: barY + y.bandwidth / 2 + 4, 'text-anchor': 'end',
-        fill: PANEL.text, 'font-family': THEME.fonts.sans, 'font-size': 12,
+      let dragging = false;
+      zone.addEventListener('pointerdown', function (e) {
+        dragging = true;
+        // setPointerCapture: asegura que sigamos recibiendo
+        // pointermove/pointerup aunque el mouse/dedo se salga del
+        // área de "zone" en pleno arrastre rápido. try/catch porque
+        // algunos navegadores lo rechazan en ciertos casos (puntero
+        // ya no activo) -- si falla, el arrastre igual funciona
+        // mientras el cursor se quede adentro de la zona, así que no
+        // vale la pena cortar el resto del gesto por esto.
+        try { zone.setPointerCapture(e.pointerId); } catch (err) {}
+        setFromPx(zone.getBoundingClientRect().bottom - e.clientY);
       });
-      label.textContent = d.categoria;
-      g.appendChild(label);
+      zone.addEventListener('pointermove', function (e) {
+        if (dragging) setFromPx(zone.getBoundingClientRect().bottom - e.clientY);
+      });
+      zone.addEventListener('pointerup', function () {
+        if (!dragging) return;
+        dragging = false;
+        zone.remove();
+        reveal(true);
+      });
+    }
 
-      // Etiqueta de valor, a la DERECHA de la punta de la barra.
-      const value = svgEl('text', {
-        x: barW + 8, y: barY + y.bandwidth / 2 + 4, 'text-anchor': 'start',
-        fill: PANEL.text, 'font-family': THEME.fonts.sans, 'font-size': 13, 'font-weight': 600,
-      });
-      value.textContent = formatNumber(d.valor);
-      g.appendChild(value);
+    // applyMergeState(doAnimate): hace que el DOM coincida con
+    // tipoState.merged (el valor YA actualizado por quien llama). Si
+    // doAnimate es true, vuela los clones; si no, salta directo al
+    // estado final (se usa al reconstruir una tarjeta que ya estaba
+    // fusionada, ej. al volver de otra pestaña).
+    async function applyMergeState(doAnimate) {
+      btnSum.disabled = true;
+      hideTip();
+      const others = [1, 2, 3, 4].map(function (i) { return cols[i]; });
+      const stackEl = sumCol.querySelector('.em-stack');
+      const sumValEl = sumCol.querySelector('.em-val');
+
+      if (tipoState.merged) {
+        const x0 = mama.getBoundingClientRect().left;
+        chart.style.setProperty('--em-colw', mama.getBoundingClientRect().width + 'px');
+        chart.classList.add('em-merged');
+        others.forEach(function (c) { c.hidden = true; });
+        sumCol.hidden = false;
+        slide(mama, x0 - mama.getBoundingClientRect().left);
+
+        if (doAnimate && !reduceMotion) {
+          const src = others.map(function (c) { return rel(c.querySelector('.em-bar'), chart); });
+          const tgt = Array.prototype.slice.call(stackEl.querySelectorAll('div')).map(function (seg) { return rel(seg, chart); });
+          stackEl.style.visibility = 'hidden';
+          sumValEl.style.visibility = 'hidden';
+          await fly(chart, src, tgt, { labels: others.map(function (c) { return c.querySelector('.em-lbl').textContent; }) });
+          stackEl.style.visibility = '';
+          sumValEl.style.visibility = '';
+          countUp(sumValEl, otherTotal);
+        } else {
+          sumValEl.textContent = formatNumber(otherTotal);
+        }
+        feedback.innerHTML = 'Colorrectal + cuello uterino + pulmón + tiroides = <b>' + formatNumber(otherTotal) + '</b>. Mama sola (<b>' + formatNumber(real) + '</b>) supera a los cuatro juntos.';
+        btnSum.textContent = 'Ver por separado';
+      } else {
+        const x0 = mama.getBoundingClientRect().left;
+        if (doAnimate && !reduceMotion) {
+          const segs = Array.prototype.slice.call(stackEl.querySelectorAll('div'));
+          const src = segs.map(function (seg) { return rel(seg, chart); });
+          sumValEl.style.visibility = 'hidden';
+          chart.classList.remove('em-merged');
+          sumCol.hidden = true;
+          others.forEach(function (c) { c.hidden = false; c.classList.add('em-ghost'); });
+          slide(mama, x0 - mama.getBoundingClientRect().left);
+          const bars = others.map(function (c) { return c.querySelector('.em-bar'); });
+          bars.forEach(function (b) { b.style.visibility = 'hidden'; });
+          // Vuelan en orden INVERSO (Tiroides -- el de más arriba en
+          // la pila -- primero), como pide la consigna. duration/
+          // stagger más cortos que antes (eran 1100/140, hasta 1,5s
+          // en total): cada barra real queda INVISIBLE (ver
+          // bars.forEach más arriba) hasta que aterriza su propio
+          // clon -- con la secuencia tan larga, se sentía como que
+          // "se rompía" (una barra desaparecida un buen rato antes de
+          // reaparecer), más que una animación prolija.
+          const srcRev = src.slice().reverse();
+          const tgtRev = bars.map(function (b) { return rel(b, chart); }).reverse();
+          const lblRev = others.map(function (c) { return c.querySelector('.em-lbl').textContent; }).reverse();
+          await fly(chart, srcRev, tgtRev, {
+            duration: 650, stagger: 90, easing: 'cubic-bezier(.45,.05,.25,1)', labels: lblRev,
+            onLand: function (k) {
+              const realIdx = others.length - 1 - k; // deshace el reverse
+              bars[realIdx].style.visibility = '';
+              others[realIdx].classList.remove('em-ghost');
+            },
+          });
+        } else {
+          chart.classList.remove('em-merged');
+          sumCol.hidden = true;
+          others.forEach(function (c) { c.hidden = false; c.classList.remove('em-ghost'); });
+          slide(mama, x0 - mama.getBoundingClientRect().left);
+        }
+        feedback.innerHTML = 'Tocá <b>Sumá los otros 4</b> para compararlos con Mama.';
+        btnSum.textContent = 'Sumá los otros 4';
+      }
+      btnSum.disabled = false;
+    }
+
+    btnSum.addEventListener('click', function () {
+      if (btnSum.disabled) return;
+      tipoState.merged = !tipoState.merged;
+      applyMergeState(true);
+    });
+    btnReset.addEventListener('click', function () {
+      tipoState = { revealed: false, guess: null, merged: false };
+      renderCasosPorTipo(container);
     });
 
-    if (xAxisLabel) {
-      const axisLabel = svgEl('text', {
-        x: innerW / 2, y: innerH + 20,
-        'text-anchor': 'middle', fill: PANEL.textDim,
-        'font-family': THEME.fonts.sans, 'font-size': 11, 'font-style': 'italic',
-      });
-      axisLabel.textContent = xAxisLabel;
-      g.appendChild(axisLabel);
-    }
+    // ---- reconstruye el estado actual (si lo había) ----
+    if (tipoState.revealed) reveal(false);
+    else setupDrag();
+    if (tipoState.merged) applyMergeState(false);
 
     animateIn(container);
   }
 
-  // HORIZONTAL_BREAKPOINT: ancho (en píxeles) del contenedor por
-  // debajo del cual "Casos por tipo de cáncer" pasa de barras
-  // verticales a horizontales (ver chartRenderers.casosPorTipo).
-  const HORIZONTAL_BREAKPOINT = 420;
+  // ------------------------------------------------------------
+  // "Casos por edad"
+  // ------------------------------------------------------------
+  function renderCasosPorEdad(container) {
+    const data = chapter1Data.casosPorEdad;
+    const total = data.reduce(function (s, d) { return s + d.valor; }, 0); // 20.750
+
+    container.innerHTML = '';
+    renderSubtitle(container, 'Casos nuevos estimados en mujeres, por edad. Argentina, 2024.');
+
+    const prompt = document.createElement('div');
+    prompt.className = 'em-prompt';
+    prompt.innerHTML = '<span class="em-prompt-dot" aria-hidden="true"></span>Tocá o arrastrá sobre las barras para elegir un rango de edad.';
+    container.appendChild(prompt);
+
+    // Chips de acceso rápido. "r" = [índice desde, índice hasta] en "data".
+    const chipDefs = [
+      { label: '45 a 74', r: [2, 3] },
+      { label: 'Antes de los 45', r: [0, 1] },
+      { label: 'Todas', r: [0, 4] },
+    ];
+    const chipsWrap = document.createElement('div');
+    chipsWrap.className = 'em-chips';
+    const chipEls = chipDefs.map(function (c) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'em-chip';
+      btn.textContent = c.label;
+      btn.dataset.r = c.r.join(',');
+      btn.addEventListener('click', function () { setSel(c.r[0], c.r[1]); });
+      chipsWrap.appendChild(btn);
+      return btn;
+    });
+    container.appendChild(chipsWrap);
+
+    const chart = document.createElement('div');
+    chart.className = 'em-chart-edad';
+    container.appendChild(chart);
+
+    // edadTipHTML(d): contenido del tooltip de una barra de edad.
+    function edadTipHTML(d) {
+      return '<strong>' + d.categoria + ' años</strong>' +
+        '<div><span>Casos</span><span>' + formatNumber(d.valor) + '</span></div>' +
+        '<div><span>Del total</span><span>' + pctLabel(d.valor / total) + '%</span></div>' +
+        '<div><span>Por día</span><span>' + (d.valor / 365).toLocaleString('es-AR', { maximumFractionDigits: 1 }) + '</span></div>';
+    }
+
+    let dragging = false, anchor = null;
+    const cols = data.map(function (d, i) {
+      const col = document.createElement('div');
+      col.className = 'em-col em-col-age';
+      col.innerHTML =
+        '<div class="em-val">' + formatNumber(d.valor) + '</div>' +
+        '<div class="em-bar" style="height:' + (d.valor / EDAD_MAX * 100) + '%"></div>' +
+        '<div class="em-lbl">' + d.categoria + '</div>';
+      col.addEventListener('pointerdown', function (e) {
+        dragging = true;
+        anchor = i;
+        setSel(i, i);
+        e.preventDefault();
+      });
+      col.addEventListener('pointerenter', function () { if (dragging) setSel(anchor, i); });
+      const bar = col.querySelector('.em-bar');
+      bar.addEventListener('pointermove', function (e) { showTip(e, edadTipHTML(d)); });
+      bar.addEventListener('pointerleave', hideTip);
+      chart.appendChild(col);
+      return col;
+    });
+
+    // El arrastre TÁCTIL no dispara "pointerenter" al pasar de una
+    // columna a otra (solo mouse) -- hace falta mirar a mano qué
+    // columna hay debajo del dedo con elementFromPoint.
+    chart.addEventListener('pointermove', function (e) {
+      if (!dragging || e.pointerType === 'mouse') return;
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      const col = el && el.closest('.em-col-age');
+      if (col) setSel(anchor, cols.indexOf(col));
+    });
+    // El "soltar" se escucha UNA sola vez en <document> (ver el
+    // arranque) -- acá solo se actualiza a qué función avisarle.
+    edadDragEnd = function () { dragging = false; };
+
+    const axisNote = document.createElement('div');
+    axisNote.className = 'em-axis-note';
+    axisNote.textContent = 'Años';
+    container.appendChild(axisNote);
+
+    // Los 2 datos sueltos: se arman UNA vez con renderInlineStats (el
+    // texto real lo pone paint(), de abajo) y después se actualizan
+    // reescribiendo el texto directo -- no hace falta destruir y
+    // reconstruir el DOM en cada clic/arrastre.
+    const statsWrap = renderInlineStats(container, [{ valor: '', label: '' }, { valor: '', label: '' }]);
+    const stats = statsWrap.querySelectorAll('.em-stat');
+    const selPctEl = stats[0].querySelector('.em-stat-value');
+    const selTxtEl = stats[0].querySelector('.em-stat-label');
+    const selDiaEl = stats[1].querySelector('.em-stat-value');
+    const selDiaTxtEl = stats[1].querySelector('.em-stat-label');
+
+    const note = document.createElement('p');
+    note.className = 'em-note';
+    note.textContent = 'Cantidad de casos, no riesgo: hay menos casos en mayores de 75 porque hay menos mujeres en esa franja de edad.';
+    container.appendChild(note);
+
+    // setSel(a, b): fija el rango elegido como [menor, mayor] (no
+    // importa en qué orden se arrastró -- de atrás para adelante o al
+    // revés da el mismo rango) y repinta.
+    function setSel(a, b) {
+      edadState.sel = [Math.min(a, b), Math.max(a, b)];
+      paint();
+    }
+
+    // paint(): pinta las barras del rango elegido, marca el chip que
+    // coincida (si alguno), recalcula el % / casos / por día, y arma
+    // la frase ("entre los X y Y años" / "antes de los X" / "desde
+    // los X" / "en todas las edades") -- todo calculado desde "data",
+    // nada hardcodeado.
+    function paint() {
+      const sel = edadState.sel;
+      cols.forEach(function (col, i) {
+        col.querySelector('.em-bar').classList.toggle('em-bar-sel', i >= sel[0] && i <= sel[1]);
+      });
+      chipEls.forEach(function (chip) {
+        chip.setAttribute('aria-pressed', chip.dataset.r === sel.join(','));
+      });
+      const sum = data.slice(sel[0], sel[1] + 1).reduce(function (s, d) { return s + d.valor; }, 0);
+      const lo = data[sel[0]].categoria.split('-')[0].replace('+', '');
+      const hi = data[sel[1]].categoria;
+      let rango;
+      if (sel[0] === 0 && sel[1] === 4) rango = 'en todas las edades';
+      else if (sel[0] === 0) rango = 'antes de los ' + (Number(data[sel[1]].categoria.split('-')[1]) + 1) + ' años';
+      else if (sel[1] === 4) rango = 'desde los ' + lo + ' años';
+      else rango = 'entre los ' + lo + ' y ' + hi.split('-')[1] + ' años';
+
+      selPctEl.textContent = pctLabel(sum / total) + '%';
+      selTxtEl.textContent = 'de los casos estimados ocurren ' + rango + ' (' + formatNumber(sum) + ' casos).';
+      selDiaEl.textContent = String(Math.round(sum / 365));
+      selDiaTxtEl.textContent = 'diagnósticos por día ' + rango + '.';
+    }
+
+    paint(); // estado inicial (o el que haya quedado de un render anterior)
+    animateIn(container);
+  }
+
+  // ------------------------------------------------------------
+  // "Porcentaje" (el waffle) -- SIN CAMBIOS de lógica respecto a la
+  // versión anterior: nunca usó el SVG que se sacó del archivo, ya
+  // dibujaba con <div> (CSS Grid), igual que ahora "Casos por tipo" y
+  // "Casos por edad".
+  // ------------------------------------------------------------
 
   // WAFFLE_GRAYS: los grises que usan en el waffle las categorías que
   // NO son "Mama" (que siempre va en rosa fuerte, para destacarla).
@@ -561,51 +822,43 @@
   // puntuales de ESTE gráfico nomás, no del resto del sitio.
   const WAFFLE_GRAYS = ['#a3abb6', '#838b97', '#67707c', '#515963', '#353a43'];
 
-  // colorForWaffle(d, index)
-  // Devuelve el color que le toca a un cuadrado del waffle según su
-  // categoría: rosa fuerte si es "Mama", o un gris de la lista de
-  // arriba (repartidos en orden, repitiendo en ciclo con el "%" si
-  // hubiera más de 5 categorías no-Mama).
+  // colorForWaffle(d, index): devuelve el color que le toca a un
+  // cuadrado del waffle según su categoría: rosa fuerte si es "Mama",
+  // o un gris de la lista de arriba (repartidos en orden, repitiendo
+  // en ciclo con el "%" si hubiera más de 5 categorías no-Mama).
   function colorForWaffle(d, index) {
     return d.key === 'mama' ? THEME.colors.roseStrong : WAFFLE_GRAYS[(index - 1) % WAFFLE_GRAYS.length];
   }
 
-  // renderWaffleChart(container, data, opts)
-  // Dibuja el gráfico de "waffle": 100 cuadrados chiquitos (<div>,
-  // NO SVG -- usa CSS Grid, la misma técnica que los puntos del
-  // módulo 3), donde cada cuadrado es el 1% de los casos. Al pasar el
-  // mouse (o tocar en celular) por una categoría, esa se resalta y el
-  // texto grande de al lado cambia para mostrar su dato.
+  // renderWaffleChart(container, data, opts): dibuja el gráfico de
+  // "waffle": 100 cuadrados chiquitos (<div>, CSS Grid -- la misma
+  // técnica que los puntos del módulo 3), donde cada cuadrado es el
+  // 1% de los casos. Al pasar el mouse (o tocar en celular) por una
+  // categoría, esa se resalta y el texto grande de al lado cambia
+  // para mostrar su dato.
   function renderWaffleChart(container, data, opts) {
     opts = opts || {};
     const subtitle = opts.subtitle || null;
 
-    container.innerHTML = ''; // limpia el gráfico anterior
+    container.innerHTML = '';
     renderSubtitle(container, subtitle);
 
-    // ---- Arma la estructura HTML del waffle a mano ----
-    // body: envuelve la grilla + el texto informativo (uno al lado
-    //       del otro desde 680px de ancho, apilados en mobile -- ver
-    //       modulo1.css, .em-waffle-body).
     const body = document.createElement('div');
     body.className = 'em-waffle-body';
 
-    // grid: el contenedor de los 100 cuadrados.
     const grid = document.createElement('div');
     grid.className = 'em-waffle-grid';
-    grid.setAttribute('role', 'img'); // para lectores de pantalla: se lee como una sola imagen
+    grid.setAttribute('role', 'img');
     grid.setAttribute('aria-label', 'Gráfico de 100 cuadrados: ' + data[0].sq + ' corresponden a cáncer de mama');
 
-    // info: el texto grande (headline + 2 líneas de detalle) que
-    // cambia según qué categoría está "enfocada".
     const info = document.createElement('div');
     info.className = 'em-waffle-info';
 
-    const headline = document.createElement('p'); // "3 de cada 10"
+    const headline = document.createElement('p');
     headline.className = 'em-waffle-headline';
-    const hlText = document.createElement('p');    // "cánceres diagnosticados... son de mama"
+    const hlText = document.createElement('p');
     hlText.className = 'em-waffle-hltext';
-    const hlMeta = document.createElement('p');    // "20.750 casos (29,9%) de un total de 69.449"
+    const hlMeta = document.createElement('p');
     hlMeta.className = 'em-waffle-hlmeta';
 
     info.appendChild(headline);
@@ -618,10 +871,9 @@
     const squares = []; // referencia a cada <div> cuadradito, para poder tocarlos después
     let pinned = null;  // qué categoría quedó "clavada" por un click (null = ninguna)
 
-    // updateHeadline(d)
-    // Actualiza el texto grande (headline/hlText/hlMeta) para mostrar
-    // los datos de la categoría "d" (o de data[0] = "Mama" si no se
-    // pasa ninguna, el estado por defecto).
+    // updateHeadline(d): actualiza el texto grande (headline/hlText/
+    // hlMeta) para mostrar los datos de la categoría "d" (o de
+    // data[0] = "Mama" si no se pasa ninguna, el estado por defecto).
     function updateHeadline(d) {
       const show = d || data[0];
       headline.textContent = show.headline || (show.sq + ' de cada 100');
@@ -629,14 +881,13 @@
       hlText.textContent = show.text;
       // toFixed(1) -> siempre 1 decimal (ej "29.9"); .replace('.',',')
       // -> formato argentino ("29,9").
-      const pctLabel = show.porcentaje.toFixed(1).replace('.', ',');
-      hlMeta.textContent = formatNumber(show.casos) + ' casos (' + pctLabel + '%) de un total de 69.449';
+      const pctLbl = show.porcentaje.toFixed(1).replace('.', ',');
+      hlMeta.textContent = formatNumber(show.casos) + ' casos (' + pctLbl + '%) de un total de 69.449';
     }
 
-    // setActive(key, pin)
-    // Marca una categoría como "activa" (resaltada): le baja la
-    // opacidad a TODOS los cuadrados excepto a los de esa categoría,
-    // y actualiza el texto grande.
+    // setActive(key, pin): marca una categoría como "activa"
+    // (resaltada): le baja la opacidad a TODOS los cuadrados excepto
+    // a los de esa categoría, y actualiza el texto grande.
     //   key = la categoría a activar (o null para volver al estado
     //         "nada enfocado")
     //   pin = true cuando viene de un CLICK (no de un simple hover):
@@ -663,9 +914,9 @@
         const sq = document.createElement('div');
         sq.className = 'em-waffle-sq';
         sq.style.background = color;
-        sq.dataset.k = d.key; // guarda a qué categoría pertenece este cuadrado
+        sq.dataset.k = d.key;
         sq.addEventListener('mouseenter', function () { setActive(d.key); });
-        sq.addEventListener('mouseleave', function () { setActive(pinned); }); // vuelve a lo clavado (o a nada)
+        sq.addEventListener('mouseleave', function () { setActive(pinned); });
         sq.addEventListener('click', function () { setActive(d.key, true); });
         grid.appendChild(sq);
         squares.push(sq);
@@ -678,123 +929,61 @@
     // clase .is-in, que en el CSS tiene su propia transición de
     // opacity/transform) con un pequeño retraso en cadena (14ms entre
     // uno y el siguiente), así se ve un efecto de "ola" llenando la
-    // grilla en vez de aparecer todos de golpe.
-    // matchMedia('(prefers-reduced-motion: reduce)') respeta la
-    // preferencia de accesibilidad del sistema operativo de "reducir
-    // movimiento": si está activada, se saltea la animación en
-    // cadena y los cuadrados aparecen directo.
-    const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // grilla en vez de aparecer todos de golpe. reduceMotion se saltea
+    // la cadena y los muestra directo.
     squares.forEach(function (sq, i) {
       if (reduceMotion) { sq.classList.add('is-in'); return; }
       setTimeout(function () { sq.classList.add('is-in'); }, 200 + i * 14);
     });
   }
 
-  // renderInlineStats(container, stats)
-  // Dibuja la fila de "datos sueltos" que va al pie de los gráficos
-  // de barras (ej. "66,2 casos cada 100.000..." + "1° Cáncer más
-  // frecuente..."). "stats" es un array de {valor, label} (ver
-  // chapter1Stats / chapter1EdadStats, arriba).
-  function renderInlineStats(container, stats) {
-    const wrap = document.createElement('div');
-    wrap.className = 'em-inline-stats';
-    stats.forEach(function (stat) {
-      const item = document.createElement('div');
-      item.className = 'em-stat';
-      const value = document.createElement('span');
-      value.className = 'em-stat-value';
-      value.textContent = stat.valor;
-      const label = document.createElement('span');
-      label.className = 'em-stat-label';
-      label.textContent = stat.label;
-      item.appendChild(value);
-      item.appendChild(label);
-      wrap.appendChild(item);
-    });
-    container.appendChild(wrap);
-  }
-
   // ============================================================
-  // 6. DESPACHADOR: qué función de dibujo le corresponde a cada
-  //    pestaña
+  // 7. DESPACHADOR: qué función de dibujo le corresponde a cada pestaña
   // ============================================================
-  // chartRenderers es un objeto donde cada CLAVE coincide exactamente
-  // con el atributo "data-chart" de cada botón .em-tab en el HTML
-  // (ver index.html: data-chart="casosPorTipo", etc.). Así, al
-  // clickear una pestaña, alcanza con buscar
-  // chartRenderers[esaClave] y llamarla -- sin un "if/else" gigante
-  // comparando nombres.
   const chartRenderers = {
-    // "Casos por tipo de cáncer": decide EN EL MOMENTO (según el
-    // ancho actual del panel) si usar barras verticales u
-    // horizontales, y después agrega los 2 datos sueltos
-    // (chapter1Stats) al pie.
     casosPorTipo: function (container) {
-      const opts = {
-        highlightFirst: true, // resalta "Mama" (siempre es la primera de la lista)
-        maxValue: 25000,
-        subtitle: 'Casos nuevos estimados en mujeres, por tipo de cáncer. Argentina, 2024.',
-        xAxisLabel: 'Top 5 cánceres frecuentes',
-      };
-      const width = container.clientWidth || 600;
-      if (width < HORIZONTAL_BREAKPOINT) {
-        renderBarChartHorizontal(container, chapter1Data.casosPorTipo, opts);
-      } else {
-        renderBarChart(container, chapter1Data.casosPorTipo, opts);
-      }
-      renderInlineStats(container, chapter1Stats);
+      renderCasosPorTipo(container);
     },
-    // "Casos por edad": siempre barras verticales (los nombres de
-    // categoría -- "45-59", "60-74" -- son cortos, nunca se aprietan).
     casosPorEdad: function (container) {
-      renderBarChart(container, chapter1Data.casosPorEdad, {
-        maxValue: 8000,
-        subtitle: 'Casos nuevos estimados en mujeres, por edad. Argentina, 2024.',
-        highlightCategories: ['45-59', '60-74'], // franja etaria con más casos
-        xAxisLabel: 'Años',
-      });
-      renderInlineStats(container, chapter1EdadStats);
+      renderCasosPorEdad(container);
     },
-    // "Porcentaje": el waffle de 100 cuadrados.
     porcentaje: function (container) {
       renderWaffleChart(container, chapter1Data.porcentaje, {
-        subtitle: 'Distribución de los casos nuevos estimados de cáncer en mujeres. Argentina, 2024. Cada cuadrado es el 1% de los casos.',
+        // La frase final ("Pasá el cursor...") es la pista de que los
+        // cuadrados grises son interactivos -- igual que "Pasá el
+        // cursor sobre una provincia..." en el mapa de módulo 2. Sin
+        // esto no hay ninguna señal visual de que, al pasar el mouse
+        // por un cuadrado, el texto grande cambia a esa categoría
+        // (ver updateHeadline/setActive más abajo).
+        subtitle: 'Distribución de los casos nuevos estimados de cáncer en mujeres. Argentina, 2024. Cada cuadrado es el 1% de los casos. Mueva el cursor por un cuadrado para ver a qué categoría corresponde.',
       });
     },
   };
 
   // ============================================================
-  // 7. ARRANQUE: conecta los clicks de las pestañas, dibuja el
-  //    primer gráfico, y vuelve a dibujar si cambia el ancho
+  // 8. ARRANQUE
   // ============================================================
-  // tabs1: los 3 botones .em-tab (ver index.html). Son propios de
-  // este módulo (NO las .ui-tab compartidas que script.js ya maneja
-  // solas) porque acá el diseño es otro -- píldora, 3 en un solo
-  // renglón siempre -- y conviene manejar el click acá mismo, junto
-  // con el redibujado del gráfico.
   const tabs1 = root.querySelectorAll('.em-tab');
-
-  // activeKey: qué gráfico está activo ahora. Arranca leyendo cuál
-  // pestaña YA tiene la clase .active en el HTML (por si en algún
-  // momento se decide que no sea siempre la primera por defecto); si
-  // ninguna la tiene, usa 'casosPorTipo' como opción por defecto.
   let activeKey = (root.querySelector('.em-tab.active') && root.querySelector('.em-tab.active').dataset.chart) || 'casosPorTipo';
 
-  // render1()
-  // Vuelve a dibujar, de cero, el gráfico que le corresponde a
-  // "activeKey" en el panel. Se llama: al cargar la página, al
-  // clickear una pestaña, y cada vez que el panel cambia de tamaño
-  // (ver ResizeObserver más abajo) -- así los gráficos SVG, que
-  // calculan su tamaño en base al ancho del contenedor, siempre
-  // quedan bien proporcionados.
+  // render1(): vuelve a dibujar el gráfico activo. Se llama al cargar
+  // la página y al clickear una pestaña.
+  //
+  // NOTA: la versión anterior de este archivo (cuando los gráficos de
+  // barras eran <svg>) también la llamaba desde un ResizeObserver,
+  // porque el <svg> necesitaba que JS le recalculara el tamaño en
+  // píxeles cada vez que cambiaba el ancho del panel. Los gráficos
+  // nuevos (este archivo) son <div> normales, 100% responsivos por
+  // CSS (flexbox + %, ver modulo1.css) -- ya NO hace falta ese
+  // recálculo, así que el ResizeObserver se sacó. Además, mantenerlo
+  // causaba un bug real: ocultar/mostrar columnas durante la
+  // animación de fusión cambiaba el alto del panel, lo que disparaba
+  // un redibujado A MITAD de esa animación (perdiendo el resultado).
   function render1() {
     const renderFn = chartRenderers[activeKey];
     if (renderFn) renderFn(panel1);
   }
 
-  // Click en cualquiera de las 3 pestañas: le saca "active"/
-  // aria-selected a TODAS, se la pone solo a la clickeada, actualiza
-  // activeKey, y vuelve a dibujar.
   tabs1.forEach(function (tab) {
     tab.addEventListener('click', function () {
       tabs1.forEach(function (t) {
@@ -810,11 +999,8 @@
 
   render1(); // primer dibujo, apenas carga la página
 
-  // ResizeObserver: vuelve a llamar a render1() cada vez que el
-  // panel cambia de tamaño (por ejemplo, al rotar el celular, al
-  // redimensionar la ventana, o al mostrar/ocultar el menú lateral en
-  // mobile) -- así el gráfico SIEMPRE se recalcula para el ancho
-  // actual, en vez de quedar con el tamaño que tenía al cargar.
-  const ro1 = new ResizeObserver(function () { render1(); });
-  ro1.observe(panel1);
+  // "Soltar" global para el arrastre de "Casos por edad" (ver
+  // edadDragEnd, declarado en la sección 5). Se registra UNA sola vez
+  // acá, no adentro de renderCasosPorEdad.
+  document.addEventListener('pointerup', function () { edadDragEnd(); });
 })();
