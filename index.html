@@ -583,15 +583,24 @@
          data-chapter coincide con el número final de cada id="chapter-X".
          Los 3 videos ya NO tienen "autoplay": script.js es el único que
          decide cuándo arranca cada uno (recién al entrar a ese módulo),
-         para que no se vean ya reproduciéndose al cargar o al navegar. -->
+         para que no se vean ya reproduciéndose al cargar o al navegar.
+
+         Tampoco tienen "loop": sin ese atributo, al llegar al final cada
+         video se detiene solo y se queda mostrando su ÚLTIMO frame (en
+         vez de volver al frame 0 y arrancar de nuevo en bucle) -- eso es
+         justamente lo que se pidió: que el video "se congele" ahí
+         mientras el usuario se queda en ese módulo. Esto no choca con el
+         reinicio al CAMBIAR de módulo: ese reinicio ya lo hace script.js
+         a mano (currentTime=0 + play(), ver ahí "video.currentTime = 0"),
+         sin depender de este atributo. -->
         <div class="chapter-media" aria-hidden="true">
-          <video class="chapter-video active" data-chapter="1" muted loop playsinline>
+          <video class="chapter-video active" data-chapter="1" muted playsinline>
             <source src="801.mp4" type="video/mp4" />
           </video>
-          <video class="chapter-video" data-chapter="2" preload="metadata" muted loop playsinline>
+          <video class="chapter-video" data-chapter="2" preload="metadata" muted playsinline>
             <source src="802.mp4" type="video/mp4" />
           </video>
-          <video class="chapter-video" data-chapter="3" preload="metadata" muted loop playsinline>
+          <video class="chapter-video" data-chapter="3" preload="metadata" muted playsinline>
             <source src="803 B.mp4" type="video/mp4" />
           </video>
         </div>
