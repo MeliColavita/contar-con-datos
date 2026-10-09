@@ -13222,15 +13222,7 @@
           x: { ticks: { color: '#a99aa6' }, grid: { display: false } },
           y: {
             min: 0,
-            // Antes el techo era 160.000 -- justo encima del total más
-            // alto del dataset (Buenos Aires, 145.201), dejaba solo ~9%
-            // de aire arriba de esa barra. El número que dibuja
-            // valueLabelsPlugin (ver más arriba) queda pegado ARRIBA de
-            // la barra, así que con tan poco aire se superponía con la
-            // etiqueta del eje ("160.000"). 180.000 le da a Buenos Aires
-            // ~19% de aire -- suficiente para que el número y la
-            // etiqueta del eje no se toquen, en cualquier provincia.
-            max: 180000,
+            max: 145000,
             afterBuildTicks: (axis) => {
               axis.ticks = [
                 { value: 0 },
@@ -13240,9 +13232,7 @@
                 { value: 80000 },
                 { value: 100000 },
                 { value: 120000 },
-                { value: 140000 },
-                { value: 160000 },
-                { value: 180000 },
+                { value: 145000 },
               ];
             },
             ticks: { color: '#a99aa6' },
