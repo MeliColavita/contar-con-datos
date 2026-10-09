@@ -26,16 +26,23 @@ chapterVideos.forEach((v) => {
   v.currentTime = 0;
 });
 
-// ---------- Intro: el video aparece a los 10 segundos, desde el inicio ----------
-// Como #introVideo ya no tiene "autoplay" (ver HTML), no se reprodujo
-// nada todavía: a los 10s lo mandamos al frame 0 por las dudas y recién
-// ahí lo arrancamos (play) al mismo tiempo que el fade-in (.visible).
-setTimeout(() => {
-  if (intro.classList.contains('hidden')) return; // si ya saltó la intro, no arrancamos el video
+// ---------- Intro: el video aparece cuando el audio llega al segundo 22 ----------
+const INTRO_VIDEO_START = 22; // segundo del audio en el que entra el video
+let introVideoStarted = false;
+
+function startIntroVideo() {
+  if (introVideoStarted) return; // que arranque una sola vez
+  if (intro.classList.contains('hidden')) return; // si ya saltó la intro, no lo arrancamos
+  introVideoStarted = true;
   introVideo.currentTime = 0;
   introVideo.play().catch((err) => console.warn('No se pudo reproducir el video de intro:', err));
   introVideo.classList.add('visible');
-}, 10000);
+}
+
+// 'timeupdate' se dispara varias veces por segundo mientras suena el audio
+audio.addEventListener('timeupdate', () => {
+  if (audio.currentTime >= INTRO_VIDEO_START) startIntroVideo();
+});
 
 // ---------- Audio + botón con doble rol ----------
 // El mismo botón (#audioBtn) cumple dos roles, uno después del otro:
