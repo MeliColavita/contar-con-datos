@@ -357,7 +357,7 @@
     // salvo que se aprete "Volver a adivinar").
     const prompt = document.createElement('div');
     prompt.className = 'em-prompt';
-    prompt.innerHTML = '<span class="dot" aria-hidden="true"></span>¿Hasta dónde creés que llega mama? Arrastrá la barra.';
+    prompt.innerHTML = '<span class="em-prompt-dot" aria-hidden="true"></span>¿Hasta dónde creés que llega mama? Arrastrá la barra.';
     prompt.hidden = tipoState.revealed;
     container.appendChild(prompt);
 
@@ -442,7 +442,10 @@
     actions.appendChild(btnReset);
     container.appendChild(actions);
 
-    renderInlineStats(container, chapter1Stats);
+    // Clase extra (además de la que ya pone renderInlineStats) para
+    // poder empujar ESTOS datos más abajo sin tocar los de "Casos por
+    // edad" -- ver .em-inline-stats-tipo en modulo1.css.
+    renderInlineStats(container, chapter1Stats).classList.add('em-inline-stats-tipo');
 
     // reveal(doAnimate): muestra la respuesta real de Mama. Se llama
     // con doAnimate=true SOLO desde el soltar del arrastre (la ÚNICA
@@ -457,28 +460,52 @@
       const bar = mama.querySelector('.em-bar');
       const valEl = mama.querySelector('.em-val');
       const lblH = mama.querySelector('.em-lbl').offsetHeight;
-      const usableH = mama.clientHeight - lblH - 10;
       const guess = tipoState.guess;
       const pct = (real / TIPO_MAX) * 100;
 
-      // Línea punteada "Tu respuesta", a la altura que marcó el
-      // usuario (si ya había una de un render anterior, se saca).
+      // Dónde ubicar la línea "Tu respuesta": NO alcanza con calcular
+      // "guess/TIPO_MAX" a mano y asumirlo como % del alto de la
+      // columna -- .em-bar comparte ese flex-column con .em-val y
+      // .em-lbl, así que flexbox la encoge un poco para que los 3
+      // entren (su alto real termina siendo MENOS que un % puro del
+      // alto de la columna, y cuánto menos no es algo fácil de
+      // predecir a mano). Antes esto hacía que, con una adivinanza
+      // bastante más alta que el valor real, la línea terminara muy
+      // arriba de donde debía -- pisando el número ("20.750").
+      // Solución: en vez de recalcular la proporción, le preguntamos
+      // al navegador cuánto mide la barra YA puesta en su alto real
+      // (sin transición, por un instante) y ubicamos la línea en
+      // proporción a ESA medida real -- así, cuando la adivinanza es
+      // igual al valor real, la línea cae exactamente sobre la punta
+      // de la barra, siempre.
+      bar.style.transition = 'none';
+      bar.style.height = pct + '%';
+      const finalBarH = bar.getBoundingClientRect().height;
+      const barBottomOffset = lblH + 10; // 10 = margin-top de .em-lbl (ver modulo1.css)
+      const guessPx = finalBarH * (guess / real);
+
+      // Línea punteada "Tu respuesta" (si ya había una de un render
+      // anterior, se saca).
       const oldLine = mama.querySelector('.em-guess-line');
       if (oldLine) oldLine.remove();
       const line = document.createElement('div');
       line.className = 'em-guess-line';
-      line.style.bottom = (lblH + 10 + (guess / TIPO_MAX / 100) * usableH * 100) + 'px';
+      line.style.bottom = (barBottomOffset + guessPx) + 'px';
       line.innerHTML = '<span>Tu respuesta</span>';
       mama.appendChild(line);
 
       if (doAnimate && !reduceMotion) {
+        // La medición de arriba ya dejó la barra en su alto final,
+        // sin transición -- la volvemos a 0 y recién ahí la animamos,
+        // para que el crecimiento se siga viendo igual que antes.
+        bar.style.height = '0%';
+        void bar.offsetWidth; // fuerza un reflow: sin esto, el navegador podría saltearse el 0% y no animar nada
         requestAnimationFrame(function () {
           bar.style.transition = 'height .9s cubic-bezier(.2,.8,.2,1)';
           bar.style.height = pct + '%';
         });
         countUp(valEl, real);
       } else {
-        bar.style.height = pct + '%';
         valEl.textContent = formatNumber(real);
       }
 
@@ -591,12 +618,18 @@
           const bars = others.map(function (c) { return c.querySelector('.em-bar'); });
           bars.forEach(function (b) { b.style.visibility = 'hidden'; });
           // Vuelan en orden INVERSO (Tiroides -- el de más arriba en
-          // la pila -- primero), como pide la consigna.
+          // la pila -- primero), como pide la consigna. duration/
+          // stagger más cortos que antes (eran 1100/140, hasta 1,5s
+          // en total): cada barra real queda INVISIBLE (ver
+          // bars.forEach más arriba) hasta que aterriza su propio
+          // clon -- con la secuencia tan larga, se sentía como que
+          // "se rompía" (una barra desaparecida un buen rato antes de
+          // reaparecer), más que una animación prolija.
           const srcRev = src.slice().reverse();
           const tgtRev = bars.map(function (b) { return rel(b, chart); }).reverse();
           const lblRev = others.map(function (c) { return c.querySelector('.em-lbl').textContent; }).reverse();
           await fly(chart, srcRev, tgtRev, {
-            duration: 1100, stagger: 140, easing: 'cubic-bezier(.45,.05,.25,1)', labels: lblRev,
+            duration: 650, stagger: 90, easing: 'cubic-bezier(.45,.05,.25,1)', labels: lblRev,
             onLand: function (k) {
               const realIdx = others.length - 1 - k; // deshace el reverse
               bars[realIdx].style.visibility = '';
@@ -645,7 +678,7 @@
 
     const prompt = document.createElement('div');
     prompt.className = 'em-prompt';
-    prompt.innerHTML = '<span class="dot" aria-hidden="true"></span>Tocá o arrastrá sobre las barras para elegir un rango de edad.';
+    prompt.innerHTML = '<span class="em-prompt-dot" aria-hidden="true"></span>Tocá o arrastrá sobre las barras para elegir un rango de edad.';
     container.appendChild(prompt);
 
     // Chips de acceso rápido. "r" = [índice desde, índice hasta] en "data".

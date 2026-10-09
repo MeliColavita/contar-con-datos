@@ -158,7 +158,18 @@
   font-size:0.85rem;
   margin-bottom:12px;
 }
-.em-prompt .dot{
+/* .em-prompt-dot, NO ".dot" a secas: style.css ya tiene una clase
+   ".dot" (los puntitos decorativos alrededor del título del
+   capítulo) con sus propias reglas -- entre ellas, position:absolute
+   y, mientras el capítulo está activo, "animation:dotPop" (un pop que
+   aparece una vez y se desvanece). Como ese ".dot" general tiene MÁS
+   especificidad (.chapter.active .dot) que la que tenía acá
+   (.em-prompt .dot), le ganaba a esta animación cada vez que se
+   recreaba el punto (en cada cambio de pestaña) -- el puntito se veía
+   "saltar"/parpadear en vez de pulsar suave, y encima quedaba
+   position:absolute en vez de alineado con el texto. Con un nombre de
+   clase propio, sin nada en común con ".dot", no hay ningún choque. */
+.em-prompt-dot{
   width:8px;
   height:8px;
   border-radius:50%;
@@ -199,6 +210,19 @@
   padding-top:30px; /* aire arriba para que el número más alto no se pegue al borde */
   position:relative;
   touch-action:none; /* evita que el navegador interprete el arrastre como scroll en celular */
+}
+/* Antes "Casos por tipo" compensaba la diferencia de alto con
+   "El tiempo" (módulo 2) con un margen vacío grande antes de los 2
+   datos de abajo (ver .em-inline-stats-tipo) -- Bren pidió aprovechar
+   ese espacio en vez de dejarlo vacío. Gran parte de ese alto pasa
+   ACÁ: barras más grandes/presentes (250px en vez de 220px). El
+   resto (no todo: así no vuelve a quedar un hueco vacío) se lo queda
+   .em-inline-stats-tipo, que empuja los 2 datos de abajo un poco más
+   -- entre las dos cosas, la tarjeta sigue midiendo lo mismo que
+   módulo 2, sin crecer. "Casos por edad" se queda en 220px -- esa
+   pestaña ya medía lo que tenía que medir, no hacía falta tocarla. */
+.em-chart-tipo{
+  height:250px;
 }
 /* "Sumá los otros 4" (solo tipo): el grid pasa a 2 columnas
    centradas, del mismo ancho que tenía Mama sola -- --em-colw lo fija
@@ -279,6 +303,15 @@
   font-style:italic;
   font-size:0.85rem;
   margin-top:-4px;
+}
+/* Solo "Casos por tipo": acá sí hace falta más aire que el -4px base
+   -- "Cuello uterino" se parte en 2 líneas, y con el margen negativo
+   esta nota quedaba prácticamente pisando esa segunda línea ("se ve
+   apretado"). "Casos por edad" usa la misma clase .em-axis-note pero
+   sus etiquetas ("15-29", "30-44"...) nunca se parten en 2 líneas, así
+   que ahí el -4px de base sigue andando bien -- no se tocó. */
+.em-chart-tipo + .em-axis-note{
+  margin-top:9px;
 }
 
 /* ---- "Casos por tipo": zona de arrastre + línea "Tu respuesta" ---- */
@@ -506,7 +539,7 @@
    elementos nuevos (el.animate(), en modulo1.js, ya se salta solo con
    duration:0 cuando corresponde -- ver reduceMotion ahí). */
 @media (prefers-reduced-motion:reduce){
-  .em-bar, .em-val, .em-lbl, .em-col, .em-prompt .dot{
+  .em-bar, .em-val, .em-lbl, .em-col, .em-prompt-dot{
     transition:none !important;
     animation:none !important;
   }
@@ -564,6 +597,19 @@
   margin-top:10px;
   padding-top:10px;
   border-top:1px solid var(--panel-border);
+}
+/* "Casos por tipo" únicamente: un poco más de separación que la base
+   (10px) antes de estos 2 datos y su línea divisoria (el border-top
+   de .em-inline-stats se mueve con el bloque, al moverse con
+   margin-top). Antes este valor era mucho más grande (92px) para
+   compensar la diferencia de alto con "El tiempo" (módulo 2) -- eso
+   dejaba un hueco vacío grande que no se veía bien. Ahora esa
+   diferencia la absorbe el GRÁFICO en sí (más alto, ver
+   .em-chart-tipo más arriba), así que acá alcanza con un empujón
+   chico. No se tocó "Casos por edad": esa pestaña ya medía
+   prácticamente lo mismo que módulo 2 de entrada. */
+.em-inline-stats-tipo{
+  margin-top:49px;
 }
 
 /* ============================================================
