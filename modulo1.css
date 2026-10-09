@@ -12,9 +12,19 @@
      .em-card         -> la tarjeta completa
      .em-tabs/.em-tab -> las 3 pestañas de arriba
      .em-panel        -> el contenedor donde se dibuja el gráfico activo
-     .em-svg          -> el <svg> de los gráficos de barras
+     .em-chart-tipo/
+     .em-chart-edad   -> la fila de columnas de cada gráfico interactivo
+     .em-col          -> una columna (barra + valor + etiqueta)
+     .em-bar          -> la barra en sí (dentro de .em-col)
+     .em-guess-*       -> la zona de arrastre para "adivinar" (Casos por tipo)
+     .em-stack/.em-fly -> la pila "los otros 4 juntos" y sus clones voladores
+     .em-chips/.em-chip -> los 3 botones de rango rápido (Casos por edad)
+     .em-btn           -> "Sumá los otros 4" / "Ver por separado" / "Volver a adivinar"
+     .em-prompt        -> la invitación a interactuar, con el punto que pulsa
+     .em-feedback      -> el mensaje de resultado (Casos por tipo)
+     .em-tip           -> el tooltip compartido, hover sobre cualquier barra
      .em-stat*        -> los "datos sueltos" (número grande + etiqueta)
-     .em-waffle-*     -> todo lo del gráfico de 100 cuadrados
+     .em-waffle-*     -> todo lo del gráfico de 100 cuadrados (Porcentaje)
      .em-caption      -> texto chico al pie (hoy sin uso en ningún
                          gráfico puntual, queda por si hace falta)
    ============================================================ */
@@ -106,22 +116,11 @@
 .em-panel{
   width:100%;
 }
-/* El <svg> en sí (los gráficos de barras, no el waffle que usa <div>
-   normales). width:100% + height:auto hace que el SVG escale
-   manteniendo su proporción según el viewBox que le puso el JS, sin
-   importar el ancho real de la tarjeta. display:block saca un
-   pequeño espacio "fantasma" que los navegadores agregan por defecto
-   debajo de los elementos inline (como <svg> lo es por default) --
-   sin esto, quedaba un hueco de unos pocos píxeles abajo del gráfico.
-   El JS le agrega esta clase al crear el SVG (createChartSVG en
-   modulo1.js) en vez de poner esos mismos 3 valores como estilo
-   inline -- más prolijo: el estilo vive en el CSS, no "pegoteado" en
-   el JS. */
-.em-svg{
-  width:100%;
-  height:auto;
-  display:block;
-}
+/* (Acá vivía .em-svg, el estilo del <svg> de los gráficos de barras
+   viejos. Se borró junto con todo el dibujado por SVG de modulo1.js:
+   "Casos por tipo" y "Casos por edad" ahora se arman con <div>
+   normales -- ver las reglas nuevas más abajo, desde "GRÁFICOS DE
+   BARRAS INTERACTIVOS".) */
 
 /* El párrafo de bajada ARRIBA de cada gráfico (ej. "Casos nuevos
    estimados en mujeres, por tipo de cáncer. Argentina, 2024.") no
@@ -133,6 +132,384 @@
    GRÁFICO que viene justo debajo, no de otro párrafo de texto. */
 .em-panel .ui-sub{
   margin-bottom:10px;
+}
+
+/* ============================================================
+   GRÁFICOS DE BARRAS INTERACTIVOS ("Casos por tipo" / "Casos por edad")
+   Reemplazan a los <svg> viejos: ahora cada barra es un <div> normal,
+   lo que permite animar con Web Animations API (el.animate(), en
+   modulo1.js) para la fusión/separación de columnas y el "clon
+   volador" -- mucho más simple que manejar esas mismas animaciones
+   con coordenadas de SVG. Comparten estas clases las 2 pestañas,
+   salvo donde se aclara "solo tipo" / "solo edad".
+   ============================================================ */
+
+/* Invitación a interactuar ("¿Hasta dónde creés..." / "Tocá o
+   arrastrá..."), con un puntito que pulsa al lado -- la misma idea
+   que ya usa el prototipo de referencia. display:none cuando
+   modulo1.js le pone [hidden] (ej. apenas se revela la respuesta de
+   "Casos por tipo"). */
+.em-prompt{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:var(--rose-strong);
+  font-weight:600;
+  font-size:0.85rem;
+  margin-bottom:12px;
+}
+.em-prompt .dot{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:var(--rose-strong);
+  flex:none;
+  animation:em-dot-pulse 1.4s infinite;
+}
+@keyframes em-dot-pulse{
+  0%,100%{ box-shadow:0 0 0 0 var(--rose-glow); }
+  50%{ box-shadow:0 0 0 8px rgba(255,111,156,0); }
+}
+
+/* .em-col y .em-tipo-actions definen su propio "display" (flex, ver
+   abajo) -- eso empata en especificidad contra el estilo por defecto
+   del navegador para el atributo [hidden] (que normalmente alcanza
+   solo con poner hidden="" para ocultar cualquier cosa) y, al
+   empatar, GANA la regla más nueva en el archivo, o sea la nuestra:
+   sin esto, modulo1.js podía marcar un elemento hidden=true y
+   igual se seguía viendo. Se fuerza acá explícitamente. */
+.em-col[hidden],
+.em-tipo-actions[hidden],
+.em-prompt[hidden]{
+  display:none;
+}
+
+/* Fila de columnas: mismo criterio para "tipo" (6 columnas posibles,
+   la 6ta -- la pila -- oculta hasta fusionar) y "edad" (5 fijas).
+   align-items:flex-end = todas las barras "paran" sobre el mismo
+   piso, sin importar su alto individual. height fija (en vez de
+   depender del contenido) porque la escala de los datos es lo que
+   define cuánto crece cada barra, no el layout. */
+.em-chart-tipo,
+.em-chart-edad{
+  display:flex;
+  align-items:flex-end;
+  gap:clamp(8px,2.5vw,24px);
+  height:220px;
+  padding-top:30px; /* aire arriba para que el número más alto no se pegue al borde */
+  position:relative;
+  touch-action:none; /* evita que el navegador interprete el arrastre como scroll en celular */
+}
+/* "Sumá los otros 4" (solo tipo): el grid pasa a 2 columnas
+   centradas, del mismo ancho que tenía Mama sola -- --em-colw lo fija
+   modulo1.js al momento de fusionar, leyendo el ancho real de Mama en
+   ese instante. */
+.em-chart-tipo.em-merged{
+  justify-content:center;
+}
+.em-chart-tipo.em-merged .em-col{
+  flex:0 0 var(--em-colw);
+}
+
+/* Una columna (barra + valor + etiqueta). flex:1 = todas se reparten
+   el ancho disponible por igual (salvo en modo "fusionado", ver
+   arriba). position:relative porque la zona de arrastre de Mama
+   (.em-guess-zone) se posiciona absolute adentro suyo. */
+.em-col{
+  flex:1;
+  min-width:0;
+  height:100%;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+  align-items:center;
+  position:relative;
+  transition:opacity .35s ease;
+}
+/* "Ver por separado" en pleno vuelo: mientras cada bloque vuela de
+   vuelta a su columna, el número/etiqueta de ESA columna arrancan
+   invisibles (onLand, en modulo1.js, les saca esta clase apenas
+   aterriza su bloque -- así el dato "aparece" recién cuando el
+   bloque llega, no antes). */
+.em-col.em-ghost .em-val,
+.em-col.em-ghost .em-lbl{
+  opacity:0;
+}
+
+.em-val{
+  font-weight:700;
+  font-variant-numeric:tabular-nums;
+  font-size:clamp(0.78rem,2vw,0.95rem);
+  color:var(--text);
+  margin-bottom:6px;
+  white-space:nowrap;
+  transition:opacity .3s ease;
+}
+.em-lbl{
+  margin-top:10px;
+  font-size:clamp(0.7rem,1.8vw,0.85rem);
+  color:var(--text);
+  text-align:center;
+  transition:opacity .3s ease;
+}
+
+/* La barra en sí. Color por defecto = rosa apagado (el mismo que ya
+   usaba este sitio para "lo no destacado" -- PANEL.barMuted en
+   modulo1.js); .em-bar-mama (siempre, la columna de Mama en "Casos
+   por tipo") y .em-bar-sel (el rango elegido en "Casos por edad") la
+   pasan a rosa fuerte. height la fija modulo1.js en cada barra según
+   su valor -- acá solo se anima el CAMBIO (el crecimiento al revelar
+   la respuesta real, o al cambiar de rango de edad). */
+.em-bar{
+  width:min(100%,96px);
+  border-radius:7px 7px 3px 3px;
+  background:rgba(255,182,206,0.4);
+  cursor:pointer;
+  transition:height .5s ease, background .25s ease;
+}
+.em-bar-mama,
+.em-bar-sel{
+  background:var(--rose-strong);
+}
+.em-col-age{ cursor:pointer; } /* toda la columna (no solo la barra) responde al clic/arrastre en "Casos por edad" */
+
+.em-axis-note{
+  text-align:center;
+  color:var(--text-dim);
+  font-style:italic;
+  font-size:0.85rem;
+  margin-top:-4px;
+}
+
+/* ---- "Casos por tipo": zona de arrastre + línea "Tu respuesta" ---- */
+/* Capa invisible sobre la columna de Mama, desde la etiqueta hacia
+   arriba -- ahí es donde se puede arrastrar para adivinar.
+   cursor:ns-resize = el ícono del mouse avisa "esto se mueve
+   vertical", aunque en celular el touch lo ignora (no hace falta). */
+.em-guess-zone{
+  position:absolute;
+  left:0;
+  right:0;
+  top:0;
+  cursor:ns-resize;
+}
+/* La barra punteada que sigue al arrastre, con la manija "↕" arriba. */
+.em-guess-bar{
+  position:absolute;
+  bottom:0;
+  left:50%;
+  transform:translateX(-50%);
+  width:min(100%,96px);
+  border:2px dashed var(--rose-strong);
+  border-radius:7px 7px 3px 3px;
+  background:rgba(255,111,156,0.18);
+}
+.em-handle{
+  position:absolute;
+  left:50%;
+  top:-13px;
+  transform:translateX(-50%);
+  width:38px;
+  height:20px;
+  border-radius:999px;
+  background:var(--rose-strong);
+  color:#1a0510;
+  font-size:0.75rem;
+  font-weight:700;
+  display:grid;
+  place-items:center;
+}
+/* Línea punteada que marca dónde quedó la respuesta adivinada, una
+   vez revelada la real -- queda puesta ahí de forma permanente (hasta
+   "Volver a adivinar"), para poder comparar a simple vista. */
+.em-guess-line{
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  width:min(130%,130px);
+  border-top:2px dashed var(--text);
+  pointer-events:none;
+}
+.em-guess-line span{
+  position:absolute;
+  right:0;
+  top:-1.4em;
+  font-size:0.72rem;
+  color:var(--text);
+  white-space:nowrap;
+  background:var(--panel);
+  padding:0 4px;
+}
+
+/* ---- "Casos por tipo": la pila "Los otros 4 juntos" ---- */
+/* Cada segmento de la pila mide "flex:<valor>" (puesto inline por
+   modulo1.js) -- así el alto de cada franja es proporcional a su
+   propio valor, sin tener que calcular porcentajes a mano. */
+.em-stack{
+  width:min(100%,96px);
+  display:flex;
+  flex-direction:column;
+  border-radius:7px 7px 3px 3px;
+  overflow:hidden;
+}
+.em-stack > div{
+  background:rgba(255,182,206,0.4);
+  border-top:2px solid var(--panel);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  font-size:clamp(0.58rem,1.5vw,0.68rem);
+  font-weight:600;
+  line-height:1.1;
+  color:var(--text);
+  overflow:hidden;
+  padding:0 3px;
+  cursor:pointer;
+}
+.em-stack > div:first-child{ border-top:0; }
+
+/* El clon "volador" durante la fusión/separación: una copia temporal
+   que modulo1.js anima de una posición a otra con el.animate() y
+   saca del DOM al llegar -- mismo look que una barra/segmento, para
+   que el "viaje" se vea continuo. */
+.em-fly{
+  position:absolute;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  line-height:1.1;
+  font-size:clamp(0.58rem,1.5vw,0.68rem);
+  font-weight:600;
+  color:var(--text);
+  background:rgba(255,182,206,0.4);
+  border-radius:7px 7px 3px 3px;
+  overflow:hidden;
+  z-index:3;
+  pointer-events:none;
+}
+
+/* Mensaje de resultado ("¡Muy cerca!", "Colorrectal + ... = ..."),
+   debajo del gráfico. min-height reserva 1 línea siempre, para que no
+   "salte" el layout cuando pasa de vacío a tener texto. */
+.em-feedback{
+  min-height:1.5em;
+  font-size:0.95rem;
+  color:var(--text);
+}
+.em-feedback b{ color:var(--rose-strong); }
+
+/* Botones "Sumá los otros 4" / "Ver por separado" / "Volver a
+   adivinar". Mismo look de píldora que .em-tab, pero CONTORNEADOS
+   (fondo transparente) en vez de rellenos -- para que se lean como
+   una acción secundaria, no como otra pestaña más. */
+.em-tipo-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+}
+.em-btn{
+  font-family:var(--sans);
+  font-size:0.85rem;
+  font-weight:600;
+  background:transparent;
+  color:var(--text);
+  border:1px solid var(--rose-strong);
+  border-radius:999px;
+  padding:8px 16px;
+  cursor:pointer;
+  transition:background .2s;
+}
+.em-btn:hover{ background:rgba(255,111,156,0.12); }
+.em-btn:disabled{ opacity:0.5; cursor:default; }
+.em-btn-ghost{
+  border-color:var(--panel-border);
+  color:var(--text-dim);
+}
+
+/* ---- "Casos por edad": chips de acceso rápido ---- */
+.em-chips{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.em-chip{
+  font-family:var(--sans);
+  font-size:0.8rem;
+  font-weight:600;
+  background:rgba(255,255,255,0.04);
+  color:var(--text-dim);
+  border:1px solid var(--panel-border);
+  border-radius:999px;
+  padding:6px 14px;
+  cursor:pointer;
+  transition:all .2s;
+}
+.em-chip:hover{ border-color:rgba(255,255,255,0.3); color:var(--text); }
+/* El chip activo lo marca modulo1.js con aria-pressed="true" cuando
+   el rango elegido coincide EXACTO con el de ese chip (si el usuario
+   arrastra un rango "suelto", ningún chip queda marcado). */
+.em-chip[aria-pressed="true"]{
+  background:var(--rose-strong);
+  border-color:var(--rose-strong);
+  color:#1a0510;
+}
+
+/* Nota chica debajo de "Casos por edad" ("Cantidad de casos, no
+   riesgo..."). Mismo tamaño/color que .ui-sub, para que se lea como
+   una aclaración secundaria, no como el cuerpo principal del texto. */
+.em-note{
+  font-size:0.8rem;
+  color:var(--text-dim);
+  margin:0;
+}
+
+/* ---- Tooltip compartido (hover sobre cualquier barra/segmento) ----
+   Mismo criterio visual que .br-tooltip en módulo 2 (tarjeta chica
+   con fondo + borde + sombra), pero vive en <body> -- modulo1.js lo
+   reposiciona con JS en cada pointermove en vez de depender de un
+   contenedor position:relative fijo, porque puede aparecer sobre
+   CUALQUIERA de las columnas o segmentos de la pila. */
+.em-tip{
+  position:absolute;
+  z-index:30;
+  pointer-events:none;
+  background:var(--panel);
+  border:1px solid var(--panel-border);
+  border-radius:12px;
+  padding:10px 12px;
+  font-size:0.85rem;
+  min-width:170px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.5);
+  font-variant-numeric:tabular-nums;
+}
+.em-tip strong{
+  font-family:var(--serif);
+  color:var(--rose-strong);
+  font-size:1rem;
+  display:block;
+  margin-bottom:4px;
+}
+.em-tip div{
+  display:flex;
+  justify-content:space-between;
+  gap:14px;
+  color:var(--text-dim);
+}
+.em-tip div span:last-child{
+  color:var(--text);
+  font-weight:600;
+}
+
+/* Respeta "reducir movimiento": apaga las transiciones CSS de los
+   elementos nuevos (el.animate(), en modulo1.js, ya se salta solo con
+   duration:0 cuando corresponde -- ver reduceMotion ahí). */
+@media (prefers-reduced-motion:reduce){
+  .em-bar, .em-val, .em-lbl, .em-col, .em-prompt .dot{
+    transition:none !important;
+    animation:none !important;
+  }
 }
 
 /* Texto chico ABAJO del gráfico -- hoy ningún gráfico puntual lo usa,
