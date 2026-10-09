@@ -521,3 +521,24 @@
   @media (hover:none){ /* pantallas táctiles: botones de al menos 44px */
     .nav-item, .ui-tab, .ui-seg button, .audio-btn{min-height:44px;}
   }
+
+  /* ============ PANTALLAS BAJAS (alto chico) ============
+     Hasta acá todos los @media de este archivo reaccionan al ANCHO.
+     Este reacciona al ALTO: pensado para notebooks con poco alto
+     disponible -- ya sea porque la pantalla es chica (ej. 1366x768)
+     o porque el sistema operativo tiene activado un escalado (ej.
+     125%/150% en Windows, muy común), que reduce el alto útil en
+     píxeles CSS aunque la resolución nominal sea alta. En una Mac sin
+     ese escalado, 100vh da bastante más alto real -- por eso la
+     tarjeta puede entrar sin barra de scroll ahí y no en una notebook
+     Windows con la misma ventana maximizada.
+     760px de techo = aprox. lo que queda de alto útil en esos casos
+     comunes, descontando barra de tareas/navegador. */
+  @media (max-height:760px){
+    .layout{padding-top:14px; padding-bottom:14px; gap:16px;}
+    .chapter-header{margin-bottom:0;}
+    .chapter-title{font-size:clamp(1.8rem,4vw,2.6rem);}
+    .chapter{min-height:0;} /* el piso fijo de 500px podía por sí solo pasarse del alto disponible */
+    .ui-panel{padding:8px 16px;}
+    .ui-lede{margin-bottom:3px;}
+  }
