@@ -380,6 +380,13 @@
   margin-bottom:14px;
 }
 
+/* Solo "Casos por edad": despega la nota "Años" de las etiquetas de las
+   barras y la deja centrada debajo del gráfico. */
+.em-chart-edad + .em-axis-note{
+  margin-top:12px;
+  text-align:center;
+}
+
 /* ---- "Casos por tipo": zona de arrastre + línea "Tu respuesta" ---- */
 /* Capa invisible sobre la columna de Mama, desde la etiqueta hacia
    arriba -- ahí es donde se puede arrastrar para adivinar.

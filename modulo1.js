@@ -1088,6 +1088,20 @@
       tab.classList.add('active');
       tab.setAttribute('aria-selected', 'true');
       activeKey = tab.dataset.chart;
+      // "Casos por tipo"/"Casos por edad" guardan su estado para que un
+      // resize a mitad de interacción no lo borre (ver tipoState/
+      // edadState, arriba) -- pero eso también hacía que, al VOLVER a
+      // la pestaña después de haber jugado, apareciera tal cual se
+      // había dejado (ya revelado/fusionado, o con un rango de edad
+      // viejo) en vez de arrancar de cero. Emi pidió lo contrario: que
+      // cada click en la pestaña reinicie el estado, así "Casos por
+      // tipo" siempre vuelve a mostrar el arrastre desde el principio,
+      // y "Casos por edad" siempre arranca en "Menos de 45".
+      if (activeKey === 'casosPorTipo') {
+        tipoState = { revealed: false, guess: null, merged: false };
+      } else if (activeKey === 'casosPorEdad') {
+        edadState.sel = [0, 1]; // "Menos de 45" (ver chips, más abajo: { label: 'Menos de 45', r: [0, 1] })
+      }
       render1();
     });
   });
