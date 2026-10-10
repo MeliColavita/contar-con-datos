@@ -279,19 +279,21 @@
   // el siguiente (efecto "en cadena" en vez de todos a la vez).
   // "opts.onLand(k)" se llama apenas ATERRIZA el clon k-ésimo (antes
   // de que terminen los demás) -- lo usa "Ver por separado" para que
-  // el número/etiqueta de cada columna aparezca apenas llega su
-  // bloque, no recién cuando terminan los 4.
+  // la barra/etiqueta real de cada columna reaparezca apenas llega su
+  // clon, no recién cuando terminan los 4. Los clones son SOLO el
+  // rectángulo de color (sin texto adentro): antes llevaban el nombre
+  // de la categoría puesto encima, pero ni la barra de origen ni la de
+  // destino tienen texto ahí realmente (vive aparte, en .em-lbl) --
+  // que apareciera/desapareciera de golpe con el clon se veía raro.
   function fly(chartEl, from, to, opts) {
     opts = opts || {};
     const duration = opts.duration != null ? opts.duration : 750;
     const stagger = opts.stagger != null ? opts.stagger : 110;
     const easing = opts.easing || 'cubic-bezier(.3,.7,.2,1)';
-    const labels = opts.labels || [];
     const onLand = opts.onLand || function () {};
     return Promise.all(from.map(function (f, k) {
       const d = document.createElement('div');
       d.className = 'em-fly';
-      if (labels[k]) d.textContent = labels[k];
       Object.assign(d.style, f);
       chartEl.appendChild(d);
       const anim = d.animate([f, to[k]], {
@@ -354,10 +356,12 @@
 
     // Invitación a jugar, con el punto rosa que pulsa -- se oculta en
     // cuanto se revela la respuesta (y se queda oculta para siempre,
-    // salvo que se aprete "Volver a adivinar").
+    // salvo que se aprete "Volver a adivinar"). "em-prompt-tipo" (además
+    // de la "em-prompt" compartida con "Casos por edad") es lo que deja
+    // agrandar/centrar el texto SOLO acá, sin afectar el prompt de edad.
     const prompt = document.createElement('div');
-    prompt.className = 'em-prompt';
-    prompt.innerHTML = '<span class="em-prompt-dot" aria-hidden="true"></span>¿Hasta dónde creés que llega el cancer de mama? Arrastrá la barra.';
+    prompt.className = 'em-prompt em-prompt-tipo';
+    prompt.innerHTML = '<span class="em-prompt-dot" aria-hidden="true"></span>Arrastrá la barra rosa y soltala para ver el dato.';
     prompt.hidden = tipoState.revealed;
     container.appendChild(prompt);
 
@@ -382,8 +386,12 @@
       const pct = (showReal ? d.valor : 0) / TIPO_MAX * 100;
       const col = document.createElement('div');
       col.className = 'em-col';
+      // em-val-q: SOLO mientras se muestra "?" (antes de arrastrar) --
+      // agranda ese signo para que invite más a jugar. Se saca sola en
+      // cuanto el usuario arrastra (ver setFromPx, más abajo), que
+      // reemplaza el "?" por el número que va adivinando.
       col.innerHTML =
-        '<div class="em-val">' + (showReal ? formatNumber(d.valor) : '?') + '</div>' +
+        '<div class="em-val' + (showReal ? '' : ' em-val-q') + '">' + (showReal ? formatNumber(d.valor) : '?') + '</div>' +
         '<div class="em-bar' + (isMama ? ' em-bar-mama' : '') + '" style="height:' + pct + '%"></div>' +
         '<div class="em-lbl">' + d.categoria + '</div>';
       const bar = col.querySelector('.em-bar');
@@ -396,9 +404,9 @@
     });
     const mama = cols[0];
 
-    // Columna de la suma ("Los otros 4 juntos"), oculta hasta que se
-    // aprieta "Sumá los otros 4". La pila va de ABAJO hacia ARRIBA en
-    // este orden: Colorrectal, Cuello uterino, Pulmón, Tiroides.
+    // Columna de la suma ("Los otros 4 cánceres"), oculta hasta que se
+    // aprieta "Ver los otros 4 juntos". La pila va de ABAJO hacia ARRIBA
+    // en este orden: Colorrectal, Cuello uterino, Pulmón, Tiroides.
     const sumCol = document.createElement('div');
     sumCol.className = 'em-col';
     sumCol.id = 'em-sum-col';
@@ -410,7 +418,7 @@
         return '<div data-i="' + i + '" style="flex:' + data[i].valor + '">' + data[i].categoria + '</div>';
       }).join('') +
       '</div>' +
-      '<div class="em-lbl">Los otros 4 juntos</div>';
+      '<div class="em-lbl">Los otros 4 cánceres</div>';
     sumCol.querySelectorAll('.em-stack > div').forEach(function (seg) {
       const d = data[+seg.dataset.i];
       seg.addEventListener('pointermove', function (e) { showTip(e, tipoTipHTML(d)); });
@@ -420,24 +428,29 @@
 
     const axisNote = document.createElement('div');
     axisNote.className = 'em-axis-note';
-    axisNote.textContent = 'Top 5 cánceres frecuentes';
+    axisNote.textContent = 'Los 5 cánceres más frecuentes en mujeres'; // antes "Top 5 cánceres frecuentes"
     container.appendChild(axisNote);
 
     const feedback = document.createElement('div');
     feedback.className = 'em-feedback';
     container.appendChild(feedback);
 
+    // Textos de los botones: "Ver los otros 4 juntos" (antes "Sumá los
+    // otros 4") y "Probar de nuevo" (antes "Volver a adivinar") -- el
+    // texto que aparece al separar (más abajo, dentro de
+    // applyMergeState) y el de la frase de abajo ("Tocá...") se
+    // actualizaron junto con este para que todos digan lo mismo.
     const actions = document.createElement('div');
     actions.className = 'em-tipo-actions';
     actions.hidden = !tipoState.revealed;
     const btnSum = document.createElement('button');
     btnSum.type = 'button';
     btnSum.className = 'em-btn';
-    btnSum.textContent = tipoState.merged ? 'Ver por separado' : 'Sumá los otros 4';
+    btnSum.textContent = tipoState.merged ? 'Ver por separado' : 'Ver los otros 4 juntos';
     const btnReset = document.createElement('button');
     btnReset.type = 'button';
     btnReset.className = 'em-btn em-btn-ghost';
-    btnReset.textContent = 'Volver a adivinar';
+    btnReset.textContent = 'Probar de nuevo';
     actions.appendChild(btnSum);
     actions.appendChild(btnReset);
     container.appendChild(actions);
@@ -540,10 +553,12 @@
         px = Math.max(6, Math.min(zone.clientHeight, px));
         gb.style.height = px + 'px';
         tipoState.guess = Math.max(100, Math.round((px / zone.clientHeight) * TIPO_MAX / 100) * 100);
+        valEl.classList.remove('em-val-q'); // ya hay un número real adivinado: el "?" grande deja de aplicar
         valEl.textContent = formatNumber(tipoState.guess);
       }
       requestAnimationFrame(function () {
         setFromPx(zone.clientHeight * 0.3);
+        valEl.classList.add('em-val-q'); // vuelve a mostrarse "?" (todavía no arrastró) -- re-agrega la clase que setFromPx sacó
         valEl.textContent = '?'; // el valor arranca oculto -- recién se ve al mover el dedo/mouse
       });
 
@@ -583,21 +598,66 @@
       const stackEl = sumCol.querySelector('.em-stack');
       const sumValEl = sumCol.querySelector('.em-val');
 
+      // La línea "Tu respuesta" (si todavía está, de cuando se reveló)
+      // se borra apenas se toca cualquiera de los dos botones -- fusionar
+      // o separar. Ya no vuelve a aparecer sola: solo la trae de vuelta
+      // un arrastre nuevo (ver reveal(), que la recrea desde cero cada
+      // vez). Antes se quedaba pegada a Mama y se deslizaba con ella al
+      // centrarse, lo cual no tenía sentido una vez que ya se está
+      // comparando contra "los otros 4 juntos".
+      const guessLine = mama.querySelector('.em-guess-line');
+      if (guessLine) guessLine.remove();
+
       if (tipoState.merged) {
         const x0 = mama.getBoundingClientRect().left;
         chart.style.setProperty('--em-colw', mama.getBoundingClientRect().width + 'px');
+
+        // BUG real que causaba el "desaparece y reaparece mágicamente":
+        // "src" (de dónde vuela cada clon) se tiene que medir ANTES de
+        // ocultar las columnas -- una columna con hidden=true mide
+        // 0x0 (display:none), así que los 4 clones arrancaban todos en
+        // un punto minúsculo cerca de la esquina del gráfico, en vez de
+        // la posición real de cada barra. Con eso, no había ninguna
+        // transición visible: las columnas se apagaban de golpe y, recién
+        // al final, aparecía la pila ya armada. Midiendo acá, con las 4
+        // columnas todavía visibles en su lugar de siempre, cada clon
+        // arranca exactamente donde está su barra real.
+        const src = (doAnimate && !reduceMotion)
+          ? others.map(function (c) { return rel(c.querySelector('.em-bar'), chart); })
+          : null;
+
         chart.classList.add('em-merged');
         others.forEach(function (c) { c.hidden = true; });
         sumCol.hidden = false;
         slide(mama, x0 - mama.getBoundingClientRect().left);
 
         if (doAnimate && !reduceMotion) {
-          const src = others.map(function (c) { return rel(c.querySelector('.em-bar'), chart); });
-          const tgt = Array.prototype.slice.call(stackEl.querySelectorAll('div')).map(function (seg) { return rel(seg, chart); });
-          stackEl.style.visibility = 'hidden';
+          // Los clones (.em-fly) vuelan SIN el texto de la etiqueta --
+          // antes lo llevaban adentro (ver "labels" más abajo en la
+          // versión vieja), pero la barra de origen no tiene ningún
+          // texto puesto encima (el nombre vive aparte, en .em-lbl,
+          // debajo) -- que apareciera de golpe dentro del clon quedaba
+          // raro. Ahora el clon es solo el rectángulo de color viajando.
+          const segs = Array.prototype.slice.call(stackEl.querySelectorAll('div'));
+          const tgt = segs.map(function (seg) { return rel(seg, chart); });
+          // Cada clon se saca del DOM apenas TERMINA SU PROPIO vuelo (ver
+          // fly()) -- como tienen demoras escalonadas (stagger), terminan
+          // en momentos distintos. Antes se ocultaba la pila ENTERA
+          // (stackEl) y se mostraba recién cuando terminaban los 4: el
+          // primer clon en aterrizar (Colorrectal) ya se había sacado,
+          // pero su segmento real todavía seguía oculto esperando a los
+          // otros 3 -- quedaba un hueco vacío ahí durante ese tramo ("se
+          // ve que desaparece"). Ahora cada segmento se oculta/muestra
+          // por separado, en su propio onLand -- apenas aterriza SU clon,
+          // aparece SU segmento, sin esperar a los demás (mismo criterio
+          // que ya usa "Ver por separado" con sus barras reales). El
+          // total ("20.216") sigue esperando a que terminen los 4, tiene
+          // sentido que cuente recién cuando la pila está completa.
+          segs.forEach(function (s) { s.style.visibility = 'hidden'; });
           sumValEl.style.visibility = 'hidden';
-          await fly(chart, src, tgt, { labels: others.map(function (c) { return c.querySelector('.em-lbl').textContent; }) });
-          stackEl.style.visibility = '';
+          await fly(chart, src, tgt, {
+            onLand: function (k) { segs[k].style.visibility = ''; },
+          });
           sumValEl.style.visibility = '';
           countUp(sumValEl, otherTotal);
         } else {
@@ -625,11 +685,19 @@
           // clon -- con la secuencia tan larga, se sentía como que
           // "se rompía" (una barra desaparecida un buen rato antes de
           // reaparecer), más que una animación prolija.
+          // Tampoco llevan el nombre adentro (mismo motivo que al
+          // fusionar, ver arriba): antes el texto "bajaba" pegado al
+          // clon desde la pila hasta la barra y después desaparecía de
+          // golpe al sacarse el clon, hasta que .em-lbl (el nombre de
+          // verdad, abajo de la barra) reaparecía por separado -- se
+          // veía como si el nombre cayera, se borrara y volviera a
+          // aparecer. Ahora el clon vuela vacío (solo el color) y
+          // .em-lbl/.em-val hacen su propio fade-in al aterrizar
+          // (onLand saca .em-ghost), un solo movimiento limpio.
           const srcRev = src.slice().reverse();
           const tgtRev = bars.map(function (b) { return rel(b, chart); }).reverse();
-          const lblRev = others.map(function (c) { return c.querySelector('.em-lbl').textContent; }).reverse();
           await fly(chart, srcRev, tgtRev, {
-            duration: 650, stagger: 90, easing: 'cubic-bezier(.45,.05,.25,1)', labels: lblRev,
+            duration: 650, stagger: 90, easing: 'cubic-bezier(.45,.05,.25,1)',
             onLand: function (k) {
               const realIdx = others.length - 1 - k; // deshace el reverse
               bars[realIdx].style.visibility = '';
@@ -642,8 +710,8 @@
           others.forEach(function (c) { c.hidden = false; c.classList.remove('em-ghost'); });
           slide(mama, x0 - mama.getBoundingClientRect().left);
         }
-        feedback.innerHTML = 'Tocá <b>Sumá los otros 4</b> para compararlos con Mama.';
-        btnSum.textContent = 'Sumá los otros 4';
+        feedback.innerHTML = 'Tocá <b>Ver los otros 4 juntos</b> para compararlos con Mama.';
+        btnSum.textContent = 'Ver los otros 4 juntos';
       }
       btnSum.disabled = false;
     }

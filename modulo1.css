@@ -158,6 +158,24 @@
   font-size:0.85rem;
   margin-bottom:12px;
 }
+/* .em-prompt-tipo: variante SOLO del prompt de "Casos por tipo"
+   ("Arrastrá la barra rosa..."), pedida más grande, más cerca del
+   gráfico y centrada en la tarjeta -- a diferencia del de "Casos por
+   edad", que se queda con el tamaño/alineación chica original de
+   arriba. justify-content:center centra el conjunto punto+texto como
+   una unidad (el punto se mueve con el texto, no queda fijo a la
+   izquierda). margin-bottom más chico = menos aire antes de
+   .em-chart-tipo, que es la "cercanía al gráfico" pedida -- no hace
+   falta cuidar que se superponga con el estado "fusionado" (Sumá los
+   otros 4): ese prompt ya está oculto (hidden) desde que se revela la
+   respuesta, y fusionar solo es posible DESPUÉS de revelar, así que
+   los dos nunca están visibles a la vez. */
+.em-prompt-tipo{
+  font-size:1.05rem;
+  justify-content:center;
+  text-align:center;
+  margin-bottom:6px;
+}
 /* .em-prompt-dot, NO ".dot" a secas: style.css ya tiene una clase
    ".dot" (los puntitos decorativos alrededor del título del
    capítulo) con sus propias reglas -- entre ellas, position:absolute
@@ -224,15 +242,31 @@
 .em-chart-tipo{
   height:250px;
 }
-/* "Sumá los otros 4" (solo tipo): el grid pasa a 2 columnas
-   centradas, del mismo ancho que tenía Mama sola -- --em-colw lo fija
-   modulo1.js al momento de fusionar, leyendo el ancho real de Mama en
-   ese instante. */
+/* "Ver los otros 4 juntos": el grid pasa a 2 columnas centradas, del
+   mismo ancho que tenía Mama sola -- --em-colw lo fija modulo1.js al
+   momento de fusionar, leyendo el ancho real de Mama en ese instante.
+   gap más grande que el de base (clamp 8-24px): "Los otros 4
+   cánceres" no entra en una sola línea con el gap chico sin acercarse
+   demasiado a la columna de Mama -- acá solo se pisa el gap PARA el
+   estado fusionado (la pestaña sin fusionar y "Casos por edad", que
+   comparten la misma .em-chart-tipo/.em-chart-edad, se quedan con el
+   gap de base). */
 .em-chart-tipo.em-merged{
   justify-content:center;
+  gap:48px;
 }
 .em-chart-tipo.em-merged .em-col{
   flex:0 0 var(--em-colw);
+}
+/* El texto no debe partirse en 2 líneas -- como la columna es angosta
+   (el mismo ancho que una barra sola, ver --em-colw arriba), el texto
+   se desborda un poco a los costados en vez de ajustarse al ancho de
+   la columna; como sigue centrado (text-align:center, heredado de
+   .em-lbl) y nada le recorta el desborde (.em-chart-tipo no tiene
+   overflow:hidden), se ve bien igual -- para eso es el gap más grande
+   de arriba, para que no llegue a pisar la columna de Mama. */
+#em-sum-col .em-lbl{
+  white-space:nowrap;
 }
 
 /* Una columna (barra + valor + etiqueta). flex:1 = todas se reparten
@@ -268,6 +302,13 @@
   margin-bottom:6px;
   white-space:nowrap;
   transition:opacity .3s ease;
+}
+/* .em-val-q: SOLO mientras la columna de Mama muestra "?" (antes de
+   arrastrar) -- lo agranda para que invite más a jugar. modulo1.js le
+   saca esta clase apenas hay un número real (arrastrando o ya
+   revelado), así que nunca agranda un número de verdad, solo el "?". */
+.em-val-q{
+  font-size:clamp(1.6rem,4vw,2.1rem);
 }
 .em-lbl{
   margin-top:10px;
@@ -312,6 +353,20 @@
    que ahí el -4px de base sigue andando bien -- no se tocó. */
 .em-chart-tipo + .em-axis-note{
   margin-top:9px;
+  /* Más separación de lo que viene después (.em-feedback) -- Emi marcó
+     que esta zona se veía toda apretada, con mucho espacio libre sin
+     usar más abajo (antes de los 2 datos sueltos). Ese espacio se
+     reparte ahora entre acá, .em-feedback y .em-tipo-actions en vez de
+     juntarse todo en un solo hueco grande antes de los datos (ver
+     .em-inline-stats-tipo, que se achicó para compensar y que la
+     tarjeta no creciera).
+     color: probé con var(--text) (más contraste) en la vuelta
+     anterior, pero Emi pidió volver al gris apagado -- el mismo
+     var(--text-dim) que ya usa .ui-sub (la bajada "Casos nuevos
+     estimados..."), para que las dos notas chicas de la tarjeta
+     combinen entre sí. */
+  color:var(--text-dim);
+  margin-bottom:14px;
 }
 
 /* ---- "Casos por tipo": zona de arrastre + línea "Tu respuesta" ---- */
@@ -430,17 +485,19 @@
   min-height:1.5em;
   font-size:0.95rem;
   color:var(--text);
+  margin-bottom:16px; /* antes 0, pegado contra los botones de abajo -- mismo motivo que el margin-bottom de .em-axis-note */
 }
 .em-feedback b{ color:var(--rose-strong); }
 
-/* Botones "Sumá los otros 4" / "Ver por separado" / "Volver a
-   adivinar". Mismo look de píldora que .em-tab, pero CONTORNEADOS
-   (fondo transparente) en vez de rellenos -- para que se lean como
-   una acción secundaria, no como otra pestaña más. */
+/* Botones "Ver los otros 4 juntos" / "Ver por separado" / "Probar de
+   nuevo". Mismo look de píldora que .em-tab, pero CONTORNEADOS (fondo
+   transparente) en vez de rellenos -- para que se lean como una acción
+   secundaria, no como otra pestaña más. */
 .em-tipo-actions{
   display:flex;
   flex-wrap:wrap;
   gap:10px;
+  margin-bottom:16px; /* antes 0, pegados contra los datos sueltos de abajo */
 }
 .em-btn{
   font-family:var(--sans);
@@ -584,15 +641,24 @@
   line-height:1.3;
 }
 /* .em-inline-stats agrupa TODOS los datos sueltos de un gráfico (ej.
-   los 2 de "Casos por edad") en una sola fila.
-     flex-wrap:wrap -> si no entran uno al lado del otro (pantalla
-                       angosta), el que no entra pasa a la fila de abajo
+   los 2 de "Casos por edad" o "Casos por tipo") en una grilla de 2
+   columnas IGUALES -- antes era flex, que solo separaba los 2 datos
+   por el gap fijo (24px) sin importar el ancho de la tarjeta: con un
+   primer dato corto ("1°") y la tarjeta ancha, el segundo quedaba
+   pegado contra el primero en vez de arrancar en una posición fija,
+   bien separados (pedido de Emi: "que cada uno inicie al principio de
+   cada columna"). repeat(2,1fr) = cada dato ocupa EXACTAMENTE la
+   mitad del ancho disponible, sin importar cuánto texto tenga.
+     auto-fit/minmax en vez de un "2" fijo -> en una tarjeta angosta
+                       (celular), si no entran los 300px mínimos para
+                       2 columnas, cae solo a 1 columna apilada (mismo
+                       resultado que el "flex-wrap:wrap" de antes)
      border-top     -> una línea sutil que los separa visualmente del
                        gráfico de arriba, para que se lean como una
                        sección aparte */
 .em-inline-stats{
-  display:flex;
-  flex-wrap:wrap;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
   gap:24px;
   margin-top:10px;
   padding-top:10px;
@@ -607,9 +673,16 @@
    diferencia la absorbe el GRÁFICO en sí (más alto, ver
    .em-chart-tipo más arriba), así que acá alcanza con un empujón
    chico. No se tocó "Casos por edad": esa pestaña ya medía
-   prácticamente lo mismo que módulo 2 de entrada. */
+   prácticamente lo mismo que módulo 2 de entrada.
+
+   Bajado de 49px a 6px: Emi pidió repartir ese hueco vacío entre
+   .em-axis-note/.em-feedback/.em-tipo-actions (que se veían todos
+   apretados entre sí) en vez de dejarlo todo junto, de una, acá abajo
+   -- la tarjeta sigue midiendo prácticamente lo mismo que antes, el
+   espacio libre simplemente ahora está distribuido en vez de
+   amontonado. */
 .em-inline-stats-tipo{
-  margin-top:49px;
+  margin-top:6px;
 }
 
 /* ============================================================
