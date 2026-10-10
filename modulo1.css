@@ -176,6 +176,17 @@
   text-align:center;
   margin-bottom:6px;
 }
+/* .em-prompt-pct: mismo criterio que .em-prompt-tipo de arriba (más
+   grande, centrada, pegada al gráfico), para la pestaña "Porcentaje".
+   Antes esta pista vivía como una frase más dentro del subtítulo gris
+   -- separada en su propio prompt, se lee mejor y de paso avisa que
+   se puede interactuar (antes no había ninguna señal visual propia). */
+.em-prompt-pct{
+  font-size:1.05rem;
+  justify-content:center;
+  text-align:center;
+  margin-bottom:10px;
+}
 /* .em-prompt-dot, NO ".dot" a secas: style.css ya tiene una clase
    ".dot" (los puntitos decorativos alrededor del título del
    capítulo) con sus propias reglas -- entre ellas, position:absolute
@@ -818,7 +829,7 @@
   text-wrap:balance;
 }
 .em-waffle-hlmeta{
-  font-size:0.8rem;
+  font-size:0.68rem; /* bajado de 0.8rem: Emi pidió que este dato (ej. "20.750 casos (29,9%) de un total de 69.449") se vea más chico */
   color:var(--text-dim);
   margin:0 0 16px;
   min-height:1.3em;
@@ -860,6 +871,7 @@
 @media (max-height:760px){
   .em-waffle-body{gap:12px;}
   .em-waffle-grid{max-width:min(195px,29vh);} /* bajado de 210px/30vh: el subtítulo con la pista de "pasá el cursor" agregó una línea más de alto */
+  .em-prompt-pct{margin-bottom:4px;} /* el prompt propio (antes era parte del subtítulo) suma una línea más -- se compensa achicando este margen */
   .em-waffle-hltext{margin:4px 0 2px;}
   .em-waffle-hlmeta{margin:0 0 8px;}
   .em-chart-tipo{height:min(193px,30vh);} /* bajado de 203px/31vh: el .chapter-header ahora deja más aire antes del título (ver style.css), así que el gráfico tiene que ceder esos px */

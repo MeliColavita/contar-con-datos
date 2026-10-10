@@ -205,7 +205,7 @@
     // Distribución de TODOS los cánceres en mujeres, AR 2024 (69.449
     // casos en total), para el waffle de 100 cuadrados.
     porcentaje: [
-      { key: 'mama', categoria: 'Mama', porcentaje: 29.9, sq: 30, casos: 20750, headline: '3 de cada 10', text: 'cánceres diagnosticados en mujeres son de mama' },
+      { key: 'mama', categoria: 'Mama', porcentaje: 29.9, sq: 30, casos: 20750, headline: '3 de cada 10', text: 'son de mama' },
       { key: 'crc', categoria: 'Colorrectal', porcentaje: 11.1, sq: 11, casos: 7698, text: 'son colorrectales' },
       { key: 'cu', categoria: 'Cuello uterino', porcentaje: 6.7, sq: 7, casos: 4679, text: 'son de cuello uterino' },
       { key: 'pul', categoria: 'Pulmón', porcentaje: 6.4, sq: 6, casos: 4469, text: 'son de pulmón' },
@@ -888,7 +888,11 @@
   // NO son "Mama" (que siempre va en rosa fuerte, para destacarla).
   // No hay una variable de :root para esto porque son colores
   // puntuales de ESTE gráfico nomás, no del resto del sitio.
-  const WAFFLE_GRAYS = ['#a3abb6', '#838b97', '#67707c', '#515963', '#353a43'];
+  // Rango ensanchado (el más claro más claro, el más oscuro más
+  // oscuro) para que las 5 categorías se distingan mejor a simple
+  // vista -- antes quedaban muy parecidas entre sí, sobre todo las 3
+  // del medio.
+  const WAFFLE_GRAYS = ['#d6dce3', '#aab2bd', '#7f8794', '#555d68', '#2c313a'];
 
   // colorForWaffle(d, index): devuelve el color que le toca a un
   // cuadrado del waffle según su categoría: rosa fuerte si es "Mama",
@@ -910,6 +914,18 @@
 
     container.innerHTML = '';
     renderSubtitle(container, subtitle);
+
+    // Invitación a interactuar, con el punto rosa que pulsa -- mismo
+    // criterio que .em-prompt-tipo en "Casos por tipo" (grande,
+    // centrada, pegada al gráfico), pero esta SIEMPRE queda visible
+    // (acá no hay ningún estado "revelado" que la oculte, a diferencia
+    // de la de "Casos por tipo"). Antes esta pista vivía pegada al
+    // final del subtítulo gris; separada en su propio prompt, puede
+    // tener su propio tamaño/color sin agrandar la bajada entera.
+    const prompt = document.createElement('div');
+    prompt.className = 'em-prompt em-prompt-pct';
+    prompt.innerHTML = '<span class="em-prompt-dot" aria-hidden="true"></span>Pasá el cursor o tocá un cuadrado para ver a qué cáncer corresponde.';
+    container.appendChild(prompt);
 
     const body = document.createElement('div');
     body.className = 'em-waffle-body';
@@ -948,9 +964,11 @@
       headline.style.color = show.key === 'mama' ? THEME.colors.roseStrong : THEME.colors.text;
       hlText.textContent = show.text;
       // toFixed(1) -> siempre 1 decimal (ej "29.9"); .replace('.',',')
-      // -> formato argentino ("29,9").
+      // -> formato argentino ("29,9"). Orden pedido: casos, total,
+      // porcentaje al final (antes el % iba pegado a los casos, en
+      // el medio -- "20.750 casos (29,9%) de un total de 69.449").
       const pctLbl = show.porcentaje.toFixed(1).replace('.', ',');
-      hlMeta.textContent = formatNumber(show.casos) + ' casos (' + pctLbl + '%) de un total de 69.449';
+      hlMeta.textContent = formatNumber(show.casos) + ' casos de un total de 69.449 (' + pctLbl + '%)';
     }
 
     // setActive(key, pin): marca una categoría como "activa"
@@ -1016,14 +1034,13 @@
       renderCasosPorEdad(container);
     },
     porcentaje: function (container) {
+      // La pista de interacción ("Pasá el cursor...") ya NO va acá --
+      // tiene su propio prompt separado (ver renderWaffleChart), igual
+      // criterio que "Casos por tipo". Esta bajada ahora solo da
+      // contexto: de dónde sale el 100% del waffle (69.449 casos/año,
+      // Argentina 2024).
       renderWaffleChart(container, chapter1Data.porcentaje, {
-        // La frase final ("Pasá el cursor...") es la pista de que los
-        // cuadrados grises son interactivos -- igual que "Pasá el
-        // cursor sobre una provincia..." en el mapa de módulo 2. Sin
-        // esto no hay ninguna señal visual de que, al pasar el mouse
-        // por un cuadrado, el texto grande cambia a esa categoría
-        // (ver updateHeadline/setActive más abajo).
-        subtitle: 'Distribución de los casos nuevos estimados de cáncer en mujeres. Argentina, 2024. Cada cuadrado es el 1% de los casos. Mueva el cursor por un cuadrado para ver a qué categoría corresponde.',
+        subtitle: 'Si tomamos todos los cánceres que se diagnostican en mujeres en Argentina (69.449 casos al año), así se reparten. Cada cuadrado es el 1%. Argentina, 2024.',
       });
     },
   };
