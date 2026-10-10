@@ -194,13 +194,12 @@
       { categoria: 'Pulmón', valor: 4469, tasa: 12.5 },
       { categoria: 'Tiroides', valor: 3370, tasa: 12.4 },
     ],
-    // Casos de cáncer de mama por grupo etario en Argentina, 2024.
     casosPorEdad: [
-      { categoria: '15-29', valor: 549 },
-      { categoria: '30-44', valor: 3984 },
-      { categoria: '45-59', valor: 6213 },
-      { categoria: '60-74', valor: 6278 },
-      { categoria: '+75', valor: 3726 },
+      { categoria: '15-29', valor: 549, desde: 15, hasta: 29 },
+      { categoria: '30-44', valor: 3984, desde: 30, hasta: 44 },
+      { categoria: '45-59', valor: 6213, desde: 45, hasta: 59 },
+      { categoria: '60-74', valor: 6278, desde: 60, hasta: 74 },
+      { categoria: '75 o más', valor: 3726, desde: 75, hasta: null },
     ],
     // Distribución de TODOS los cánceres en mujeres, AR 2024 (69.449
     // casos en total), para el waffle de 100 cuadrados.
@@ -737,7 +736,7 @@
   // ------------------------------------------------------------
   // "Casos por edad"
   // ------------------------------------------------------------
-  function renderCasosPorEdad(container) {
+    function renderCasosPorEdad(container) {
     const data = chapter1Data.casosPorEdad;
     const total = data.reduce(function (s, d) { return s + d.valor; }, 0); // 20.750
 
@@ -745,15 +744,16 @@
     renderSubtitle(container, 'Casos nuevos estimados en mujeres, por edad. Argentina, 2024.');
 
     const prompt = document.createElement('div');
-    prompt.className = 'em-prompt';
+    prompt.className = 'em-prompt em-prompt-tipo';
     prompt.innerHTML = '<span class="em-prompt-dot" aria-hidden="true"></span>Tocá o arrastrá sobre las barras para elegir un rango de edad.';
     container.appendChild(prompt);
 
     // Chips de acceso rápido. "r" = [índice desde, índice hasta] en "data".
     const chipDefs = [
-      { label: '45 a 74', r: [2, 3] },
-      { label: 'Antes de los 45', r: [0, 1] },
-      { label: 'Todas', r: [0, 4] },
+      { label: 'Menos de 45', r: [0, 1] },
+      { label: '45 a 74 años', r: [2, 3] },
+      { label: '75 o más', r: [4, 4] },
+      { label: 'Todas las edades', r: [0, 4] },
     ];
     const chipsWrap = document.createElement('div');
     chipsWrap.className = 'em-chips';
@@ -834,7 +834,7 @@
 
     const note = document.createElement('p');
     note.className = 'em-note';
-    note.textContent = 'Cantidad de casos, no riesgo: hay menos casos en mayores de 75 porque hay menos mujeres en esa franja de edad.';
+    note.textContent = 'Son cantidades de casos, no riesgo: hay menos casos después de los 75 años porque hay menos mujeres de esa edad';
     container.appendChild(note);
 
     // setSel(a, b): fija el rango elegido como [menor, mayor] (no
@@ -846,29 +846,39 @@
     }
 
     // paint(): pinta las barras del rango elegido, marca el chip que
-    // coincida (si alguno), recalcula el % / casos / por día, y arma
-    // la frase ("entre los X y Y años" / "antes de los X" / "desde
-    // los X" / "en todas las edades") -- todo calculado desde "data",
-    // nada hardcodeado.
+    // coincida (si alguno), recalcula el "X de cada 10" / casos / por
+    // día, y arma la frase -- todo calculado desde "data".
     function paint() {
       const sel = edadState.sel;
       cols.forEach(function (col, i) {
-        col.querySelector('.em-bar').classList.toggle('em-bar-sel', i >= sel[0] && i <= sel[1]);
+      col.querySelector('.em-bar').classList.toggle('em-bar-sel', i >= sel[0] && i <= sel[1]);
       });
       chipEls.forEach(function (chip) {
         chip.setAttribute('aria-pressed', chip.dataset.r === sel.join(','));
       });
       const sum = data.slice(sel[0], sel[1] + 1).reduce(function (s, d) { return s + d.valor; }, 0);
-      const lo = data[sel[0]].categoria.split('-')[0].replace('+', '');
-      const hi = data[sel[1]].categoria;
-      let rango;
-      if (sel[0] === 0 && sel[1] === 4) rango = 'en todas las edades';
-      else if (sel[0] === 0) rango = 'antes de los ' + (Number(data[sel[1]].categoria.split('-')[1]) + 1) + ' años';
-      else if (sel[1] === 4) rango = 'desde los ' + lo + ' años';
-      else rango = 'entre los ' + lo + ' y ' + hi.split('-')[1] + ' años';
+      const share = sum / total;
+      const todas = sel[0] === 0 && sel[1] === 4;
 
-      selPctEl.textContent = pctLabel(sum / total) + '%';
-      selTxtEl.textContent = 'de los casos estimados ocurren ' + rango + ' (' + formatNumber(sum) + ' casos).';
+      let rango;
+      if (todas) rango = 'en todas las edades';
+      else if (sel[0] === 0) rango = 'antes de los ' + (data[sel[1]].hasta + 1) + ' años';
+      else if (sel[1] === 4) rango = 'a partir de los ' + data[sel[0]].desde + ' años';
+      else rango = 'entre los ' + data[sel[0]].desde + ' y ' + data[sel[1]].hasta + ' años';
+
+      if (todas) {
+        // Rango completo: en vez de "10 de cada 10", el total de casos.
+        selPctEl.textContent = formatNumber(sum);
+        selTxtEl.textContent = 'casos nuevos estimados en total';
+      } else {
+        // "6 de cada 10"; si es menos del 5%, "3 de cada 100" (evita "0 de cada 10")
+        const proporcion = share * 10 < 0.5
+          ? Math.round(share * 100) + ' de cada 100'
+          : Math.round(share * 10) + ' de cada 10';
+        selPctEl.textContent = proporcion;
+        selTxtEl.textContent = 'casos ocurren ' + rango + ' (' + formatNumber(sum) + ')';
+      }
+
       selDiaEl.textContent = String(Math.round(sum / 365));
       selDiaTxtEl.textContent = 'diagnósticos por día ' + rango + '.';
     }
