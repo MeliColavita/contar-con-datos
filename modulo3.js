@@ -9,14 +9,16 @@
 //
 // A diferencia del módulo 1 (que dibuja gráficos de barras/waffle con
 // SVG puro), acá NO HACE FALTA dibujar nada "desde cero": el HTML
-// (index.html) ya trae armados los botones, el slider y los textos;
-// este script solo:
+// (index.html) ya trae armados los botones y los textos; este script
+// solo:
 //   1. Crea los puntos (<div class="me-dot">) de cada grilla, UNA
 //      sola vez, al cargar la página.
 //   2. Les cambia la clase (apagado / encendido / nuevo) cada vez que
 //      se aprieta un botón, para "pintarlos" según el modo elegido.
-//   3. Actualiza los números (7,54 / 9,33 / 302 / 373 / etc.) a mano,
-//      como texto.
+//   3. Actualiza los números (7,5 / 9,3 / 302 / 373 / etc.) a mano,
+//      como texto, y muestra/oculta los textos que solo corresponden
+//      a uno de los 2 estados (leyenda, "respuesta", pregunta,
+//      instrucción, texto del botón).
 //
 // Las grillas (me-g1, me-g2) se arman con <div> dentro de un
 // contenedor CSS Grid (.me-dotgrid) -- la misma técnica que usa el
@@ -32,8 +34,8 @@
 //
 // Igual que los otros módulos, todo vive adentro de una única función
 // que se ejecuta sola (IIFE), para no dejar ninguna variable
-// (SIN1, dots1, pintarPanel1, etc.) visible desde afuera ni pisar
-// nada de los otros módulos.
+// (dots1, pintarPanel1, etc.) visible desde afuera ni pisar nada de
+// los otros módulos.
 // ============================================================
 (function () {
   // g1 = el contenedor de la grilla del panel 1 (ver index.html:
@@ -42,10 +44,6 @@
   // script nunca tira error en una página sin este módulo.
   const g1 = document.getElementById('me-g1');
   if (!g1) return; // el módulo no está en la página, no hacemos nada
-
-  // fmt(v): redondea "v" al entero más cercano y lo formatea con
-  // puntos de miles, estilo argentino: 1234567 -> "1.234.567".
-  const fmt = (v) => Math.round(v).toLocaleString('es-AR');
 
   // crearPuntos(container, count)
   // Crea "count" elementos <div class="me-dot"> (todos arrancan
@@ -68,14 +66,6 @@
   // ============================================================
   // PANEL 1: grilla de 1.000 mujeres (tasas del estudio AIMS)
   // ============================================================
-  // SIN1 = tasa de detección de un radiólogo solo: 7,54 cánceres
-  //        detectados cada 1.000 mujeres.
-  // CON1 = tasa de detección CON apoyo de IA: 9,33 cada 1.000.
-  // Fuente de los 2 números: Kelly C.J., Wilson M. et al., Nature
-  // Cancer 2026 (el detalle completo está en el <details class=
-  // "ui-src"> del HTML, abajo de este panel).
-  const SIN1 = 7.54, CON1 = 9.33;
-
   // Crea los 1.000 puntos (40 columnas x 25 filas, definido en el
   // "style" inline del HTML: grid-template-columns:repeat(40,1fr)) y
   // guarda la referencia de cada uno en "dots1".
@@ -101,65 +91,42 @@
   //   2. Enciende los 8 de "base1" en ámbar (clase "me-lit" = "cáncer
   //      detectado", el hallazgo de un radiólogo solo).
   //   3. Si conIA es true, enciende ADEMÁS los 2 de "extra1" en rosa
-  //      (clase "me-new" = "diferencia atribuible a la IA").
-  //   4. Actualiza el número grande (7,54 o 9,33) junto a la grilla.
+  //      (clase "me-new" = "detectado de más con la IA").
+  //   4. Actualiza el número grande (7,5 o 9,3 -- redondeado a 1
+  //      decimal, pedido así por Meli; el valor exacto con intervalo
+  //      de confianza sigue estando en "Fuente").
+  //   5. Muestra/oculta la leyenda y la "respuesta" en rosa que SOLO
+  //      corresponden a la vista "IA sola" (contenido definitivo
+  //      pedido por Meli: antes estaban siempre visibles).
   function pintarPanel1(conIA) {
     dots1.forEach((d) => { d.className = 'me-dot'; });
     base1.forEach((p) => { dots1[p].className = 'me-dot me-lit'; });
     if (conIA) extra1.forEach((p) => { dots1[p].className = 'me-dot me-new'; });
-    document.getElementById('me-r1').textContent = conIA ? '9,33' : '7,54';
+    document.getElementById('me-r1').textContent = conIA ? '9,3' : '7,5';
+    document.getElementById('me-leg1-ia').hidden = !conIA;
+    document.getElementById('me-answer1').hidden = !conIA;
   }
   pintarPanel1(false); // estado inicial: sin IA
 
   // Conecta los 2 botones "Un radiólogo" / "Con apoyo de IA" del
-  // panel 1. modoPanel1(conIA) hace 2 cosas a la vez: actualiza el
+  // panel 1. modoPanel1(conIA) hace 3 cosas a la vez: actualiza el
   // atributo aria-pressed de cada botón (para que los lectores de
-  // pantalla y el estilo CSS sepan cuál está "apretado") y repinta la
-  // grilla llamando a pintarPanel1.
+  // pantalla y el estilo CSS sepan cuál está "apretado"), oculta la
+  // instrucción ("Tocá 'IA sola'...") una vez que ya está activa --
+  // sin esto seguía diciendo "tocá" aunque ya estuviera tocada, como
+  // si no hubiese pasado nada -- y repinta la grilla llamando a
+  // pintarPanel1.
   const bSin1 = document.getElementById('me-m-sin');
   const bCon1 = document.getElementById('me-m-con');
+  const prompt1 = document.getElementById('me-prompt1');
   function modoPanel1(conIA) {
     bSin1.setAttribute('aria-pressed', !conIA);
     bCon1.setAttribute('aria-pressed', conIA);
+    prompt1.hidden = conIA;
     pintarPanel1(conIA);
   }
   bSin1.onclick = () => modoPanel1(false);
   bCon1.onclick = () => modoPanel1(true);
-
-  // ============================================================
-  // SLIDER DE PROYECCIÓN ("Proyección sobre esta tasa")
-  // ============================================================
-  // El slider deja "escalar" las tasas SIN1/CON1 a una cantidad de
-  // mujeres mayor a las 115.973 del estudio real -- por eso el
-  // <details class="ui-src"> del HTML aclara que esto es una
-  // EXTRAPOLACIÓN lineal, no un resultado medido directamente por el
-  // estudio.
-  const n = document.getElementById('me-n'); // el <input type="range">
-
-  // upd()
-  // Lee el valor actual del slider (n.value, un string -- el "+"
-  // adelante lo convierte a número) y recalcula los 3 resultados:
-  //   a = cuántos detectaría un radiólogo solo, sobre "v" mujeres
-  //   b = cuántos detectaría con apoyo de IA, sobre "v" mujeres
-  //   (b - a) = la diferencia atribuible a la IA
-  // Los 3 se redondean al entero más cercano y se escriben como texto
-  // en sus respectivos <div> (me-s-sin, me-s-con, me-s-dif), junto
-  // con la etiqueta del slider (me-nlab) que muestra la cantidad de
-  // mujeres elegida.
-  function upd() {
-    const v = +n.value;
-    const a = Math.round((v * SIN1) / 1000);
-    const b = Math.round((v * CON1) / 1000);
-    document.getElementById('me-nlab').textContent = fmt(v);
-    document.getElementById('me-s-sin').textContent = fmt(a);
-    document.getElementById('me-s-con').textContent = fmt(b);
-    document.getElementById('me-s-dif').textContent = '+' + fmt(b - a);
-  }
-  // oninput se dispara en cada movimiento del slider (no solo al
-  // soltarlo), así los números se actualizan en vivo mientras se
-  // arrastra.
-  n.oninput = upd;
-  upd(); // pinta los valores iniciales (40.000 mujeres, el value por defecto del HTML) apenas carga
 
   // ============================================================
   // PANEL 2: 100 cánceres de intervalo
@@ -177,39 +144,53 @@
 
   // escapaban: las 25 posiciones FIJAS (25% de 100) que representan
   // los cánceres de intervalo que la IA habría identificado antes, si
-  // se hubiera usado en la mamografía previa.
-  const escapaban = [3, 11, 19, 27, 34, 42, 48, 55, 61, 66, 70, 73, 77, 80, 82, 85, 87, 89, 91, 92, 94, 95, 96, 97, 98];
+  // se hubiera usado en la mamografía previa. Repartidas 5 por fila
+  // (20 columnas x 5 filas) y salteadas dentro de cada fila -- ANTES
+  // estaban casi todas concentradas en las últimas 2 filas (quedaba
+  // como una barra de progreso a medio llenar, un orden que no
+  // existe); ahora están esparcidas por toda la grilla, sin ningún
+  // patrón visual (ni diagonal, ni agrupadas), para que se lean como
+  // "25 al azar entre 100", no como una secuencia.
+  const escapaban = [2, 7, 12, 15, 18, 21, 26, 30, 33, 37, 41, 45, 49, 53, 57, 62, 66, 70, 74, 78, 81, 85, 89, 93, 97];
 
   // pintarPanel2(conIA)
   // Repinta la grilla del panel 2: apaga todos los puntos y, si
   // conIA es true, enciende los 25 de "escapaban" en rosa (clase
-  // "me-new"). Actualiza el número grande (0 o 25) y le agrega/saca
-  // la clase compartida .ui-pinktext (el mismo rosa que usa
-  // .ui-pinktext en el resto del sitio) para que el número se vea en
-  // color solo cuando hay algo que mostrar.
+  // "me-new"). El "dato grande" de este panel tiene 2 estados
+  // (contenido definitivo pedido por Meli, ya no es solo un número):
+  // antes de tocar el botón se ve la PREGUNTA ("me-r2-q"); después se
+  // ve la RESPUESTA en rosa ("me-r2-a"), seguida de la línea opcional
+  // que conecta con el título del módulo ("me-r2-note"). La leyenda
+  // del punto rosa ("Marcado por la IA...") sigue el mismo criterio:
+  // solo se ve una vez tocado el botón.
   function pintarPanel2(conIA) {
     dots2.forEach((d) => { d.className = 'me-dot'; });
     if (conIA) escapaban.forEach((p) => { dots2[p].className = 'me-dot me-new'; });
-    const num = document.getElementById('me-r2');
-    num.textContent = conIA ? '25' : '0';
-    num.classList.toggle('ui-pinktext', conIA);
+    document.getElementById('me-r2-q').hidden = conIA;
+    document.getElementById('me-r2-a').hidden = !conIA;
+    document.getElementById('me-r2-note').hidden = !conIA;
+    document.getElementById('me-leg2-ia').hidden = !conIA;
   }
   pintarPanel2(false); // estado inicial: sin IA
 
-  // Conecta los 2 botones "Un radiólogo" / "Con apoyo de IA" del
-  // panel 2 (son botones DISTINTOS a los del panel 1 -- ids con el
-  // "2" al final -- porque cada panel tiene su propio control
-  // independiente; cambiar el modo en un panel no afecta al otro).
-  const bSin2 = document.getElementById('me-m-sin2');
-  const bCon2 = document.getElementById('me-m-con2');
-  bSin2.onclick = () => {
-    bSin2.setAttribute('aria-pressed', 'true');
-    bCon2.setAttribute('aria-pressed', 'false');
-    pintarPanel2(false);
-  };
-  bCon2.onclick = () => {
-    bSin2.setAttribute('aria-pressed', 'false');
-    bCon2.setAttribute('aria-pressed', 'true');
-    pintarPanel2(true);
+  // Conecta el botón único "Ver qué marca la IA" del panel 2 (antes
+  // eran 2 botones -- "Un radiólogo"/"Con apoyo de IA" -- pero este
+  // panel no compara 2 modos de lectura como el panel 1: es una sola
+  // acción de "revelar". Se deja como toggle (aria-pressed) para que
+  // se pueda volver al estado inicial y repetir la interacción, en
+  // vez de quedar fija una vez tocada.
+  // Además de pintar la grilla, cada click actualiza el texto del
+  // botón, que pasa a avisar que ahora hace lo contrario ("Volver a
+  // ocultar" en vez de "Ver qué marca la IA") -- así queda claro que
+  // "pasó algo" al tocarlo, aunque los puntos sean lo único que
+  // cambia visualmente además de esto. (Este panel ya no tiene una
+  // instrucción rosa aparte que ocultar: el botón solo ya es
+  // suficientemente claro.)
+  const bRev2 = document.getElementById('me-btn2');
+  bRev2.onclick = () => {
+    const conIA = bRev2.getAttribute('aria-pressed') !== 'true';
+    bRev2.setAttribute('aria-pressed', conIA);
+    bRev2.textContent = conIA ? 'Volver a ocultar' : 'Ver qué marca la IA';
+    pintarPanel2(conIA);
   };
 })();

@@ -14,13 +14,142 @@
    Convención de nombres de este archivo:
      .me-card      -> la tarjeta completa (ver index.html: lleva las
                       clases "ui-panel me-card" juntas)
+     .me-prompt    -> la pista de interacción con el punto que pulsa
+                      ("Cambiá entre..."), antes de cada .ui-seg
      .me-dotgrid   -> el contenedor CSS Grid de cada grilla de puntos
      .me-dot       -> cada punto individual (y sus variantes .me-lit /
                       .me-new, según qué representa)
-     .me-view      -> cada "sub-bloque" de contenido dentro del panel 1
-                      (la grilla, y la barra de proyección)
-     .me-scale*    -> el slider de proyección y sus resultados
+     .me-btn       -> botón de acción suelto (panel 2: "Ver qué marca
+                      la IA" / "Volver a ocultar")
+     .me-answer    -> la "respuesta" en rosa que se revela al tocar
+                      (ambos paneles)
    ============================================================ */
+
+/* .me-prompt/.me-prompt-dot: MISMA idea visual que .em-prompt-tipo/
+   .em-prompt-pct del módulo 1 (punto rosa que pulsa + texto más grande
+   y CENTRADO, no la variante chica/izquierda de .em-prompt a secas) --
+   pedido explícito de Meli: "idéntico al módulo 1". Se duplica acá en
+   vez de compartirla en style.css a propósito: la de módulo 1 tiene
+   lógica propia (se oculta con [hidden] al revelar la respuesta de
+   "Casos por tipo") ya probada y en producción; tocarla para volverla
+   genérica corría el riesgo de romper algo ahí sin necesidad, cuando
+   acá alcanza con repetir el mismo puñado de reglas. A diferencia de
+   antes, el prompt del panel 2 SÍ se oculta (modulo3.js le pone
+   [hidden] apenas se toca el botón "Ver qué marca la IA" -- una vez
+   revelado el resultado, "Tocá el botón..." deja de tener sentido),
+   por eso hace falta el mismo override que módulo1.css ya tiene para
+   ".em-prompt[hidden]" (ver más abajo): .me-prompt también define su
+   propio "display", que empata en especificidad contra el [hidden]
+   del navegador y le gana si no se fuerza acá. */
+.me-prompt{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  gap:8px;
+  color:var(--rose-strong);
+  font-weight:600;
+  font-size:1.05rem;
+  margin-bottom:16px;
+}
+.me-prompt[hidden]{
+  display:none;
+}
+.me-prompt-dot{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:var(--rose-strong);
+  flex:none;
+  animation:me-dot-pulse 1.4s infinite;
+}
+@keyframes me-dot-pulse{
+  0%,100%{ box-shadow:0 0 0 0 var(--rose-glow); }
+  50%{ box-shadow:0 0 0 8px rgba(255,111,156,0); }
+}
+@media (prefers-reduced-motion:reduce){
+  .me-prompt-dot{ animation:none; }
+}
+
+/* .me-btn: botón de acción único del panel 2 ("Ver qué marca la IA" /
+   "Volver a ocultar"). Antes vivía adentro de un .ui-seg (la píldora
+   de selector compartida) solo para heredarle el aspecto -- pero esa
+   barra ancha con borde alrededor es visualmente "el resto" del
+   selector de 2 botones de la OTRA pestaña; acá, con un solo botón
+   suelto, se leía como un contenedor vacío. .me-btn es la MISMA idea
+   visual que .em-btn del módulo 1 (botón-contorno, no relleno, pensado
+   para una sola acción en vez de un grupo de opciones) -- se duplica
+   acá en vez de compartirla, mismo criterio que .me-prompt arriba. */
+.me-btn{
+  font-family:var(--sans);
+  font-size:0.85rem;
+  font-weight:600;
+  background:transparent;
+  color:var(--text);
+  border:1px solid var(--rose-strong);
+  border-radius:999px;
+  padding:8px 16px;
+  cursor:pointer;
+  transition:background .2s, color .2s;
+  margin-bottom:16px;
+  /* .ui-panel es flex-column: por default, un <button> como hijo
+     directo se ESTIRA al ancho completo (align-self:stretch, el
+     comportamiento de fábrica de flex) -- se veía como una barra
+     ancha, no como un botón chico. align-self:center lo saca de ese
+     estiramiento Y lo centra horizontalmente (pedido de Meli). width
+     fijo (no "ajustado al texto") para que los 2 estados del botón
+     ("Ver qué marca la IA" / "Volver a ocultar", textos de distinto
+     largo) midan siempre lo mismo -- pidió Meli que no "salte" de
+     tamaño al cambiar de texto. */
+  align-self:center;
+  width:230px;
+  max-width:100%;
+  text-align:center;
+}
+.me-btn:hover{ background:rgba(255,111,156,0.12); }
+/* Estado "revelado" (aria-pressed lo pone modulo3.js): relleno rosa,
+   igual criterio que el resto de los botones activos del sitio. */
+.me-btn[aria-pressed="true"]{
+  background:var(--rose-strong);
+  color:#1a0510;
+  border-color:var(--rose-strong);
+}
+
+/* Botones activos de .ui-seg (selector "Un radiólogo"/"IA sola" del
+   panel 1, y el botón único "Ver qué marca la IA" del panel 2): la
+   clase compartida (ver style.css) ya usa el mismo color de fondo que
+   .em-tab.active de módulo 1 (var(--rose-strong) + texto oscuro) -- lo
+   único que le faltaba para ser IDÉNTICA es el resplandor (box-shadow)
+   que sí tiene .em-tab.active. Se agrega acá, scopeado a .me-card, en
+   vez de tocar la regla compartida .ui-seg en style.css -- así no se
+   le agrega un brillo que nadie pidió a otros usos futuros de .ui-seg. */
+.me-card .ui-seg button[aria-pressed="true"]{
+  box-shadow:0 6px 18px rgba(255,111,156,0.35);
+}
+
+/* Más separación de "Fuente" que el valor de base de .ui-note (10px,
+   ver style.css) -- scopeado a este módulo nomás, para no afectar la
+   de módulo 1. */
+.me-card .ui-note{
+  margin-top:22px;
+}
+
+/* .me-answer: la "Respuesta" en rosa que solo se ve al revelar el
+   resultado -- en el panel 1 ("Sí: casi 2 cánceres más...") y en el
+   panel 2 ("La IA habría marcado alrededor de 25 de cada 100."). Es
+   un <p>, así que sin esto tomaría el margen por defecto del
+   navegador (1em arriba y abajo) -- se lo resetea a un valor chico.
+   Antes el panel 2 usaba .ui-big (el número grande, pensado para
+   cifras cortas tipo "7,5") para toda la oración completa: en la
+   columna angosta de .ui-stats se partía en muchas líneas y quedaba
+   casi ilegible -- .me-answer es texto normal en negrita, no "número
+   grande", así que envuelve bien en cualquier ancho. */
+.me-answer{
+  font-size:0.85rem;
+  font-weight:600;
+  line-height:1.3;
+  margin:2px 0 0;
+}
 
 /* El ajuste de espaciado título->tarjeta que antes vivía acá, SOLO
    para el capítulo 3 (porque tenía más contenido y necesitaba ganar
@@ -73,23 +202,6 @@
      INSTANTÁNEO (sin cruce/fundido) en este módulo. */
   .me-card .ui-tabpanel{
     transition:none;
-  }
-
-  /* .me-view: dentro del panel 1 hay 2 "sub-bloques" de contenido (la
-     grilla de 1.000 puntos, y la barra de proyección con el slider) y
-     los DOS quedan SIEMPRE visibles, apilados uno debajo del otro --
-     ninguno depende de clickear un botón para mostrarse/ocultarse (a
-     diferencia de las pestañas del panel 1 vs. panel 2, que sí se
-     alternan). El selector ".me-view + .me-view" apunta a un
-     ".me-view" que viene JUSTO DESPUÉS de otro ".me-view" (osea, el
-     segundo bloque en adelante) y le agrega una línea sutil arriba,
-     para que se lea como una sección aparte y no como un bloque
-     continuo de contenido. */
-  .me-view{ display:block; }
-  .me-view + .me-view{
-    margin-top:10px;
-    padding-top:10px;
-    border-top:1px solid var(--panel-border);
   }
 
   /* ============================================================
@@ -152,75 +264,23 @@
     box-shadow:0 0 7px rgba(255,111,156,.8);
   }
 
-  /* ============ SLIDER DE PROYECCIÓN (.me-scale) ============ */
-  /* .me-scale envuelve el slider + sus 3 resultados. margin/padding
-     en 0 porque, al ser su propio ".me-view" (ver arriba), el
-     espaciado entre ESTE bloque y el de arriba (la grilla) ya lo
-     resuelve la regla ".me-view + .me-view". */
-  .me-scale{ margin-top:0; padding-top:0; }
-  /* La etiqueta del slider ("Proyección sobre esta tasa: 40.000
-     mujeres"). display:block la separa del slider con su propio
-     renglón (en vez de quedar los dos en la misma línea). */
-  .me-scale label{
-    display:block;
-    font-size:0.82rem;
-    margin-bottom:4px;
-    color:var(--text-dim);
-  }
-  /* El <input type="range"> en sí. accent-color le cambia el color al
-     "pulgar" (el círculo que se arrastra) y a la barra ya recorrida,
-     para que combinen con la paleta rosa del sitio en vez de quedar
-     con el celeste/gris por defecto del navegador. */
-  .me-scale input[type=range]{
-    width:100%;
-    accent-color:var(--rose-strong);
-  }
-  /* Los 3 resultados (un radiólogo / con IA / diferencia), repartidos
-     en 3 columnas iguales. */
-  .me-scale-out{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:6px;
-    margin-top:4px;
-  }
-  /* Acá el número grande (.ui-big, la clase compartida) se achica a
-     1.1rem fijo -- más chico que su tamaño por defecto (1.4rem) --
-     porque acá van 3 números juntos en una fila angosta, y a tamaño
-     completo no entrarían prolijos. */
-  .me-scale-out .ui-big{ font-size:1.1rem; }
-
   /* ============================================================
-     PANEL 2 ("Las que se escapaban"): ajustes puntuales de layout
-     Este panel tiene MENOS contenido que el panel 1 (no tiene la
-     barra de proyección/slider), pero la tarjeta -- al ser un
-     "grid-stack" (ver .ui-panels en style.css) -- siempre mide el
-     alto del panel MÁS alto de los dos. Sin estos ajustes, el panel 2
-     quedaría con toda su grilla pegada arriba y un hueco vacío grande
-     abajo, debajo de "Fuente".
-     ============================================================ */
-  /* "Fuente" se saca del flujo normal del documento
-     (position:absolute), apoyada en la esquina inferior derecha del
-     panel -- .ui-panel ya es position:relative (lo trae de fábrica,
-     ver style.css), así que es el punto de referencia para ese
-     "absolute". Al sacarla del flujo, el espacio libre que sobra
-     dentro del panel queda LIBRE por completo para centrar la
-     grilla (.ui-visual, regla de abajo), en vez de competir con
-     "Fuente" por el mismo espacio. */
-  #me-tabpanel-2 .ui-src{
-    position:absolute;
-    right:20px;
-    bottom:14px;
-    margin-top:0;
-  }
-
+     PANEL 2 ("Los que no se detectan"): ajustes puntuales de layout
+     Este panel tiene MENOS contenido que el panel 1, pero la tarjeta
+     -- al ser un "grid-stack" (ver .ui-panels en style.css) --
+     siempre mide el alto del panel MÁS alto de los dos. Sin este
+     ajuste, el panel 2 quedaría con todo su contenido pegado arriba
+     y un hueco vacío grande abajo.
+     ("Fuente" ya no vive adentro de los paneles -- ver index.html,
+     ahora es una sola, compartida, después de "Límites" al final de
+     toda la tarjeta -- así que acá no hace falta sacarla del flujo
+     ni nada parecido, solo centrar .ui-visual.) */
   /* margin-top/bottom:auto en .ui-visual (que es hijo directo de
      .ui-panel, el cual es flex-column) hace que ese elemento absorba
      TODO el espacio libre sobrante, repartido mitad arriba/mitad
      abajo suyo -- empujándolo al CENTRO vertical del espacio
-     disponible dentro del panel. El texto de arriba (.ui-sub/.ui-seg)
-     no se mueve (queda pegado arriba, como siempre), y "Fuente" no
-     compite por este espacio porque ya la sacamos del flujo en la
-     regla de arriba. */
+     disponible dentro del panel. El texto de arriba (.ui-sub/botón)
+     no se mueve (queda pegado arriba, como siempre). */
   #me-tabpanel-2 .ui-visual{
     margin-top:auto;
     margin-bottom:auto;
@@ -243,3 +303,24 @@
   @media (prefers-reduced-motion: reduce){
     .me-dot{ transition:none; }
   }
+
+/* ============ PANTALLAS BAJAS (alto chico) ============
+   Mismo criterio que style.css/modulo1.css (ver ahí la explicación
+   general): este módulo nunca había necesitado su propio ajuste acá
+   (antes la tarjeta era más baja que las de módulo 1/2, le sobraba
+   margen) -- pero al agrandarla para emparejar su altura con las
+   otras 2 (.me-prompt y .me-card .ui-note, más arriba), ese margen
+   nuevo también había que achicarlo en pantallas bajas, o volvía a
+   aparecer la barra de scroll (probado contra los 601px reales de
+   Brenda). */
+@media (max-height:760px){
+  .me-prompt{margin-bottom:3px;}
+  .me-card .ui-note{margin-top:4px;}
+  .me-answer{margin-top:0;}
+  .me-card .ui-src{margin-top:0;}
+  .me-card .ui-sub{margin-bottom:2px;}
+  .me-card .ui-seg{margin-bottom:2px;}
+  .me-btn{margin-bottom:6px;}
+  .me-dotgrid{gap:2px;}
+  .me-card{margin-bottom:0;}
+}

@@ -533,6 +533,21 @@ body {
   line-height: 1.28;
 }
 
+/* Nota chica al pie de una tarjeta/pestaña -- más chica y más tenue
+   que .ui-lede/.ui-sub, para que se lea como aclaración secundaria
+   (ej. "Son cantidades de casos, no riesgo..." en módulo 1, o la
+   aclaración de módulo 3 sobre el estudio del Reino Unido). Antes
+   era ".em-note", propia de módulo 1 (modulo1.css) -- se subió acá
+   porque módulo 3 también la necesita: mismo criterio visual, dos
+   módulos. */
+.ui-note {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  opacity: 0.7;
+  line-height: 1.3;
+  margin: 10px 0 0;
+}
+
 /* ---- Pestañas para elegir qué visualización ver ----
      En vez de mostrar las dos tablas una al lado de la otra (lo que
      hacía la página altísima), ahora solo se muestra una a la vez:
@@ -704,9 +719,10 @@ body {
   gap: 8px;
 }
 .ui-stats .ui-legend,
-.ui-stats .ui-readout {
+.ui-stats .ui-readout,
+.ui-stats .ui-note {
   margin-top: 0;
-} /* el gap del flex ya separa, no hace falta el margin-top original */
+} /* el gap del flex ya separa, no hace falta el margin-top original -- .ui-note se agregó para el texto chico de la grilla del módulo 3 */
 
 @media (min-width: 680px) {
   .ui-visual {

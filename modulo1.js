@@ -833,7 +833,7 @@
     const selDiaTxtEl = stats[1].querySelector('.em-stat-label');
 
     const note = document.createElement('p');
-    note.className = 'em-note';
+    note.className = 'ui-note'; // antes 'em-note' (propia de este módulo) -- ahora compartida en style.css, módulo 3 también la usa
     note.textContent = 'Son cantidades de casos, no riesgo: hay menos casos después de los 75 años porque hay menos mujeres de esa edad';
     container.appendChild(note);
 
