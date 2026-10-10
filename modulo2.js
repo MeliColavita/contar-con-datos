@@ -13025,6 +13025,8 @@
     const ttName = document.getElementById('brTtName');
     const ttPct = document.getElementById('brTtPct');
 
+    const promptProv = document.getElementById('brProvPrompt');
+
     const pathEls = []; // referencia a cada <path> de provincia + sus datos, para no recorrer el DOM de nuevo después
     // Los datos de CABA ya están sumados dentro de "Buenos Aires":
     // acá solo definimos qué provincias se resaltan juntas.
@@ -13053,6 +13055,7 @@
       // separado), porque CABA ya está sumada ahí (ver
       // GROUPED_PROVINCES, arriba).
       const activate = (e) => {
+        if (promptProv) promptProv.classList.add('br-prompt-gone');
         pathEls.forEach((o) => o.el.classList.remove('active'));
         const group = GROUPED_PROVINCES[p.name] || [p.name];
         pathEls.forEach((o) => {
@@ -13128,7 +13131,7 @@
     // positionTooltip().
     function showTooltip(p, e) {
       ttName.textContent = p.name;
-      ttPct.innerHTML = `<b>${p.pct.toLocaleString('es-AR')}%</b> de las muertes totales`;
+      ttPct.innerHTML = `<b>${p.pct.toLocaleString('es-AR')}%</b> de las muertes por cáncer`;
       tooltip.classList.add('visible');
       positionTooltip(e);
     }
@@ -13181,14 +13184,14 @@
         labels: [''],
         datasets: [
           {
-            label: ['Muertes totales', 'por cáncer'],
+            label: ['Todos los', ' cánceres'],
             data: [0],
             backgroundColor: '#f4c9a8',
             borderRadius: 4,
             barThickness: 70,
           },
           {
-            label: ['Muertes por', 'cáncer de', 'mama'],
+            label: ['Cáncer de', ' mama'],
             data: [0],
             backgroundColor: '#8b3a55',
             borderRadius: 4,
@@ -13206,6 +13209,13 @@
             position: 'right',
             maxWidth: 130,
             labels: { color: '#f2e9ee', boxWidth: 14, padding: 12, font: { size: 14 } },
+            title: {
+              display: true,
+              text: ' ',
+              color: 'transparent',
+              font: { size: 1 },
+              padding: { top: 16 },
+            },
           },
           tooltip: {
             callbacks: {
@@ -13251,7 +13261,7 @@
       provinceChart.data.datasets[0].data = [p.total];
       provinceChart.data.datasets[1].data = [p.cancer];
       provinceChart.update();
-      chartTitleEl.textContent = `Muertes totales vs. cáncer de mama — ${p.name}`;
+      chartTitleEl.textContent = `${p.name}`;
     }
 
     // selección inicial: Buenos Aires (con CABA resaltada junto con ella)
@@ -13280,6 +13290,20 @@
     const tabAnio = document.getElementById('brTabAnio');
     const panelProvincia = document.getElementById('brPanelProvincia');
     const panelAnio = document.getElementById('brPanelAnio');
+
+    // Fuente: un solo botón, el texto cambia según la pestaña.
+    const srcBox = document.getElementById('brSrc');
+    const srcText = document.getElementById('brSrcText');
+    const SRC_ANIO = 'Microdatos DEIS 2005–2024.';
+    const SRC_PROV =
+      'Microdatos DEIS, defunciones acumuladas 2018–2022. Límites provinciales: IGN 2019 ' +
+      '(vía Trase Atlas), proyección transversal de Mercator. Cada punto representa 100 ' +
+      'muertes por cáncer de mama, distribuidos aleatoriamente dentro del territorio de ' +
+      'cada provincia (no marcan ubicaciones reales).';
+    function setFuente(texto) {
+      srcText.textContent = texto;
+      srcBox.removeAttribute('open'); // al cambiar de pestaña se cierra el desplegable
+    }
 
     // animarEntrada(panel)
     // Vuelve a disparar la animación .br-fade-in (ver @keyframes
@@ -13329,6 +13353,12 @@
       panelAnio.classList.add('br-hidden');
       animarEntrada(panelProvincia);
       resizeChart('brProvinceChart');
+
+      // Pista rosa de "Por provincia": reaparece cada vez que se vuelve a esta pestaña.
+      const promptProvEl = document.getElementById('brProvPrompt');
+      if (promptProvEl) promptProvEl.classList.remove('br-prompt-gone');
+
+      setFuente(SRC_PROV);
     });
     tabAnio.addEventListener('click', () => {
       tabAnio.classList.add('active');
@@ -13338,6 +13368,13 @@
       initYearTab();
       animarEntrada(panelAnio);
       resizeChart('brAnioScatter');
+
+      // PISTA ROSA: cada vez que se vuelve a "Por año", reaparece.
+      // >>> SI QUERÉS QUE, UNA VEZ OCULTA, NO VUELVA A APARECER <<<
+      // borrá (o comentá) estas 2 líneas.
+      const promptAnioEl = document.getElementById('brAnioPrompt');
+      if (promptAnioEl) promptAnioEl.classList.remove('br-prompt-gone');
+      setFuente(SRC_ANIO);
     });
 
     // YEAR_DATA: un dato por año (2005-2024) para el gráfico de
@@ -13405,7 +13442,15 @@
       currentYear = year;
       const yd = YEAR_DATA.find((d) => d.year === year);
 
-      document.getElementById('brAnioYear').textContent = year;
+      // Promedio diario: muertes del año / días REALES de ese año
+      // (366 si es bisiesto, 365 si no).
+      const esBisiesto = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+      const diasDelAnio = esBisiesto ? 366 : 365;
+      document.getElementById('brStatDia').textContent = (yd.mama / diasDelAnio).toLocaleString(
+        'es-AR',
+        { minimumFractionDigits: 1, maximumFractionDigits: 1 },
+      );
+
       document.getElementById('brStatMama').textContent = yd.mama.toLocaleString('es-AR');
       document.getElementById('brStatTasa').textContent = yd.tasa.toLocaleString('es-AR', {
         minimumFractionDigits: 2,
@@ -13552,6 +13597,31 @@
           if (closestYear !== null && closestDist < 15) selectYear(closestYear);
         }
       });
+
+      // ------------------------------------------------------------
+      // PISTA ROSA "Pasá el cursor o tocá un año..." -- desaparece al interactuar
+      // ------------------------------------------------------------
+      // Se considera "interactuar" cuando el mouse se mueve sobre el gráfico
+      // (pointermove) o cuando se lo toca en el celular (pointerdown). Se usa
+      // {once:true}: cada listener se ejecuta una sola vez y se borra solo.
+      // (No se usa selectYear() como disparador porque initYearTab() la llama
+      // al cargar la página, y la pista desaparecería antes de que nadie
+      // haya interactuado.)
+      //
+      // >>> SI EN ALGÚN MOMENTO QUERÉS QUE LA PISTA NO DESAPAREZCA <<<
+      // Borrá (o comentá) TODO este bloque, desde "const promptAnio" hasta el
+      // último "canvasAnio.addEventListener('pointerdown', ...)". Con eso la
+      // pista queda fija. No hace falta tocar el HTML ni el CSS.
+      const promptAnio = document.getElementById('brAnioPrompt');
+      const ocultarPromptAnio = () => {
+        if (promptAnio) promptAnio.classList.add('br-prompt-gone');
+      };
+      // Sin {once:true}: los listeners quedan activos para siempre, así la pista
+      // se puede volver a ocultar cada vez que reaparece (ver el reseteo en el
+      // click de la pestaña "Por año", más abajo en este archivo).
+      // Agregar la clase varias veces no hace nada raro: es idempotente.
+      canvasAnio.addEventListener('pointermove', ocultarPromptAnio);
+      canvasAnio.addEventListener('pointerdown', ocultarPromptAnio);
     }
 
     // initYearTab()
@@ -13568,6 +13638,27 @@
       buildScatter();
       selectYear(currentYear);
     }
+
+    // "Por año" es la pestaña que se ve al entrar al módulo: armamos su
+    // mapa y su gráfico apenas carga la página.
+    initYearTab();
+    // El capítulo 2 está oculto al cargar la página, así que Chart.js puede
+    // haber medido el canvas en 0px: lo re-medimos cuando se hace visible.
+    document.querySelector('.nav-item[data-target="2"]').addEventListener('click', () => {
+      setTimeout(() => resizeChart('brAnioScatter'), 50);
+    });
+
+    // Pista rosa: reaparece cada vez que se entra de nuevo al capítulo 2.
+    // Observamos la clase "active" del <section id="chapter-2"> en vez de
+    // escuchar los botones, así funciona sin importar cómo se cambie de capítulo.
+    const chapter2 = document.getElementById('chapter-2');
+    const promptAnio = document.getElementById('brAnioPrompt');
+    const promptProv = document.getElementById('brProvPrompt');
+    new MutationObserver(() => {
+      if (!chapter2.classList.contains('active')) return;
+      if (promptAnio) promptAnio.classList.remove('br-prompt-gone');
+      if (promptProv) promptProv.classList.remove('br-prompt-gone');
+    }).observe(chapter2, { attributes: true, attributeFilter: ['class'] });
   })();
 
   // ============================================================

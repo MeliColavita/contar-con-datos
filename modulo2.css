@@ -277,6 +277,28 @@
   margin-bottom: 16px;
 }
 
+/* "Por provincia": el texto de bajada ahora es de una sola frase, así que
+   no hace falta reservarle 2 líneas y media (min-height). El espacio que
+   se ahorra lo ocupa la pista rosa, para que la tarjeta no cambie de alto. */
+#brPanelProvincia .br-subhead {
+  min-height: 0;
+  margin-bottom: 8px;
+}
+#brPanelProvincia .br-chart-col .em-prompt {
+  margin: 0 0 10px;
+}
+
+/* Cuando el usuario interactúa, la pista se desvanece pero SIGUE OCUPANDO
+   su lugar (opacity/visibility, no display:none), para que el gráfico no
+   se mueva. Es la misma idea que en "Por año". */
+#brPanelProvincia .em-prompt.br-prompt-gone {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.4s ease,
+    visibility 0.4s;
+}
+
 /* ============ EL MAPA (los 2: "Por provincia" y "Por año") ============
    El mapa (viewBox 520x920: más alto que ancho) antes escalaba por
    ANCHO (width:100%; height:auto, puesto en el <svg> directamente) --
@@ -366,7 +388,7 @@
    hasta el borde inferior de la fila. */
 #brPanelProvincia .br-map-inner {
   --br-map-lift: 10px; /* cuánto sube respecto al grid (antes -62px) */
-  --br-legend-h: 34px; /* alto reservado para la leyenda */
+  --br-legend-h: 48px; /* alto reservado para la leyenda */
   position: absolute;
   top: calc(-1 * var(--br-map-lift));
   bottom: 0;
@@ -435,28 +457,21 @@
   opacity: 0.9;
 }
 
-/* Referencia chica debajo del mapa interactivo ("● = 100 muertes por
-   cáncer de mama"). flex-wrap:wrap por si en una tarjeta angosta el
-   punto y el texto no entran en un solo renglón. */
+/* Aclaración debajo del mapa: ahora es un texto de 2-3 líneas, centrado. */
 .br-legend {
+  width: 100%;
+  margin: 0;
+  padding: 0 6px;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  text-align: center;
   flex: none;
   height: var(--br-legend-h, 34px);
-  margin-top: 0;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
+  line-height: 1.3;
   color: var(--br-text-dim);
-  flex-wrap: nowrap; /* antes: wrap */
-  white-space: nowrap; /* no corta el texto */
-}
-.br-legend .br-dot-sample {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--br-rose);
-  display: inline-block;
 }
 
 /* ============ TOOLTIP DEL MAPA ============
@@ -549,39 +564,70 @@
   margin-bottom: 4px;
 }
 
-/* Los 2 datos sueltos ("5.832 muertes..." / "24,37 muertes cada...")
-   debajo del gráfico de dispersión, en la pestaña "Por año".
-   flex-wrap:nowrap + justify-content:center los mantiene siempre en
-   una sola fila, centrados. */
-.br-stat-row {
-  display: flex;
-  gap: 24px;
-  margin-bottom: 22px;
-  flex-wrap: nowrap;
-  justify-content: center;
+/* Pista rosa de "Por año". El formato (color, tamaño, puntito) viene de
+   .em-prompt en modulo1.css; acá solo se ajusta el margen para que la
+   tarjeta mida lo mismo que antes (el .br-sub que reemplaza tenía 4px). */
+#brPanelAnio .br-panel .em-prompt {
+  margin-bottom: 4px;
 }
-/* "Por año": el margin-top de .br-stat-row (puesto inline en
-   index.html) creció para separarlo de los años del eje X -- este
-   margin-bottom, en cambio, se achica para compensar ese alto extra
-   (nada depende de este espacio: es lo último del panel, antes de su
-   padding-bottom) y que la tarjeta entera no termine más alta que la
-   de "Por provincia". */
-#brPanelAnio .br-stat-row {
-  margin-bottom: 10px;
+
+/* Cuando el usuario interactúa, la pista se desvanece, pero SIGUE
+   OCUPANDO SU LUGAR (opacity/visibility en vez de display:none).
+   Si usáramos display:none, el gráfico subiría de golpe justo cuando el
+   mouse está encima de él, y eso haría que el hover parpadee. */
+#brPanelAnio .br-panel .em-prompt.br-prompt-gone {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.4s ease,
+    visibility 0.4s;
 }
-.br-stat-block .br-num {
+
+/* Nota "El eje empieza en 24": debajo del gráfico de "Por año",
+   alineada a la izquierda, con el mismo gris que los textos secundarios. */
+.br-axis-note {
+  margin: 0;
+  text-align: left;
+  font-size: 0.75rem;
+  font-style: italic;
+  line-height: 1.2;
+  color: var(--br-text-dim);
+}
+/* Dato principal de "Por año": mujeres que mueren por día.
+   Mismo estilo que tenían los números grandes (serif, rosa, con brillo). */
+.br-day {
+  margin-top: 10px;
+  text-align: center;
+}
+.br-day-num {
   font-family: var(--br-serif);
   font-weight: 500;
-  font-size: 1.9rem;
+  font-size: 2.6rem;
+  line-height: 1;
   color: var(--br-rose);
   text-shadow: 0 0 18px var(--br-rose-glow);
-  line-height: 1;
 }
-.br-stat-block .br-lbl {
-  font-size: 0.8rem;
-  color: var(--br-text-dim);
+.br-day-lbl {
   margin-top: 4px;
-  max-width: 150px;
+  font-size: 0.9rem;
+  color: var(--br-text);
+}
+
+/* Datos secundarios: una sola línea, en gris. */
+.br-stat-line {
+  margin: 8px 0 0;
+  text-align: center;
+  font-size: 0.8rem;
+  line-height: 1.3;
+  color: var(--br-text-dim);
+  white-space: nowrap; /* fuerza una sola línea */
+}
+
+/* En pantallas angostas la línea no entra: se permite que baje. */
+@media (max-width: 600px) {
+  .br-stat-line {
+    white-space: normal;
+  }
 }
 
 /* El <canvas> de Chart.js nunca se desborda de su contenedor (su alto
