@@ -225,20 +225,24 @@
 
                         <!-- Columna 2: solo el mapa (y su leyenda/tooltip,
                              que van pegados a él). -->
-                        <div class="br-map-card">
-                          <svg
-                            class="br-map"
-                            id="brMap"
-                            viewBox="0 0 520 920"
-                            xmlns="http://www.w3.org/2000/svg"
-                          ></svg>
-                          <div class="br-legend">
-                            <span class="br-dot-sample"></span>
-                            <span>= 100 muertes por cáncer de mama</span>
-                          </div>
-                          <div class="br-tooltip" id="brTooltip">
-                            <p class="br-t-name" id="brTtName">—</p>
-                            <p class="br-t-pct" id="brTtPct">—</p>
+                        <div class="br-map-col">
+                          <div class="br-map-inner">
+                            <div class="br-map-card">
+                              <svg
+                                class="br-map"
+                                id="brMap"
+                                viewBox="0 0 520 920"
+                                xmlns="http://www.w3.org/2000/svg"
+                              ></svg>
+                              <div class="br-tooltip" id="brTooltip">
+                                <p class="br-t-name" id="brTtName">—</p>
+                                <p class="br-t-pct" id="brTtPct">—</p>
+                              </div>
+                            </div>
+                            <div class="br-legend">
+                              <span class="br-dot-sample"></span>
+                              <span>= 100 muertes por cáncer de mama</span>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -372,7 +376,9 @@
              ============================================================ -->
             <div class="ui-wrap">
               <div class="ui-panel me-card">
-                <h3 class="ui-card-title">¿Cuánto cambia el diagnóstico con una segunda lectura?</h3>
+                <h3 class="ui-card-title">
+                  ¿Cuánto cambia el diagnóstico con una segunda lectura?
+                </h3>
                 <p class="ui-sub">
                   115.973 mamografías del sistema público británico (estudio AIMS), releídas por
                   inteligencia artificial. Cada punto es una mujer.
@@ -417,163 +423,169 @@
                       <!-- Grupo de 2 botones: cambian qué puntos están encendidos
                    en la grilla. "Proyección" ya no es un botón: ver más
                    abajo, siempre desplegada. -->
-                    <div class="ui-seg" role="group" aria-label="Modo de lectura">
-                      <button id="me-m-sin" type="button" aria-pressed="true">Un radiólogo</button>
-                      <button id="me-m-con" type="button" aria-pressed="false">
-                        Con apoyo de IA
-                      </button>
-                    </div>
+                      <div class="ui-seg" role="group" aria-label="Modo de lectura">
+                        <button id="me-m-sin" type="button" aria-pressed="true">
+                          Un radiólogo
+                        </button>
+                        <button id="me-m-con" type="button" aria-pressed="false">
+                          Con apoyo de IA
+                        </button>
+                      </div>
 
-                    <!-- Vista 1: la grilla de 1.000 puntos + leyenda + número.
+                      <!-- Vista 1: la grilla de 1.000 puntos + leyenda + número.
                    40 columnas x 25 filas = 1.000 puntos (.me-dotgrid los
                    crea vacíos; modulo3.js les agrega las clases me-lit /
                    me-new a las posiciones que corresponden). -->
-                    <div class="me-view" id="me-view-grid">
-                      <div class="ui-visual">
-                        <div class="ui-field">
-                          <div
-                            class="me-dotgrid"
-                            id="me-g1"
-                            style="grid-template-columns: repeat(40, 1fr)"
-                            role="img"
-                            aria-label="Grilla de 1.000 mujeres"
-                          ></div>
-                        </div>
-                        <div class="ui-stats">
-                          <div class="ui-legend">
-                            <span><i style="background: var(--flame)"></i>Cáncer detectado</span
-                            ><span
-                              ><i style="background: var(--rose-strong)"></i>Diferencia atribuible a
-                              la IA</span
-                            >
+                      <div class="me-view" id="me-view-grid">
+                        <div class="ui-visual">
+                          <div class="ui-field">
+                            <div
+                              class="me-dotgrid"
+                              id="me-g1"
+                              style="grid-template-columns: repeat(40, 1fr)"
+                              role="img"
+                              aria-label="Grilla de 1.000 mujeres"
+                            ></div>
                           </div>
-                          <div class="ui-readout">
-                            <div>
-                              <div class="ui-big" id="me-r1">7,54</div>
-                              <div class="ui-lab">cánceres detectados cada 1.000 mujeres</div>
+                          <div class="ui-stats">
+                            <div class="ui-legend">
+                              <span><i style="background: var(--flame)"></i>Cáncer detectado</span
+                              ><span
+                                ><i style="background: var(--rose-strong)"></i>Diferencia atribuible
+                                a la IA</span
+                              >
+                            </div>
+                            <div class="ui-readout">
+                              <div>
+                                <div class="ui-big" id="me-r1">7,54</div>
+                                <div class="ui-lab">cánceres detectados cada 1.000 mujeres</div>
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
 
-                    <!-- Vista 2: la barra deslizadora + resultados de la
+                      <!-- Vista 2: la barra deslizadora + resultados de la
                    proyección. Siempre visible debajo de la grilla
                    (separada por una línea sutil, ver CSS
                    ".me-view + .me-view"). -->
-                    <div class="me-view" id="me-view-scale">
-                      <div class="me-scale">
-                        <label for="me-n"
-                          >Proyección sobre esta tasa:
-                          <strong id="me-nlab">40.000</strong> mujeres</label
-                        >
-                        <input
-                          id="me-n"
-                          type="range"
-                          min="1000"
-                          max="463000"
-                          step="1000"
-                          value="40000"
-                        />
-                        <div class="me-scale-out">
-                          <div>
-                            <div class="ui-big" id="me-s-sin">302</div>
-                            <div class="ui-lab">un radiólogo</div>
-                          </div>
-                          <div>
-                            <div class="ui-big" id="me-s-con">373</div>
-                            <div class="ui-lab">con apoyo de IA</div>
-                          </div>
-                          <div>
-                            <div class="ui-big ui-pinktext" id="me-s-dif">+71</div>
-                            <div class="ui-lab">de diferencia</div>
+                      <div class="me-view" id="me-view-scale">
+                        <div class="me-scale">
+                          <label for="me-n"
+                            >Proyección sobre esta tasa:
+                            <strong id="me-nlab">40.000</strong> mujeres</label
+                          >
+                          <input
+                            id="me-n"
+                            type="range"
+                            min="1000"
+                            max="463000"
+                            step="1000"
+                            value="40000"
+                          />
+                          <div class="me-scale-out">
+                            <div>
+                              <div class="ui-big" id="me-s-sin">302</div>
+                              <div class="ui-lab">un radiólogo</div>
+                            </div>
+                            <div>
+                              <div class="ui-big" id="me-s-con">373</div>
+                              <div class="ui-lab">con apoyo de IA</div>
+                            </div>
+                            <div>
+                              <div class="ui-big ui-pinktext" id="me-s-dif">+71</div>
+                              <div class="ui-lab">de diferencia</div>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
 
-                    <!-- <details>/<summary> es un acordeón nativo del navegador:
+                      <!-- <details>/<summary> es un acordeón nativo del navegador:
                    no hace falta JS. "Fuente" (el <summary>) es lo único
                    que se ve por defecto, alineado a la esquina derecha
                    del panel; al hacer click se despliega el texto completo. -->
-                    <details class="ui-src">
-                      <summary>Fuente</summary>
-                      <p>
-                        Kelly C.J., Wilson M. et al. Diagnostic accuracy, fairness and clinical
-                        implementation of AI for breast cancer screening. <em>Nature Cancer</em>
-                        2026;7:494–506. Acceso abierto. Tasa de detección 9,33 por 1.000 (IC 95%:
-                        8,78–9,88) con IA, frente a 7,54 (IC 95%: 7,04–8,03) de un único lector
-                        humano. La proyección es lineal sobre esas tasas: no es un resultado del
-                        estudio, por encima de 115.973 mamografías se extrapola.
-                      </p>
-                    </details>
-                  </div>
-                </div>
-
-                <!-- Panel 2: arranca oculto, sin clase .active -->
-                <div
-                  class="ui-tabpanel"
-                  id="me-tabpanel-2"
-                  role="tabpanel"
-                  aria-labelledby="me-tabbtn-2"
-                >
-                  <div class="ui-panel">
-                    <div class="ui-seg" role="group" aria-label="Modo de lectura">
-                      <button id="me-m-sin2" type="button" aria-pressed="true">Un radiólogo</button>
-                      <button id="me-m-con2" type="button" aria-pressed="false">Con apoyo de IA</button>
+                      <details class="ui-src">
+                        <summary>Fuente</summary>
+                        <p>
+                          Kelly C.J., Wilson M. et al. Diagnostic accuracy, fairness and clinical
+                          implementation of AI for breast cancer screening. <em>Nature Cancer</em>
+                          2026;7:494–506. Acceso abierto. Tasa de detección 9,33 por 1.000 (IC 95%:
+                          8,78–9,88) con IA, frente a 7,54 (IC 95%: 7,04–8,03) de un único lector
+                          humano. La proyección es lineal sobre esas tasas: no es un resultado del
+                          estudio, por encima de 115.973 mamografías se extrapola.
+                        </p>
+                      </details>
                     </div>
-                    <!-- Aclaración puntual de este panel (qué es un cáncer
+                  </div>
+
+                  <!-- Panel 2: arranca oculto, sin clase .active -->
+                  <div
+                    class="ui-tabpanel"
+                    id="me-tabpanel-2"
+                    role="tabpanel"
+                    aria-labelledby="me-tabbtn-2"
+                  >
+                    <div class="ui-panel">
+                      <div class="ui-seg" role="group" aria-label="Modo de lectura">
+                        <button id="me-m-sin2" type="button" aria-pressed="true">
+                          Un radiólogo
+                        </button>
+                        <button id="me-m-con2" type="button" aria-pressed="false">
+                          Con apoyo de IA
+                        </button>
+                      </div>
+                      <!-- Aclaración puntual de este panel (qué es un cáncer
                    de intervalo): no es la bajada general del módulo
                    -esa ya está arriba, una sola vez, en .ui-card-title
                    + .ui-sub de la tarjeta- sino una nota corta que solo
                    aplica a esta pestaña, por eso va acá y no arriba. -->
-                    <p class="ui-sub">
-                      Un cáncer de intervalo es el que aparece entre dos controles porque no se vio
-                      en la mamografía anterior. Cada punto es uno de esos cánceres que se
-                      escapaban.
-                    </p>
-                    <!-- Grilla de 100 puntos: 20 columnas x 5 filas, más
+                      <p class="ui-sub">
+                        Un cáncer de intervalo es el que aparece entre dos controles porque no se
+                        vio en la mamografía anterior. Cada punto es uno de esos cánceres que se
+                        escapaban.
+                      </p>
+                      <!-- Grilla de 100 puntos: 20 columnas x 5 filas, más
                    achatada que la del panel 1 a propósito (mismo motivo
                    que antes: si esta grilla terminara siendo más alta
                    que la del panel 1, sería ELLA la que fija el alto
                    compartido de los dos paneles -- ver comentario de
                    #me-tabpanel-2 en el CSS). -->
-                    <div class="ui-visual">
-                      <div class="ui-field">
-                        <div
-                          class="me-dotgrid"
-                          id="me-g2"
-                          style="grid-template-columns: repeat(20, 1fr)"
-                          role="img"
-                          aria-label="100 cánceres de intervalo"
-                        ></div>
-                      </div>
-                      <div class="ui-stats">
-                        <div class="ui-readout">
-                          <div>
-                            <div class="ui-big" id="me-r2">0</div>
-                            <div class="ui-lab">
-                              de cada 100 cánceres de intervalo fueron identificados en la
-                              mamografía anterior
+                      <div class="ui-visual">
+                        <div class="ui-field">
+                          <div
+                            class="me-dotgrid"
+                            id="me-g2"
+                            style="grid-template-columns: repeat(20, 1fr)"
+                            role="img"
+                            aria-label="100 cánceres de intervalo"
+                          ></div>
+                        </div>
+                        <div class="ui-stats">
+                          <div class="ui-readout">
+                            <div>
+                              <div class="ui-big" id="me-r2">0</div>
+                              <div class="ui-lab">
+                                de cada 100 cánceres de intervalo fueron identificados en la
+                                mamografía anterior
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
+                      <details class="ui-src">
+                        <summary>Fuente</summary>
+                        <p>
+                          Kelly C.J., Wilson M. et al. Diagnostic accuracy, fairness and clinical
+                          implementation of AI for breast cancer screening. <em>Nature Cancer</em>
+                          2026;7:494–506. Acceso abierto. La IA identificó el 25,0% de los cánceres
+                          de intervalo en la mamografía anterior (IC 95%: 20,4–30,0), hasta 39 meses
+                          antes de su diagnóstico real.
+                        </p>
+                      </details>
                     </div>
-                    <details class="ui-src">
-                      <summary>Fuente</summary>
-                      <p>
-                        Kelly C.J., Wilson M. et al. Diagnostic accuracy, fairness and clinical
-                        implementation of AI for breast cancer screening. <em>Nature Cancer</em>
-                        2026;7:494–506. Acceso abierto. La IA identificó el 25,0% de los cánceres de
-                        intervalo en la mamografía anterior (IC 95%: 20,4–30,0), hasta 39 meses
-                        antes de su diagnóstico real.
-                      </p>
-                    </details>
                   </div>
                 </div>
-              </div>
-              <!-- /.ui-panels -->
+                <!-- /.ui-panels -->
               </div>
               <!-- /.ui-panel.me-card -->
             </div>
