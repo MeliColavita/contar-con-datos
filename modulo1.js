@@ -448,7 +448,8 @@
     // sigue ocupando su lugar. "em-shown" es el estado visible -- acá
     // arranca con ella (si todavía no se reveló) y reveal() se la saca.
     const prompt = document.createElement('div');
-    prompt.className = 'em-prompt em-prompt-tipo em-reveal-fade' + (tipoState.revealed ? '' : ' em-shown');
+    prompt.className =
+      'em-prompt em-prompt-tipo em-reveal-fade' + (tipoState.revealed ? '' : ' em-shown');
     prompt.innerHTML =
       '<span class="em-prompt-dot" aria-hidden="true"></span>¿Cuántos casos de mama creés que hay? Arrastrá la barra para adivinar.';
     container.appendChild(prompt);
@@ -627,7 +628,8 @@
     resultRow.appendChild(feedback);
 
     const statsCol = document.createElement('div');
-    statsCol.className = 'em-tipo-result-stats em-reveal-fade' + (tipoState.revealed ? ' em-shown' : '');
+    statsCol.className =
+      'em-tipo-result-stats em-reveal-fade' + (tipoState.revealed ? ' em-shown' : '');
     chapter1Stats.forEach(function (s) {
       const item = document.createElement('div');
       item.className = 'em-stat';
@@ -1237,7 +1239,7 @@
     const prompt = document.createElement('div');
     prompt.className = 'em-prompt em-prompt-pct';
     prompt.innerHTML =
-      '<span class="em-prompt-dot" aria-hidden="true"></span>Pasá el cursor o tocá un cuadrado para ver a qué cáncer corresponde.';
+      '<span class="em-prompt-dot" aria-hidden="true"></span>Pasá el cursor sobre un cuadrado para ver a qué cáncer corresponde.';
     container.appendChild(prompt);
 
     const body = document.createElement('div');
