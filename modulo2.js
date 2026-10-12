@@ -13131,7 +13131,7 @@
     // positionTooltip().
     function showTooltip(p, e) {
       ttName.textContent = p.name;
-      ttPct.innerHTML = `<b>${p.pct.toLocaleString('es-AR')}%</b> de las muertes por cáncer`;
+      ttPct.innerHTML = `<b>${p.cancer.toLocaleString('es-AR')}</b> muertes por cáncer de mama`;
       tooltip.classList.add('visible');
       positionTooltip(e);
     }
@@ -13262,6 +13262,11 @@
       provinceChart.data.datasets[1].data = [p.cancer];
       provinceChart.update();
       chartTitleEl.textContent = `${p.name}`;
+
+      const pctEl = document.getElementById('brChartPct');
+      if (pctEl) {
+        pctEl.innerHTML = `<b>${p.pct.toLocaleString('es-AR')}%</b> de las muertes por cáncer fueron por cáncer de mama`;
+      }
     }
 
     // selección inicial: Buenos Aires (con CABA resaltada junto con ella)
@@ -13294,15 +13299,64 @@
     // Fuente: un solo botón, el texto cambia según la pestaña.
     const srcBox = document.getElementById('brSrc');
     const srcText = document.getElementById('brSrcText');
-    const SRC_ANIO = 'Microdatos DEIS 2005–2024.';
+    const SRC_ANIO =
+      'Muertes: microdatos DEIS 2005–2024. Población femenina: proyecciones INDEC ' +
+      '(2005–2009: INDEC-CELADE 1950–2015; 2010–2024: INDEC 2010–2040).';
     const SRC_PROV =
       'Microdatos DEIS, defunciones acumuladas 2018–2022. Límites provinciales: IGN 2019 ' +
       '(vía Trase Atlas), proyección transversal de Mercator. Cada punto representa 100 ' +
       'muertes por cáncer de mama, distribuidos aleatoriamente dentro del territorio de ' +
       'cada provincia (no marcan ubicaciones reales).';
+    const srcRow = document.querySelector('.br-src-row');
+
+    const SUB_ANIO = 'Muertes por cáncer de mama cada 100.000 mujeres. Argentina, 2005–2024.';
+    const SUB_PROV =
+      'Muertes por cáncer de mama por provincia, 2018–2022. Cada punto equivale a 100 muertes.';
+    const srcSub = document.getElementById('brSrcSub');
+
+    // ---------- Notas que se abren al pasar el cursor por ciertos años ----------
+    // Cada clave es un año de la serie; el valor es el texto (puede llevar <br>)
+    // que se muestra en el desplegable "Fuente" mientras el cursor esté sobre ese año.
+    const NOTAS_ANIO = {
+      2015: 'Variación interanual sin causa oficial identificada. Tasa bruta, sin ajuste por edad.',
+      2017: 'Variación interanual sin causa oficial identificada. Tasa bruta, sin ajuste por edad.',
+      2020:
+        'Año de pandemia. Hubo demoras en el procesamiento de las estadísticas vitales y ' +
+        'cambios en la clasificación de causas por la covid-19.<br><br>' +
+        'Fuente: DEIS, Estadísticas Vitales 2020, Serie 5, N.º 64.',
+    };
+    // Año cuya nota está abierta en este momento (null = ninguna). Sirve para
+    // 1) no reescribir el texto en cada movimiento del mouse, y
+    // 2) saber si hay algo que restaurar al salir, sin pisar un "Fuente"
+    //    que el usuario haya abierto a mano con un click.
+    let notaAnioActual = null;
+
     function setFuente(texto) {
+      notaAnioActual = null; // al cambiar de pestaña, cualquier nota queda descartada
       srcText.textContent = texto;
       srcBox.removeAttribute('open'); // al cambiar de pestaña se cierra el desplegable
+    }
+
+    // Si el año tiene nota, la muestra y abre el desplegable; si no, restaura todo.
+    function mostrarNotaAnio(year) {
+      const nota = NOTAS_ANIO[year];
+      if (!nota) {
+        ocultarNotaAnio();
+        return;
+      }
+      if (notaAnioActual === year) return; // ya está abierta esa nota
+      notaAnioActual = year;
+      srcText.innerHTML = nota;
+      srcBox.setAttribute('open', '');
+    }
+
+    // Devuelve el botón "Fuente" a su estado normal (texto de "Por año", cerrado).
+    // Solo actúa si había una nota abierta.
+    function ocultarNotaAnio() {
+      if (notaAnioActual === null) return;
+      notaAnioActual = null;
+      srcText.textContent = SRC_ANIO;
+      srcBox.removeAttribute('open');
     }
 
     // animarEntrada(panel)
@@ -13356,8 +13410,11 @@
 
       // Pista rosa de "Por provincia": reaparece cada vez que se vuelve a esta pestaña.
       const promptProvEl = document.getElementById('brProvPrompt');
-      if (promptProvEl) promptProvEl.classList.remove('br-prompt-gone');
-
+      if (promptProvEl) {
+        promptProvEl.classList.remove('br-prompt-gone');
+        promptProvEl.classList.remove('br-hidden'); // <-- NUEVA: la muestra
+      }
+      srcSub.textContent = SUB_PROV;
       setFuente(SRC_PROV);
     });
     tabAnio.addEventListener('click', () => {
@@ -13372,8 +13429,11 @@
       // PISTA ROSA: cada vez que se vuelve a "Por año", reaparece.
       // >>> SI QUERÉS QUE, UNA VEZ OCULTA, NO VUELVA A APARECER <<<
       // borrá (o comentá) estas 2 líneas.
+      const promptProvOff = document.getElementById('brProvPrompt');
+      if (promptProvOff) promptProvOff.classList.add('br-hidden'); // <-- NUEVA: la oculta
       const promptAnioEl = document.getElementById('brAnioPrompt');
       if (promptAnioEl) promptAnioEl.classList.remove('br-prompt-gone');
+      srcSub.textContent = SUB_ANIO;
       setFuente(SRC_ANIO);
     });
 
@@ -13382,28 +13442,46 @@
     // mama = muertes por cáncer de mama (mujeres)
     // total = muertes por cáncer total (mujeres)
     // tasa = muertes cada 100.000 mujeres
+    // YEAR_DATA: un dato por año (2005-2024).
+    // mama = muertes por cáncer de mama (mujeres)
+    // total = muertes por cáncer total (mujeres)
+    // tasa = muertes cada 100.000 mujeres
+    // poblacion = población femenina estimada (INDEC)
     const YEAR_DATA = [
-      { year: 2005, mama: 5364, total: 26046, tasa: 27.24 },
-      { year: 2006, mama: 5339, total: 26197, tasa: 26.85 },
-      { year: 2007, mama: 5395, total: 26630, tasa: 26.86 },
-      { year: 2008, mama: 5212, total: 26442, tasa: 25.7 },
-      { year: 2009, mama: 5419, total: 27088, tasa: 26.46 },
-      { year: 2010, mama: 5471, total: 27373, tasa: 26.24 },
-      { year: 2011, mama: 5422, total: 27318, tasa: 25.72 },
-      { year: 2012, mama: 5530, total: 28192, tasa: 25.95 },
-      { year: 2013, mama: 5660, total: 28719, tasa: 26.27 },
-      { year: 2014, mama: 5653, total: 29168, tasa: 25.97 },
-      { year: 2015, mama: 5970, total: 29950, tasa: 27.14 },
-      { year: 2016, mama: 5889, total: 30102, tasa: 26.5 },
-      { year: 2017, mama: 6049, total: 30241, tasa: 26.95 },
-      { year: 2018, mama: 5740, total: 29118, tasa: 25.32 },
-      { year: 2019, mama: 5900, total: 30252, tasa: 25.78 },
-      { year: 2020, mama: 5594, total: 28886, tasa: 24.21 },
-      { year: 2021, mama: 5820, total: 29580, tasa: 24.96 },
-      { year: 2022, mama: 5768, total: 29351, tasa: 24.52 },
-      { year: 2023, mama: 5840, total: 29850, tasa: 24.61 },
-      { year: 2024, mama: 5832, total: 30006, tasa: 24.37 },
+      { year: 2005, mama: 5364, total: 26046, tasa: 27.24, poblacion: 19693678 },
+      { year: 2006, mama: 5339, total: 26197, tasa: 26.85, poblacion: 19886783 },
+      { year: 2007, mama: 5395, total: 26630, tasa: 26.86, poblacion: 20082889 },
+      { year: 2008, mama: 5212, total: 26442, tasa: 25.7, poblacion: 20280308 },
+      { year: 2009, mama: 5419, total: 27088, tasa: 26.46, poblacion: 20477339 },
+      { year: 2010, mama: 5471, total: 27373, tasa: 26.24, poblacion: 20847749 },
+      { year: 2011, mama: 5422, total: 27318, tasa: 25.72, poblacion: 21080699 },
+      { year: 2012, mama: 5530, total: 28192, tasa: 25.95, poblacion: 21312880 },
+      { year: 2013, mama: 5660, total: 28719, tasa: 26.27, poblacion: 21543898 },
+      { year: 2014, mama: 5653, total: 29168, tasa: 25.97, poblacion: 21773297 },
+      { year: 2015, mama: 5970, total: 29950, tasa: 27.14, poblacion: 22000620 },
+      { year: 2016, mama: 5889, total: 30102, tasa: 26.5, poblacion: 22225898 },
+      { year: 2017, mama: 6049, total: 30241, tasa: 26.95, poblacion: 22449188 },
+      { year: 2018, mama: 5740, total: 29118, tasa: 25.32, poblacion: 22670130 },
+      { year: 2019, mama: 5900, total: 30252, tasa: 25.78, poblacion: 22888380 },
+      { year: 2020, mama: 5594, total: 28886, tasa: 24.21, poblacion: 23103631 },
+      { year: 2021, mama: 5820, total: 29580, tasa: 24.96, poblacion: 23315929 },
+      { year: 2022, mama: 5768, total: 29351, tasa: 24.52, poblacion: 23525352 },
+      { year: 2023, mama: 5840, total: 29850, tasa: 24.61, poblacion: 23731700 },
+      { year: 2024, mama: 5832, total: 30006, tasa: 24.37, poblacion: 23934795 },
     ];
+
+    // Promedio FIJO de muertes por día, 2005–2024: total de muertes / total de días
+    // (cuenta los años bisiestos). Se calcula UNA vez y no cambia con el año elegido.
+    const PROMEDIO_DIA = (() => {
+      const bisiesto = (y) => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+      const muertes = YEAR_DATA.reduce((a, d) => a + d.mama, 0);
+      const dias = YEAR_DATA.reduce((a, d) => a + (bisiesto(d.year) ? 366 : 365), 0);
+      return muertes / dias;
+    })();
+    document.getElementById('brStatDia').textContent = PROMEDIO_DIA.toLocaleString('es-AR', {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    }); // → "15,5"
 
     // yearInitDone: para que buildYearMap()/buildScatter() corran UNA
     // sola vez (la primera vez que se entra a "Por año"), no cada vez
@@ -13442,20 +13520,11 @@
       currentYear = year;
       const yd = YEAR_DATA.find((d) => d.year === year);
 
-      // Promedio diario: muertes del año / días REALES de ese año
-      // (366 si es bisiesto, 365 si no).
-      const esBisiesto = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
-      const diasDelAnio = esBisiesto ? 366 : 365;
-      document.getElementById('brStatDia').textContent = (yd.mama / diasDelAnio).toLocaleString(
-        'es-AR',
-        { minimumFractionDigits: 1, maximumFractionDigits: 1 },
-      );
-
+      // Columna izquierda: estos dos valores cambian con el año.
+      // (El promedio por día de la columna derecha es fijo: se escribe una sola vez,
+      // arriba, junto a PROMEDIO_DIA.)
+      document.getElementById('brStatPob').textContent = yd.poblacion.toLocaleString('es-AR');
       document.getElementById('brStatMama').textContent = yd.mama.toLocaleString('es-AR');
-      document.getElementById('brStatTasa').textContent = yd.tasa.toLocaleString('es-AR', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      });
 
       document.getElementById('brOverlayYear').textContent = year;
       document.getElementById('brOverlayPct').textContent =
@@ -13467,6 +13536,10 @@
         ds.pointBackgroundColor = ds.years.map((y) => (y === year ? '#ff6f9c' : ds.baseColor));
         scatterChart.update('none');
       }
+
+      // NUEVO: si este año tiene nota (2015, 2017, 2020) abre "Fuente" con ella;
+      // si no, deja el botón como siempre.
+      mostrarNotaAnio(year);
     }
 
     // buildScatter()
@@ -13564,8 +13637,20 @@
           },
           onHover: (evt, els) => {
             if (els.length) selectYear(YEAR_DATA[els[0].index].year);
+            else ocultarNotaAnio(); // NUEVO: el cursor ya no está sobre un año
           },
         },
+        plugins: [
+          {
+            id: 'brAxisX',
+            afterLayout(chart) {
+              const stats = document.querySelector('.br-stats');
+              if (stats) {
+                stats.style.setProperty('--br-axis-x', chart.scales.y.left + 'px');
+              }
+            },
+          },
+        ],
       });
 
       // Hover sobre las etiquetas de año del eje X: Chart.js detecta
@@ -13595,6 +13680,7 @@
             }
           });
           if (closestYear !== null && closestDist < 15) selectYear(closestYear);
+          else ocultarNotaAnio(); // NUEVO: en la franja de etiquetas pero lejos de un año
         }
       });
 
@@ -13616,12 +13702,9 @@
       const ocultarPromptAnio = () => {
         if (promptAnio) promptAnio.classList.add('br-prompt-gone');
       };
-      // Sin {once:true}: los listeners quedan activos para siempre, así la pista
-      // se puede volver a ocultar cada vez que reaparece (ver el reseteo en el
-      // click de la pestaña "Por año", más abajo en este archivo).
-      // Agregar la clase varias veces no hace nada raro: es idempotente.
-      canvasAnio.addEventListener('pointermove', ocultarPromptAnio);
-      canvasAnio.addEventListener('pointerdown', ocultarPromptAnio);
+
+      // NUEVO: al sacar el cursor (o el dedo) del gráfico, la nota desaparece
+      canvasAnio.addEventListener('pointerleave', ocultarNotaAnio);
     }
 
     // initYearTab()
@@ -13642,6 +13725,7 @@
     // "Por año" es la pestaña que se ve al entrar al módulo: armamos su
     // mapa y su gráfico apenas carga la página.
     initYearTab();
+    srcSub.textContent = SUB_ANIO;
     // El capítulo 2 está oculto al cargar la página, así que Chart.js puede
     // haber medido el canvas en 0px: lo re-medimos cuando se hace visible.
     document.querySelector('.nav-item[data-target="2"]').addEventListener('click', () => {

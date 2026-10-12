@@ -339,6 +339,11 @@
                       <button class="br-tab-btn" id="brTabProvincia" type="button">
                         Por provincia
                       </button>
+
+                      <div class="em-prompt em-prompt-tipo br-hidden" id="brProvPrompt">
+                        <span class="em-prompt-dot" aria-hidden="true"></span>Pasá el cursor sobre
+                        una provincia para ver sus datos.
+                      </div>
                     </div>
 
                     <div id="brPanelProvincia" class="br-hidden">
@@ -351,16 +356,7 @@
                              acá adentro: sigue siendo uno solo, compartido
                              arriba de las 2 columnas. -->
                         <div class="br-chart-col">
-                          <p class="br-subhead">
-                            Muertes por cáncer de mama por provincia, 2018–2022. Cada punto equivale
-                            a 100 muertes.
-                          </p>
-
                           <!-- Pista rosa: modulo2.js le agrega/saca "br-prompt-gone" -->
-                          <div class="em-prompt em-prompt-tipo" id="brProvPrompt">
-                            <span class="em-prompt-dot" aria-hidden="true"></span>Pasá el cursor o
-                            tocá una provincia para ver sus datos.
-                          </div>
 
                           <div class="br-panel">
                             <h2 id="brChartTitle">
@@ -372,6 +368,7 @@
                             <div style="width: 100%; height: 190px; position: relative">
                               <canvas id="brProvinceChart"></canvas>
                             </div>
+                            <p class="br-chart-pct" id="brChartPct"></p>
                           </div>
                         </div>
 
@@ -392,7 +389,7 @@
                               </div>
                             </div>
                             <p class="br-legend">
-                              Los puntos son cantidades, no riesgo: más habitantes, más puntos.
+                              Los puntos son cantidades, no riesgo:<br />más habitantes, más puntos.
                             </p>
                           </div>
                         </div>
@@ -400,9 +397,6 @@
                     </div>
 
                     <div id="brPanelAnio">
-                      <p class="br-subhead">
-                        Muertes por cáncer de mama cada 100.000 mujeres. Argentina, 2005–2024.
-                      </p>
                       <div class="br-grid-layout">
                         <!-- El mapa "plano" (#brMapAnio) y su texto grande
                              (.br-map-overlay, año/%) siguen ACÁ, sin tocar --
@@ -450,26 +444,43 @@
                             <canvas id="brAnioScatter"></canvas>
                           </div>
                           <p class="br-axis-note">El eje empieza en 24</p>
-                          <!-- Dato principal: promedio de mujeres que mueren por día -->
-                          <div class="br-day">
-                            <div class="br-day-num" id="brStatDia">—</div>
-                            <div class="br-day-lbl">mujeres mueren por día por cáncer de mama</div>
+                          <!-- Dos columnas de datos:
+                               izquierda = valores que CAMBIAN con el año (población y muertes)
+                               derecha   = valor FIJO (promedio de muertes por día, 2005–2024) -->
+                          <div class="br-stats">
+                            <div class="br-stats-left">
+                              <div class="br-stat-item">
+                                <div class="br-stat-num" id="brStatPob">—</div>
+                                <div class="br-stat-lbl">mujeres en Argentina</div>
+                              </div>
+                              <div class="br-stat-item">
+                                <div class="br-stat-num" id="brStatMama">—</div>
+                                <div class="br-stat-lbl">muertes por cáncer de mama en el año</div>
+                              </div>
+                            </div>
+                            <div class="br-stats-right">
+                              <div class="br-day-num" id="brStatDia">—</div>
+                              <div class="br-day-lbl">
+                                mujeres mueren por día por cáncer de mama
+                              </div>
+                              <div class="br-day-sub">Promedio 2005–2024</div>
+                            </div>
                           </div>
-
-                          <!-- Datos secundarios, en una sola línea y en gris -->
-                          <p class="br-stat-line">
-                            <span id="brStatMama">—</span> muertes en el año ·
-                            <span id="brStatTasa">—</span> cada 100.000 mujeres
-                          </p>
                         </div>
                       </div>
                     </div>
                     <!-- Fuente: una sola para toda la tarjeta, así el botón queda fijo en
                       las dos pestañas. modulo2.js cambia el texto de #brSrcText. -->
-                    <details class="ui-src" id="brSrc">
-                      <summary>Fuente</summary>
-                      <p id="brSrcText">Microdatos DEIS 2005–2024.</p>
-                    </details>
+                    <div class="br-src-row">
+                      <p class="br-src-sub" id="brSrcSub">
+                        Muertes por cáncer de mama por provincia, 2018–2022. Cada punto equivale a
+                        100 muertes.
+                      </p>
+                      <details class="ui-src" id="brSrc">
+                        <summary>Fuente</summary>
+                        <p id="brSrcText">Microdatos DEIS 2005–2024.</p>
+                      </details>
+                    </div>
                   </div>
                 </div>
               </div>
