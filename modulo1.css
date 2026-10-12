@@ -391,14 +391,16 @@
    sus etiquetas ("15-29", "30-44"...) nunca se parten en 2 líneas, así
    que ahí el -4px de base sigue andando bien -- no se tocó. */
 .em-chart-tipo + .em-axis-note{
-  margin-top:9px;
+  /* 18px/22px (antes 9px/14px): Emi pidió más aire entre el gráfico y
+     este eje, y entre el eje y los botones de abajo. */
+  margin-top:18px;
   /* color: probé con var(--text) (más contraste) en una vuelta
      anterior, pero Emi pidió volver al gris apagado -- el mismo
      var(--text-dim) que ya usa .ui-sub (la bajada "Casos nuevos
      estimados..."), para que las dos notas chicas de la tarjeta
      combinen entre sí. */
   color:var(--text-dim);
-  margin-bottom:14px;
+  margin-bottom:22px;
 }
 
 /* Solo "Casos por edad": despega la nota "Años" de las etiquetas de las
@@ -423,6 +425,13 @@
   pointer-events:none;
 }
 /* La barra punteada que sigue al arrastre, con la manija "↕" arriba. */
+/* animation: destello constante (pedido de Emi) para que se note, sin
+   necesidad de leer el texto, que ESTA barra punteada es la que hay
+   que arrastrar -- mismo criterio visual que .em-prompt-dot (pulso de
+   box-shadow con --rose-glow), pero acá en loop sobre el borde
+   entero, no un puntito. Se corta solo al soltar: setupDrag() saca
+   esta zona del DOM apenas termina el arrastre (ver pointerup, más
+   abajo), así que la animación nunca sigue corriendo "de más". */
 .em-guess-bar{
   position:absolute;
   bottom:0;
@@ -432,6 +441,11 @@
   border:2px dashed var(--rose-strong);
   border-radius:7px 7px 3px 3px;
   background:rgba(255,111,156,0.18);
+  animation:em-guess-pulse 1.6s ease-in-out infinite;
+}
+@keyframes em-guess-pulse{
+  0%,100%{ box-shadow:0 0 0 0 rgba(255,111,156,0); }
+  50%{ box-shadow:0 0 16px 3px var(--rose-glow); }
 }
 /* .em-handle es la ÚNICA parte interactiva de toda la zona de
    arrastre (ver el comentario de .em-guess-zone, arriba) --
@@ -569,6 +583,17 @@
   border-color:var(--panel-border);
   color:var(--text-dim);
 }
+/* .em-btn-sum: ancho fijo (lo bastante para "Ver los otros 4 juntos",
+   el más largo de sus 2 textos) -- como .em-tipo-actions centra el
+   grupo entero, si este botón cambiaba de ancho según su texto
+   ("Ver los otros 4 juntos" / "Ver por separado") también corría de
+   lugar a "Probar de nuevo", al lado. Con ancho fijo el grupo entero
+   mide siempre lo mismo, así que nada se mueve (pedido de Emi). */
+.em-btn-sum{
+  width:216px;
+  max-width:100%;
+  text-align:center;
+}
 
 /* ---- "Casos por edad": chips de acceso rápido ---- */
 .em-chips{
@@ -644,7 +669,7 @@
    elementos nuevos (el.animate(), en modulo1.js, ya se salta solo con
    duration:0 cuando corresponde -- ver reduceMotion ahí). */
 @media (prefers-reduced-motion:reduce){
-  .em-bar, .em-val, .em-lbl, .em-col, .em-prompt-dot, .em-reveal-fade{
+  .em-bar, .em-val, .em-lbl, .em-col, .em-prompt-dot, .em-reveal-fade, .em-guess-bar{
     transition:none !important;
     animation:none !important;
   }
@@ -733,7 +758,7 @@
   grid-template-columns:1fr 1fr;
   align-items:flex-start;
   gap:16px 24px;
-  margin-top:4px;
+  margin-top:20px; /* antes 4px -- Emi pidió que las 2 columnas arranquen un poco más abajo de los botones */
 }
 .em-tipo-result .em-feedback{
   /* min-height más alto que la base de .em-feedback (1.5em, una sola
@@ -744,11 +769,28 @@
      en todo momento"). */
   min-height:4.2em;
   margin-bottom:0; /* el margin-bottom base de .em-feedback era para cuando iba pegada a los botones de abajo; acá ya no hace falta */
+  /* text-align:justify (pedido de Emi): pareja los 2 bordes del texto
+     en vez de dejar el derecho irregular -- se nota sobre todo acá,
+     que el mensaje ocupa 2-3 líneas en una columna angosta (la mitad
+     de la tarjeta). */
+  text-align:justify;
 }
 .em-tipo-result-stats{
   display:flex;
   flex-direction:column;
   gap:10px;
+}
+/* .em-stat de base apila el número arriba de la etiqueta (2 líneas,
+   ver más arriba) -- acá, en la columna de datos fijos, Emi pidió que
+   cada dato sea UN SOLO renglón: número en rosa seguido del texto en
+   gris, en la misma línea. align-items:baseline los alinea por el
+   PISO del texto (no por el borde de la caja), que es lo que se ve
+   prolijo cuando el número (1.4rem) y la etiqueta (0.8rem) tienen
+   tamaños de letra distintos. */
+.em-tipo-result-stats .em-stat{
+  flex-direction:row;
+  align-items:baseline;
+  gap:6px;
 }
 
 /* .em-tipo-foot: la bajada que antes iba arriba de todo ("Casos
@@ -961,9 +1003,10 @@
      el min-height de .em-feedback para 2-3 líneas). Se achica acá lo
      mismo que ya se achicaba el resto del sitio en este escalón. */
   .em-tipo-result .em-feedback{min-height:2.6em;}
-  .em-tipo-result{margin-top:2px; gap:8px 24px;}
+  .em-tipo-result{margin-top:4px; gap:8px 24px;}
   .em-tipo-actions{margin-bottom:6px;}
   .em-tipo-foot{margin-top:6px;}
+  .em-chart-tipo + .em-axis-note{margin-top:6px; margin-bottom:10px;}
 }
 
 /* ============ PANTALLAS MUY BAJAS (segundo escalón) ============

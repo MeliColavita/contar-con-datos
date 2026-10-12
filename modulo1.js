@@ -227,7 +227,11 @@
         porcentaje: 29.9,
         sq: 30,
         casos: 20750,
-        headline: '3 de cada 10',
+        // Sin "headline" propio (antes decía "3 de cada 10", pedido de
+        // Emi que diga "30 de cada 100"): sin este campo, cae en el
+        // mismo formato automático que ya usan las demás categorías
+        // ("sq + ' de cada 100'", ver updateHeadline más abajo) --
+        // como sq=30, da exactamente "30 de cada 100".
         text: 'son de mama',
       },
       {
@@ -591,7 +595,12 @@
     btnReset.textContent = 'Probar de nuevo';
     const btnSum = document.createElement('button');
     btnSum.type = 'button';
-    btnSum.className = 'em-btn';
+    // em-btn-sum: ancho fijo (ver modulo1.css) -- su texto cambia de
+    // largo ("Ver los otros 4 juntos" / "Ver por separado") y, como el
+    // grupo de botones está centrado, un botón que cambia de ancho
+    // corría también a "Probar de nuevo" cada vez que se tocaba (pedido
+    // de Emi: que se quede siempre en el mismo lugar).
+    btnSum.className = 'em-btn em-btn-sum';
     btnSum.textContent = tipoState.merged ? 'Ver por separado' : 'Ver los otros 4 juntos';
     actions.appendChild(btnReset);
     actions.appendChild(btnSum);
@@ -729,11 +738,16 @@
 
       const ratio = real / guess;
       let msg;
-      if (Math.abs(ratio - 1) < 0.1) {
+      if (guess === real) {
+        // Acertó justo (ahora posible: la escala de arrastre redondea
+        // de 50 en 50, y 20.750 es múltiplo de 50) -- mensaje propio,
+        // más festejado que el de "cerca".
+        msg = '¡Adivinaste! Son <b>' + formatNumber(real) + '</b>.';
+      } else if (Math.abs(ratio - 1) < 0.1) {
         msg =
           'Dijiste <b>' +
           formatNumber(guess) +
-          '</b>. ¡Muy cerca! Son <b>' +
+          '</b>. ¡Casi! Son <b>' +
           formatNumber(real) +
           '</b> casos por año.';
       } else if (ratio > 1) {
@@ -1210,11 +1224,14 @@
   // NO son "Mama" (que siempre va en rosa fuerte, para destacarla).
   // No hay una variable de :root para esto porque son colores
   // puntuales de ESTE gráfico nomás, no del resto del sitio.
-  // Rango ensanchado (el más claro más claro, el más oscuro más
-  // oscuro) para que las 5 categorías se distingan mejor a simple
-  // vista -- antes quedaban muy parecidas entre sí, sobre todo las 3
-  // del medio.
-  const WAFFLE_GRAYS = ['#ebeff3', '#bcc3cd', '#99a0ac', '#555d68', '#2c313a'];
+  // Calculados con pasos de LUMINOSIDAD PAREJOS (HSL, 92/74/56/38/22%,
+  // mismo matiz que la paleta rosa del sitio -- H=320, S=10%) en vez
+  // de elegidos a ojo: la versión anterior tenía un salto grande entre
+  // el 3er y 4to tono y los 2 últimos quedaban parecidos entre sí
+  // (reportado por Emi: "no se nota diferencia"). El más oscuro
+  // (#3e323a) queda igual bien por encima de --panel (#160f1b), para
+  // no perderse contra el fondo.
+  const WAFFLE_GRAYS = ['#ede9eb', '#c3b6bf', '#9a8493', '#6b5764', '#3e323a'];
 
   // colorForWaffle(d, index): devuelve el color que le toca a un
   // cuadrado del waffle según su categoría: rosa fuerte si es "Mama",
