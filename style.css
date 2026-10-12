@@ -50,11 +50,17 @@ body {
   z-index: 0;
 }
 #intro .bg-video {
-  width: 120%;
-  height: 120%;
-  left: -10%;
-  top: -10%;
-  transform: translateX(4%) translateY(5%);
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  /* Centra la VELA (no el cuadro del video) en la pantalla, sea cual sea la
+     proporción de la ventana. La vela está al 46,25% del ancho del video; con
+     object-fit:cover el video se dibuja con un ancho de max(100vw, 177,78vh),
+     así que la corrimos a la derecha 0,0375 de ese ancho (x1,12 por el
+     zoom). El scale(1.16) tapa los bordes que deja el corrimiento, y los
+     8vh hacia abajo la alejan del título, que ahora queda arriba. */
+  transform: translate(calc(0.0435 * max(100vw, 177.78vh)), 8vh) scale(1.16);
   /* Arranca invisible: la intro empieza mostrando solo el botón de audio.
      El video ya se está reproduciendo de fondo (autoplay+muted), pero
      JS recién le agrega ".visible" a los 10s (ver script.js), momento
@@ -136,6 +142,370 @@ body {
   color: var(--text-dim);
   text-align: center;
   margin-top: 0.6rem;
+}
+
+/* ---------- Animación de entrada de la intro ----------
+   Título y subtítulos aparecen rápido, uno tras otro (cada uno dura
+   0,5s y entran con 0,6s de diferencia), con los puntitos rosa (dotPop)
+   alrededor, como los títulos de los módulos. --d = cuándo arranca cada uno. */
+.intro-text {
+  position: relative;
+  display: inline-block;
+}
+.intro-title,
+.intro-sub,
+.intro-note {
+  opacity: 0;
+  animation: introIn 0.5s ease forwards;
+  animation-delay: var(--d);
+}
+.intro-title {
+  --d: 0.2s;
+}
+.intro-sub {
+  --d: 0.8s;
+}
+.intro-note {
+  --d: 1.4s;
+}
+@keyframes introIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+#intro .dot {
+  animation: dotPop 1.1s ease forwards;
+}
+#intro .dot:nth-child(1) {
+  animation-delay: calc(var(--d) + 0s);
+}
+#intro .dot:nth-child(2) {
+  animation-delay: calc(var(--d) + 0.08s);
+}
+#intro .dot:nth-child(3) {
+  animation-delay: calc(var(--d) + 0.16s);
+}
+#intro .dot:nth-child(4) {
+  animation-delay: calc(var(--d) + 0.24s);
+}
+#intro .dot:nth-child(5) {
+  animation-delay: calc(var(--d) + 0.32s);
+}
+#intro .dot:nth-child(6) {
+  animation-delay: calc(var(--d) + 0.4s);
+}
+
+/* ---------- Mensaje central + botón "Saltear intro" ----------
+   Los dos aparecen cuando terminaron los 3 textos (1,4s + 0,5s = 1,9s;
+   por eso el delay de 2s). */
+#intro .intro-start {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.2rem;
+  pointer-events: none; /* solo el botón recibe clicks */
+  animation: introReveal 0.6s ease 2s both;
+}
+/* Mensaje de volumen: sutil, en el mismo tono apagado que el resto */
+.intro-volume {
+  position: absolute;
+  bottom: calc(100% + 1.2rem);
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  margin: 0;
+  font-size: clamp(0.85rem, 1.5vw, 1rem);
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  text-align: center;
+  transition:
+    opacity 0.5s ease,
+    visibility 0.5s ease;
+}
+#intro.started .intro-volume,
+#intro.ended .intro-volume {
+  opacity: 0;
+  visibility: hidden;
+}
+#intro.ended .intro-start {
+  animation: introReveal 0.5s ease 0s both;
+}
+
+/* ---------- Botón de inicio que se convierte en barra de reproducción ----------
+   Estado inicial: una "píldora" con el texto "Apretá acá para comenzar".
+   Con la clase "started" (la pone script.js al arrancar el audio) se
+   ensancha, el texto se va y aparecen los controles. El relleno
+   translúcido (.player-fill) es el avance del audio. */
+.player-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  pointer-events: auto;
+  transition: transform 0.9s ease;
+}
+/* Al arrancar el audio (y al terminar) la barra baja a donde estaban los
+   títulos: 47vh hacia abajo desde el centro, menos media barra (23px), así
+   la barra apoya a 3vh del borde, igual que "Saltear intro". */
+#intro.started .player-wrap,
+#intro.ended .player-wrap {
+  transform: translateY(calc(47vh - 23px));
+}
+/* Título y subtítulos: arrancan abajo; con el audio suben arriba del todo */
+#intro .intro-head {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% - 3vh);
+  transform: translateY(-100%);
+  text-align: center;
+  pointer-events: none; /* ocupa todo el ancho: sin esto tapaba el botón "Saltear intro" */
+  transition:
+    top 0.9s ease,
+    transform 0.9s ease;
+}
+#intro.started .intro-head,
+#intro.ended .intro-head {
+  top: 4vh;
+  transform: none;
+}
+.intro-head .intro-title {
+  margin: 0 0 0.4rem;
+}
+.intro-player {
+  position: relative;
+  overflow: hidden;
+  width: 19rem;
+  max-width: 90vw;
+  height: 46px;
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(4px);
+  transition:
+    width 0.6s ease,
+    border-color 0.3s ease;
+}
+.intro-player:hover {
+  border-color: var(--rose);
+}
+#intro.started .intro-player {
+  width: min(34rem, 90vw);
+}
+#intro.ended .intro-player {
+  width: 11rem;
+}
+#intro.ended .player-fill {
+  opacity: 0; /* con "Continuar" no hay avance que mostrar */
+}
+/* Botón redondo de "volver a escuchar": solo con el audio terminado */
+#intro .player-replay {
+  display: none;
+  width: 46px;
+  height: 46px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(4px);
+}
+#intro .player-replay:hover {
+  border-color: var(--rose);
+}
+#intro.ended .player-replay {
+  display: grid;
+}
+#intro.ended.failed .player-replay {
+  display: none; /* si el audio no cargó no hay nada para repetir */
+}
+.player-track {
+  position: absolute;
+  inset: 0;
+  cursor: pointer;
+}
+.player-fill {
+  height: 100%;
+  width: 0;
+  background: rgba(255, 111, 156, 0.28); /* --rose-strong, medio transparente */
+  transition: width 0.3s linear;
+  pointer-events: none;
+}
+#intro .player-start {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0 16px;
+  justify-content: center;
+  background: none;
+  border: 0;
+  border-radius: 30px;
+  backdrop-filter: none;
+  font-size: 1rem;
+  transition:
+    opacity 0.3s ease,
+    visibility 0.3s ease;
+}
+#intro.started .player-start {
+  opacity: 0;
+  visibility: hidden;
+}
+.player-controls {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 10px;
+  pointer-events: none; /* los espacios vacíos dejan pasar el click a la barra */
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.4s ease 0.25s,
+    visibility 0.4s ease 0.25s;
+}
+#intro.started .player-controls {
+  opacity: 1;
+  visibility: visible;
+}
+.pbtn {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--text);
+  cursor: pointer;
+  pointer-events: auto;
+}
+.pbtn:hover {
+  color: var(--rose);
+  background: rgba(255, 255, 255, 0.08);
+}
+.pbtn:focus-visible {
+  outline: 2px solid var(--rose-strong);
+  outline-offset: 2px;
+}
+.pbtn[aria-pressed='false'] {
+  opacity: 0.45;
+}
+/* cada botón trae 2 íconos; se ve uno según el estado */
+.pbtn .i-pause,
+.pbtn .i-muted {
+  display: none;
+}
+.pbtn[data-state='playing'] .i-play,
+.pbtn[data-state='muted'] .i-vol {
+  display: none;
+}
+.pbtn[data-state='playing'] .i-pause,
+.pbtn[data-state='muted'] .i-muted {
+  display: inline;
+}
+.player-time {
+  flex: 1;
+  margin-left: 8px;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+/* Subtítulos: aparecen encima de la barra */
+.intro-caption {
+  position: absolute;
+  bottom: calc(100% + 0.9rem);
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: min(90vw, 40rem);
+  margin: 0;
+  padding: 0.4rem 0.9rem;
+  border-radius: 10px;
+  background: rgba(7, 5, 10, 0.55);
+  color: var(--text);
+  font-size: clamp(0.95rem, 1.8vw, 1.2rem);
+  text-align: center;
+  line-height: 1.35;
+}
+
+#intro .skip-btn {
+  position: absolute;
+  right: 3vw;
+  bottom: 3vh;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: var(--text);
+  padding: 8px 18px;
+  border-radius: 30px;
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  animation: introReveal 0.6s ease 2s both;
+}
+#intro .skip-btn:hover {
+  border-color: var(--rose);
+}
+.skip-btn:focus-visible {
+  outline: 2px solid var(--rose-strong);
+  outline-offset: 3px;
+}
+@keyframes introReveal {
+  from {
+    opacity: 0;
+    visibility: hidden;
+  }
+  to {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+/* Con el audio terminado ("Continuar") saltear ya no tiene sentido */
+#intro.ended .skip-btn {
+  animation: none;
+  opacity: 0;
+  visibility: hidden;
+}
+@media (max-width: 900px) {
+  /* en pantallas angostas el botón chocaría con la barra o con el texto:
+     antes de empezar va arriba a la derecha; con el audio, centrado sobre la barra */
+  #intro .skip-btn {
+    top: 1rem;
+    right: 1rem;
+    bottom: auto;
+  }
+  #intro.started .skip-btn {
+    top: auto;
+    right: 50%;
+    bottom: calc(3vh + 46px + 0.8rem);
+    transform: translateX(50%);
+  }
+}
+@media (hover: none) {
+  #intro .skip-btn {
+    min-height: 44px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .intro-title,
+  .intro-sub,
+  .intro-note {
+    opacity: 1;
+    animation: none;
+  }
+  #intro .dot {
+    animation: none;
+  }
 }
 
 /* ---------- MAIN EXPERIENCE ---------- */
