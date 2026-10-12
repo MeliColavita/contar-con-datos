@@ -55,9 +55,19 @@ audio.addEventListener('timeupdate', () => {
 // querer, algún handler del contenedor padre.
 // Entra a la experiencia (lo usa el botón del audio ya terminado).
 function enterExperience() {
+  clearInterval(fadeId); // corta el fade-in de volumen si seguía en curso
   audio.pause();
+  audio.currentTime = 0;
   introVideo.pause();
+  // Importante: sacar "started"/"ended". Con "started", el CSS deja
+  // .player-controls en visibility:visible y los .pbtn tienen
+  // pointer-events:auto, así que seguían recibiendo clicks por encima de
+  // los módulos aunque #intro estuviera .hidden.
+  intro.classList.remove('started', 'ended', 'failed');
   intro.classList.add('hidden');
+  intro.setAttribute('inert', ''); // nada del intro recibe clicks ni foco
+  intro.setAttribute('aria-hidden', 'true');
+  introCaption.hidden = true;
 
   // Recién ahora arranca el video del módulo activo (capítulo 1 al
   // entrar por primera vez). Los capítulos 2 y 3 arrancan solos al
@@ -72,8 +82,13 @@ function enterExperience() {
 }
 
 const AUDIO_FAIL_TEXT = 'Continuar →';
+// true cuando ya se entró a la experiencia (la intro quedó desactivada)
+function introClosed() {
+  return intro.classList.contains('hidden');
+}
 // Si el audio no carga, no dejamos la intro trabada: se puede entrar igual.
 function audioFailed() {
+  if (introClosed()) return; // si ya se salteó la intro, no la "revivimos"
   audioHasEnded = true;
   audioBtn.textContent = AUDIO_FAIL_TEXT;
   intro.classList.remove('started');
@@ -97,6 +112,7 @@ skipBtn.addEventListener('click', (e) => {
 // a ser un botón: "Continuar →", con un botón al lado para volver a escuchar.
 audioBtn.addEventListener('click', (e) => {
   e.stopPropagation();
+  if (introClosed()) return;
 
   if (audioHasEnded) {
     enterExperience();
@@ -108,9 +124,13 @@ audioBtn.addEventListener('click', (e) => {
   audio
     .play()
     .then(() => {
+      if (introClosed()) return audio.pause(); // se salteó mientras cargaba
       fadeVolume(0.45); // sube el volumen gradualmente hasta 0.45
     })
     .catch((err) => {
+      // Si se saltea la intro mientras play() está pendiente, pause()
+      // rechaza la promesa: no es un error real, no hay que hacer nada.
+      if (introClosed()) return;
       console.warn('No se pudo reproducir el audio:', err);
       audioFailed();
     });
@@ -183,19 +203,23 @@ audio.addEventListener('play', updatePlayState);
 audio.addEventListener('pause', updatePlayState);
 
 pPlay.addEventListener('click', () => {
+  if (introClosed()) return;
   if (audio.paused) audio.play().catch(() => {});
   else audio.pause();
 });
 pRestart.addEventListener('click', () => {
+  if (introClosed()) return;
   audio.currentTime = 0;
   audio.play().catch(() => {});
 });
 pMute.addEventListener('click', () => {
+  if (introClosed()) return;
   audio.muted = !audio.muted;
   pMute.dataset.state = audio.muted ? 'muted' : 'on';
   pMute.setAttribute('aria-label', audio.muted ? 'Activar sonido' : 'Silenciar');
 });
 pCC.addEventListener('click', () => {
+  if (introClosed()) return;
   captionsOn = !captionsOn;
   pCC.setAttribute('aria-pressed', captionsOn);
   updateCaption(audio.currentTime);
@@ -204,6 +228,7 @@ pCC.addEventListener('click', () => {
 // y la barra de reproducción vuelve a aparecer, junto con "Saltear intro".
 const pReplay = document.getElementById('pReplay');
 pReplay.addEventListener('click', () => {
+  if (introClosed()) return;
   audioHasEnded = false;
   intro.classList.remove('ended');
   intro.classList.add('started');
@@ -215,7 +240,7 @@ pReplay.addEventListener('click', () => {
 });
 // Tocar la barra lleva el audio a ese momento (solo con la barra activa)
 pTrack.addEventListener('click', (e) => {
-  if (!intro.classList.contains('started') || !audio.duration) return;
+  if (introClosed() || !intro.classList.contains('started') || !audio.duration) return;
   const r = pTrack.getBoundingClientRect();
   audio.currentTime = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)) * audio.duration;
 });
@@ -225,6 +250,7 @@ pTrack.addEventListener('click', (e) => {
 // click de arriba lo trata como "entrar a la experiencia" en vez de
 // activar/pausar audio.
 audio.addEventListener('ended', () => {
+  if (introClosed()) return;
   audioHasEnded = true;
   audioBtn.textContent = AUDIO_FAIL_TEXT; // "Continuar →"
   intro.classList.remove('started');
@@ -234,14 +260,16 @@ audio.addEventListener('ended', () => {
 
 // Sube el volumen del audio de a poco (en "steps" pasos) para que no entre
 // de golpe apenas se aprieta play. target = volumen final (0 a 1).
+let fadeId = null; // guardamos el intervalo para poder cortarlo al saltear la intro
 function fadeVolume(target, ms = 1500) {
+  clearInterval(fadeId);
   const steps = 30;
   const stepSize = target / steps;
   let i = 0;
-  const id = setInterval(() => {
+  fadeId = setInterval(() => {
     i++;
     audio.volume = Math.min(target, stepSize * i);
-    if (i >= steps) clearInterval(id);
+    if (i >= steps) clearInterval(fadeId);
   }, ms / steps);
 }
 
