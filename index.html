@@ -575,215 +575,24 @@
                   </button>
                 </div>
 
-                <!-- .ui-panels: envuelve los 2 paneles (grid-stack, ver CSS)
-                 para que el rectángulo mida siempre el alto del panel
-                 más alto de los dos, y no cambie de tamaño al cambiar
-                 de pestaña. -->
+                <!-- Pestañas vacías (pedido): los paneles quedan sin contenido. -->
                 <div class="ui-panels">
-                  <!-- Panel 1: arranca visible (clase .active) -->
                   <div
                     class="ui-tabpanel active"
                     id="me-tabpanel-1"
                     role="tabpanel"
                     aria-labelledby="me-tabbtn-1"
-                  >
-                    <div class="ui-panel">
-                      <!-- Bajada PROPIA de esta pestaña (contenido definitivo
-                   de Meli): antes había una sola ".ui-sub" compartida arriba
-                   de las pestañas -- ahora cada pestaña tiene la suya,
-                   porque el texto es distinto en cada una. -->
-                      <p class="ui-sub">
-                        Una IA leyó las mamografías de 115.973 mujeres de 50 a 70 años del Reino
-                        Unido (estudio AIMS) y se comparó con un radiólogo.
-                      </p>
-                      <!-- Pista de interacción, mismo criterio que .em-prompt del
-                   módulo 1 (punto rosa que pulsa + texto) -- avisa que el
-                   selector de abajo cambia lo que se ve en la grilla. Se
-                   oculta con [hidden] apenas se activa "IA sola" (modulo3.js):
-                   sin esto, la instrucción seguía diciendo "Tocá IA sola"
-                   aunque ya estuviera tocado/activo, como si no hubiese
-                   pasado nada. Vuelve a aparecer si se vuelve a "Un
-                   radiólogo". -->
-                      <div class="me-prompt" id="me-prompt1">
-                        <span class="me-prompt-dot" aria-hidden="true"></span>Tocá "IA sola" para
-                        ver qué pasa.
-                      </div>
-                      <!-- Selector: cambia qué puntos están encendidos en la
-                   grilla. -->
-                      <div class="ui-seg" role="group" aria-label="Modo de lectura">
-                        <button id="me-m-sin" type="button" aria-pressed="true">
-                          Un radiólogo
-                        </button>
-                        <button id="me-m-con" type="button" aria-pressed="false">IA sola</button>
-                      </div>
-
-                      <!-- La grilla de 1.000 puntos + leyenda + número. 40
-                   columnas x 25 filas = 1.000 puntos (.me-dotgrid los crea
-                   vacíos; modulo3.js les agrega las clases me-lit / me-new
-                   a las posiciones que corresponden). -->
-                      <div class="ui-visual">
-                        <div class="ui-field">
-                          <div
-                            class="me-dotgrid"
-                            id="me-g1"
-                            style="grid-template-columns: repeat(40, 1fr)"
-                            role="img"
-                            aria-label="Grilla de 1.000 mujeres"
-                          ></div>
-                        </div>
-                        <div class="ui-stats">
-                          <!-- Texto chico que explica qué representa cada punto
-                       de la grilla (pedido puntual de Meli: antes esto
-                       solo estaba en el aria-label, invisible). -->
-                          <p class="ui-note">
-                            Cada punto es una de 1.000 mujeres que se hacen el control.
-                          </p>
-                          <div class="ui-legend">
-                            <span><i style="background: var(--flame)"></i>Cáncer detectado</span
-                            ><!-- Este 2do ítem arranca oculto ([hidden]): modulo3.js
-                         le sacar/pone el atributo según el modo elegido, para
-                         que solo se vea en la vista "IA sola" (pedido de Meli). -->
-                            <span id="me-leg1-ia" hidden
-                              ><i style="background: var(--rose-strong)"></i>Detectado de más con
-                              IA</span
-                            >
-                          </div>
-                          <div class="ui-readout">
-                            <div>
-                              <div class="ui-big" id="me-r1">7,5</div>
-                              <div class="ui-lab">cánceres detectados</div>
-                            </div>
-                          </div>
-                          <!-- "Respuesta" (pedido de Meli): solo se muestra en la
-                       vista "IA sola", modulo3.js le sacar/pone [hidden]
-                       igual que a la leyenda de arriba. -->
-                          <p class="ui-pinktext me-answer" id="me-answer1" hidden>
-                            Sí: casi 2 cánceres más cada 1.000 mujeres.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Panel 2: arranca oculto, sin clase .active -->
+                  ></div>
                   <div
                     class="ui-tabpanel"
                     id="me-tabpanel-2"
                     role="tabpanel"
                     aria-labelledby="me-tabbtn-2"
-                  >
-                    <div class="ui-panel">
-                      <!-- Bajada PROPIA de esta pestaña (ver comentario del
-                   mismo tipo en el panel 1): antes era el único .ui-sub
-                   del módulo; ahora cada pestaña tiene el suyo. -->
-                      <p class="ui-sub">
-                        Los cánceres que aparecen entre un control y el siguiente, después de una
-                        mamografía que había salido normal, se llaman cánceres de intervalo.
-                      </p>
-                      <!-- Sin pista de interacción rosa acá (a diferencia del
-                   panel 1): el botón de abajo ("Ver qué marca la IA") ya es
-                   lo bastante claro por sí solo -- una instrucción aparte
-                   sobraba. -->
-                      <!-- Un solo botón, SIN el contenedor .ui-seg (antes lo
-                   envolvía para que se viera como una píldora de selector,
-                   pero esa barra ancha vacía es el resto visual del
-                   selector "Un radiólogo/IA sola" de la OTRA pestaña -- acá
-                   no hay nada que seleccionar, es una sola acción). Usa
-                   .me-btn (el mismo estilo de botón-contorno que .em-btn
-                   del módulo 1: "Sumá los otros 4", etc.), alineado a la
-                   izquierda, debajo de la instrucción. El texto cambia
-                   entre los 2 estados (modulo3.js): "Ver qué marca la IA"
-                   / "Volver a ocultar". -->
-                      <button id="me-btn2" class="me-btn" type="button" aria-pressed="false">
-                        Ver qué marca la IA
-                      </button>
-                      <!-- Grilla de 100 puntos: 20 columnas x 5 filas, más
-                   achatada que la del panel 1 a propósito (mismo motivo
-                   que antes: si esta grilla terminara siendo más alta
-                   que la del panel 1, sería ELLA la que fija el alto
-                   compartido de los dos paneles -- ver comentario de
-                   #me-tabpanel-2 en el CSS). -->
-                      <div class="ui-visual">
-                        <div class="ui-field">
-                          <div
-                            class="me-dotgrid"
-                            id="me-g2"
-                            style="grid-template-columns: repeat(20, 1fr)"
-                            role="img"
-                            aria-label="100 cánceres de intervalo"
-                          ></div>
-                          <!-- Texto chico que explica qué representa cada punto:
-                       pie de la grilla (abajo, a la izquierda) -- antes
-                       vivía arriba de la leyenda, en .ui-stats, pero esa
-                       explicación se busca debajo de la grilla, no al
-                       lado de los números. -->
-                          <p class="ui-note">Cada punto es uno de 100 cánceres de intervalo.</p>
-                        </div>
-                        <div class="ui-stats">
-                          <!-- Orden de lectura: PRIMERO el resultado (lo que se
-                       busca), DESPUÉS la leyenda (la referencia, se
-                       consulta solo si hace falta) -- antes iba al revés. -->
-                          <div class="ui-readout">
-                            <p class="ui-sub" id="me-r2-q">
-                              ¿Cuántos habría marcado la IA en la mamografía anterior?
-                            </p>
-                            <!-- Oración completa en vez del número suelto ("Alrededor
-                         de 25 de cada 100." no decía de qué, recién se
-                         entendía leyendo la leyenda de abajo). -->
-                            <p class="ui-pinktext me-answer" id="me-r2-a" hidden>
-                              La IA habría marcado alrededor de 25 de cada 100.
-                            </p>
-                            <!-- Línea opcional que conecta con la pregunta del título
-                         del módulo ("¿Puede la IA detectar más cánceres de
-                         mama?"), sin prometer de más -- "podría", no "va a". -->
-                            <p class="ui-sub" id="me-r2-note" hidden>
-                              En algunos casos, esto podría permitir un diagnóstico más temprano.
-                            </p>
-                          </div>
-                          <div class="ui-legend">
-                            <span
-                              ><i
-                                style="
-                                  background: var(--dot-off);
-                                  border: 1px solid rgba(255, 255, 255, 0.35);
-                                "
-                              ></i
-                              >Cáncer de intervalo</span
-                            ><!-- 2do ítem: arranca oculto, aparece junto con los
-                         puntos rosas al tocar el botón. -->
-                            <span id="me-leg2-ia" hidden
-                              ><i style="background: var(--rose-strong)"></i>Marcado por la IA en la
-                              mamografía anterior</span
-                            >
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  ></div>
                 </div>
-                <!-- /.ui-panels -->
 
-                <!-- Aclaración general del módulo (aplica a las 2 pestañas, por
-                 eso va acá afuera y no adentro de .ui-panels): mismo criterio
-                 que la nota al pie de "Casos por edad" en módulo 1 (.ui-note,
-                 compartida en style.css -- antes se llamaba .em-note y vivía
-                 solo en modulo1.css, se subió a compartida para que este
-                 módulo la pueda usar igual). -->
-                <p class="ui-note">
-                  <strong>Límites:</strong> estudio del Reino Unido con mamografías de años
-                  anteriores. La IA no se usó con pacientes y pidió estudios adicionales a más
-                  mujeres que un radiólogo. No es una predicción para Argentina.
-                </p>
-
-                <!-- "Fuente" ahora es UNA sola, compartida por las 2 pestañas (el
-                 texto ya era idéntico en las 2 -- duplicarla no sumaba nada) y
-                 va DESPUÉS de "Límites" (pedido explícito: antes "Fuente" quedaba
-                 arriba de "Límites", acá se invierte el orden). Mismo .ui-src
-                 de siempre: abajo a la derecha, popover hacia arriba. -->
-                <details class="ui-src">
-                  <summary>Fuente</summary>
-                  <p>Kelly et al., Nature Cancer, 2026 (estudio AIMS). IA de Google.</p>
-                </details>
+                <!-- Único botón del módulo: inicia el video 04_FINAL (ver modulo3.js). -->
+                <button id="me-final" class="me-final" type="button">Final</button>
               </div>
               <!-- /.ui-panel.me-card -->
             </div>
@@ -818,6 +627,18 @@
           </video>
           <video class="chapter-video" data-chapter="3" preload="metadata" muted playsinline>
             <source src="03_MODULO.mp4" type="video/mp4" />
+          </video>
+          <!-- Video final: lo activa el botón "Final" del módulo 3 (ver modulo3.js).
+           data-chapter="4" no coincide con ningún .nav-item, así que script.js no lo elige solo. -->
+          <video
+            class="chapter-video"
+            id="me-video4"
+            data-chapter="4"
+            preload="metadata"
+            muted
+            playsinline
+          >
+            <source src="04_FINAL.mp4" type="video/mp4" />
           </video>
         </div>
 

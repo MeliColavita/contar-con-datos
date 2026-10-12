@@ -41,34 +41,41 @@
    ".em-prompt[hidden]" (ver más abajo): .me-prompt también define su
    propio "display", que empata en especificidad contra el [hidden]
    del navegador y le gana si no se fuerza acá. */
-.me-prompt{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  text-align:center;
-  gap:8px;
-  color:var(--rose-strong);
-  font-weight:600;
-  font-size:1.05rem;
-  margin-bottom:16px;
+.me-prompt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 8px;
+  color: var(--rose-strong);
+  font-weight: 600;
+  font-size: 1.05rem;
+  margin-bottom: 16px;
 }
-.me-prompt[hidden]{
-  display:none;
+.me-prompt[hidden] {
+  display: none;
 }
-.me-prompt-dot{
-  width:8px;
-  height:8px;
-  border-radius:50%;
-  background:var(--rose-strong);
-  flex:none;
-  animation:me-dot-pulse 1.4s infinite;
+.me-prompt-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--rose-strong);
+  flex: none;
+  animation: me-dot-pulse 1.4s infinite;
 }
-@keyframes me-dot-pulse{
-  0%,100%{ box-shadow:0 0 0 0 var(--rose-glow); }
-  50%{ box-shadow:0 0 0 8px rgba(255,111,156,0); }
+@keyframes me-dot-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 var(--rose-glow);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(255, 111, 156, 0);
+  }
 }
-@media (prefers-reduced-motion:reduce){
-  .me-prompt-dot{ animation:none; }
+@media (prefers-reduced-motion: reduce) {
+  .me-prompt-dot {
+    animation: none;
+  }
 }
 
 /* .me-btn: botón de acción único del panel 2 ("Ver qué marca la IA" /
@@ -80,18 +87,20 @@
    visual que .em-btn del módulo 1 (botón-contorno, no relleno, pensado
    para una sola acción en vez de un grupo de opciones) -- se duplica
    acá en vez de compartirla, mismo criterio que .me-prompt arriba. */
-.me-btn{
-  font-family:var(--sans);
-  font-size:0.85rem;
-  font-weight:600;
-  background:transparent;
-  color:var(--text);
-  border:1px solid var(--rose-strong);
-  border-radius:999px;
-  padding:8px 16px;
-  cursor:pointer;
-  transition:background .2s, color .2s;
-  margin-bottom:16px;
+.me-btn {
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--rose-strong);
+  border-radius: 999px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    color 0.2s;
+  margin-bottom: 16px;
   /* .ui-panel es flex-column: por default, un <button> como hijo
      directo se ESTIRA al ancho completo (align-self:stretch, el
      comportamiento de fábrica de flex) -- se veía como una barra
@@ -101,18 +110,20 @@
      ("Ver qué marca la IA" / "Volver a ocultar", textos de distinto
      largo) midan siempre lo mismo -- pidió Meli que no "salte" de
      tamaño al cambiar de texto. */
-  align-self:center;
-  width:230px;
-  max-width:100%;
-  text-align:center;
+  align-self: center;
+  width: 230px;
+  max-width: 100%;
+  text-align: center;
 }
-.me-btn:hover{ background:rgba(255,111,156,0.12); }
+.me-btn:hover {
+  background: rgba(255, 111, 156, 0.12);
+}
 /* Estado "revelado" (aria-pressed lo pone modulo3.js): relleno rosa,
    igual criterio que el resto de los botones activos del sitio. */
-.me-btn[aria-pressed="true"]{
-  background:var(--rose-strong);
-  color:#1a0510;
-  border-color:var(--rose-strong);
+.me-btn[aria-pressed='true'] {
+  background: var(--rose-strong);
+  color: #1a0510;
+  border-color: var(--rose-strong);
 }
 
 /* Botones activos de .ui-seg (selector "Un radiólogo"/"IA sola" del
@@ -123,15 +134,15 @@
    que sí tiene .em-tab.active. Se agrega acá, scopeado a .me-card, en
    vez de tocar la regla compartida .ui-seg en style.css -- así no se
    le agrega un brillo que nadie pidió a otros usos futuros de .ui-seg. */
-.me-card .ui-seg button[aria-pressed="true"]{
-  box-shadow:0 6px 18px rgba(255,111,156,0.35);
+.me-card .ui-seg button[aria-pressed='true'] {
+  box-shadow: 0 6px 18px rgba(255, 111, 156, 0.35);
 }
 
 /* Más separación de "Fuente" que el valor de base de .ui-note (10px,
    ver style.css) -- scopeado a este módulo nomás, para no afectar la
    de módulo 1. */
-.me-card .ui-note{
-  margin-top:22px;
+.me-card .ui-note {
+  margin-top: 22px;
 }
 
 /* .me-answer: la "Respuesta" en rosa que solo se ve al revelar el
@@ -144,11 +155,11 @@
    columna angosta de .ui-stats se partía en muchas líneas y quedaba
    casi ilegible -- .me-answer es texto normal en negrita, no "número
    grande", así que envuelve bien en cualquier ancho. */
-.me-answer{
-  font-size:0.85rem;
-  font-weight:600;
-  line-height:1.3;
-  margin:2px 0 0;
+.me-answer {
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.3;
+  margin: 2px 0 0;
 }
 
 /* El ajuste de espaciado título->tarjeta que antes vivía acá, SOLO
@@ -158,16 +169,18 @@
    sacó el override de acá porque ya no hace falta: el valor general
    es el mismo que este capítulo necesitaba. */
 
-  /* ============ TARJETA PRINCIPAL ============
+/* ============ TARJETA PRINCIPAL ============
      La tarjeta visible es la de AFUERA: en el HTML lleva las clases
      "ui-panel me-card" juntas (mismo molde que .em-card del módulo
      1 -- ver modulo1.css), así las dos tarjetas miden exactamente lo
      mismo (ancho, padding, fondo con blur) sin que cada módulo tenga
      que definir su propio tamaño. .me-card solo agrega el margen
      inferior puntual de este módulo. */
-  .me-card{ margin-bottom:8px; }
+.me-card {
+  margin-bottom: 8px;
+}
 
-  /* Las 2 pestañas (.ui-tabpanel, "1.000 mujeres en control" / "Las
+/* Las 2 pestañas (.ui-tabpanel, "1.000 mujeres en control" / "Las
      que se escapaban") YA NO tienen su propia tarjeta adentro: antes
      cada una envolvía su contenido en un .ui-panel con fondo + borde
      + blur PROPIOS -- lo que se veía como "una tarjeta adentro de
@@ -177,14 +190,14 @@
      (que .ui-panel sigue aportando, y que la pestaña 2 -- ver más
      abajo -- todavía necesita para poder centrar su contenido
      verticalmente dentro del espacio disponible). */
-  .me-card .ui-tabpanel > .ui-panel{
-    background:none;
-    border:none;
-    backdrop-filter:none;
-    padding:0;
-  }
+.me-card .ui-tabpanel > .ui-panel {
+  background: none;
+  border: none;
+  backdrop-filter: none;
+  padding: 0;
+}
 
-  /* .ui-tabpanel (la pestaña compartida, definida en style.css) pasa
+/* .ui-tabpanel (la pestaña compartida, definida en style.css) pasa
      de una pestaña a otra con un FUNDIDO de 0,35 segundos
      (transition:opacity): mientras una se apaga, la otra se prende,
      y por un instante las dos se ven parcialmente superpuestas.
@@ -200,11 +213,11 @@
 
      Por eso, acá anulamos esa transición: el cambio de pestaña queda
      INSTANTÁNEO (sin cruce/fundido) en este módulo. */
-  .me-card .ui-tabpanel{
-    transition:none;
-  }
+.me-card .ui-tabpanel {
+  transition: none;
+}
 
-  /* ============================================================
+/* ============================================================
      GRILLA DE PUNTOS (.me-dotgrid) -- paneles 1 y 2
      Cada punto es un <div class="me-dot"> dentro de un contenedor
      CSS Grid, la misma técnica que usa el waffle del Capítulo 1
@@ -218,12 +231,12 @@
      porque depende de cuántos puntos tiene cada visualización
      (1.000 vs. 100) -- no tendría sentido fijarlo acá en el CSS.
      ============================================================ */
-  .me-dotgrid{
-    display:grid;
-    gap:3px;
-    width:100%;
-  }
-  /* Cada punto individual arranca "apagado": usa la variable
+.me-dotgrid {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+}
+/* Cada punto individual arranca "apagado": usa la variable
      compartida --dot-off (definida en :root, style.css) -- un blanco
      bien translúcido, el mismo que usaría cualquier otro módulo para
      representar "sin dato todavía".
@@ -234,37 +247,37 @@
        transition:background -> cuando el JS le cambia la clase (a
                            .me-lit o .me-new), el color cambia de a
                            poco en vez de saltar de golpe */
-  .me-dot{
-    width:100%;
-    aspect-ratio:1;
-    border-radius:50%;
-    background:var(--dot-off);
-    transition:background .5s ease;
-  }
-  /* "Cáncer detectado" (la tasa BASE, sin IA): color ámbar
+.me-dot {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--dot-off);
+  transition: background 0.5s ease;
+}
+/* "Cáncer detectado" (la tasa BASE, sin IA): color ámbar
      (--flame, variable compartida), con un resplandor sutil del
      mismo color alrededor (box-shadow) -- reemplaza al círculo
      ".me-glow" aparte que existía en la versión anterior con SVG;
      acá, al ser más simple la técnica (div en vez de 2 círculos
      superpuestos), el brillo es directamente un box-shadow en el
      punto mismo. */
-  .me-dot.me-lit{
-    background:var(--flame);
-    box-shadow:0 0 6px rgba(255,179,92,.7);
-  }
-  /* "Detectado gracias a la IA" (la diferencia que suma el apoyo de
+.me-dot.me-lit {
+  background: var(--flame);
+  box-shadow: 0 0 6px rgba(255, 179, 92, 0.7);
+}
+/* "Detectado gracias a la IA" (la diferencia que suma el apoyo de
      IA por encima de la tasa base): rosa fuerte (--dot-pink), mismo
      resplandor pero en rosa. Esta MISMA clase se usa en los 2
      paneles: tanto para los puntos "nuevos" del panel 1 (los que se
      encienden solo con IA activada) como para los cánceres de
      intervalo "recuperados" del panel 2 -- en los dos casos
      representan lo mismo conceptualmente: "esto lo encontró la IA". */
-  .me-dot.me-new{
-    background:var(--dot-pink);
-    box-shadow:0 0 7px rgba(255,111,156,.8);
-  }
+.me-dot.me-new {
+  background: var(--dot-pink);
+  box-shadow: 0 0 7px rgba(255, 111, 156, 0.8);
+}
 
-  /* ============================================================
+/* ============================================================
      PANEL 2 ("Los que no se detectan"): ajustes puntuales de layout
      Este panel tiene MENOS contenido que el panel 1, pero la tarjeta
      -- al ser un "grid-stack" (ver .ui-panels en style.css) --
@@ -275,34 +288,38 @@
      ahora es una sola, compartida, después de "Límites" al final de
      toda la tarjeta -- así que acá no hace falta sacarla del flujo
      ni nada parecido, solo centrar .ui-visual.) */
-  /* margin-top/bottom:auto en .ui-visual (que es hijo directo de
+/* margin-top/bottom:auto en .ui-visual (que es hijo directo de
      .ui-panel, el cual es flex-column) hace que ese elemento absorba
      TODO el espacio libre sobrante, repartido mitad arriba/mitad
      abajo suyo -- empujándolo al CENTRO vertical del espacio
      disponible dentro del panel. El texto de arriba (.ui-sub/botón)
      no se mueve (queda pegado arriba, como siempre). */
-  #me-tabpanel-2 .ui-visual{
-    margin-top:auto;
-    margin-bottom:auto;
-  }
+#me-tabpanel-2 .ui-visual {
+  margin-top: auto;
+  margin-bottom: auto;
+}
 
-  @media (min-width:680px){
-    /* 65% en vez del 42% que usa la grilla del panel 1 (ver
+@media (min-width: 680px) {
+  /* 65% en vez del 42% que usa la grilla del panel 1 (ver
        .ui-visual .ui-field en style.css): como en este panel 2 no hay
        .ui-stats compitiendo por texto largo al lado (son apenas 2
        líneas de resultado), la grilla puede ocupar bastante más
        ancho disponible -> cada punto individual sale más grande y
        se ve mejor. */
-    #me-tabpanel-2 .ui-visual .ui-field{ flex:0 0 65%; }
+  #me-tabpanel-2 .ui-visual .ui-field {
+    flex: 0 0 65%;
   }
+}
 
-  /* Respeta la preferencia de accesibilidad "reducir movimiento" del
+/* Respeta la preferencia de accesibilidad "reducir movimiento" del
      sistema operativo: si está activada, el cambio de color de los
      puntos (apagado -> encendido) pasa a ser instantáneo, sin la
      transición suave de .5s que tiene por defecto. */
-  @media (prefers-reduced-motion: reduce){
-    .me-dot{ transition:none; }
+@media (prefers-reduced-motion: reduce) {
+  .me-dot {
+    transition: none;
   }
+}
 
 /* ============ PANTALLAS BAJAS (alto chico) ============
    Mismo criterio que style.css/modulo1.css (ver ahí la explicación
@@ -313,14 +330,52 @@
    nuevo también había que achicarlo en pantallas bajas, o volvía a
    aparecer la barra de scroll (probado contra los 601px reales de
    Brenda). */
-@media (max-height:760px){
-  .me-prompt{margin-bottom:3px;}
-  .me-card .ui-note{margin-top:4px;}
-  .me-answer{margin-top:0;}
-  .me-card .ui-src{margin-top:0;}
-  .me-card .ui-sub{margin-bottom:2px;}
-  .me-card .ui-seg{margin-bottom:2px;}
-  .me-btn{margin-bottom:6px;}
-  .me-dotgrid{gap:2px;}
-  .me-card{margin-bottom:0;}
+@media (max-height: 760px) {
+  .me-prompt {
+    margin-bottom: 3px;
+  }
+  .me-card .ui-note {
+    margin-top: 4px;
+  }
+  .me-answer {
+    margin-top: 0;
+  }
+  .me-card .ui-src {
+    margin-top: 0;
+  }
+  .me-card .ui-sub {
+    margin-bottom: 2px;
+  }
+  .me-card .ui-seg {
+    margin-bottom: 2px;
+  }
+  .me-btn {
+    margin-bottom: 6px;
+  }
+  .me-dotgrid {
+    gap: 2px;
+  }
+  .me-card {
+    margin-bottom: 0;
+  }
+}
+
+/* Único botón del módulo 3 ("Final"): centrado abajo de la tarjeta. */
+.me-final {
+  align-self: center;
+  margin-top: auto;
+  font-family: var(--sans);
+  font-size: 0.95rem;
+  font-weight: 600;
+  background: var(--rose-strong);
+  color: #1a0510;
+  border: 1px solid var(--rose-strong);
+  border-radius: 999px;
+  padding: 10px 32px;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(255, 111, 156, 0.35);
+  transition: filter 0.2s;
+}
+.me-final:hover {
+  filter: brightness(1.1);
 }
