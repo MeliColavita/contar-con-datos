@@ -60,7 +60,7 @@ body {
      así que la corrimos a la derecha 0,0375 de ese ancho (x1,12 por el
      zoom). El scale(1.16) tapa los bordes que deja el corrimiento, y los
      8vh hacia abajo la alejan del título, que ahora queda arriba. */
-  transform: translate(calc(0.0435 * max(100vw, 177.78vh)), 8vh) scale(1.16);
+  transform: translate(calc(0.0435 * max(100vw, 177.78vh)), 26vh) scale(1.06);
   /* Arranca invisible: la intro empieza mostrando solo el botón de audio.
      El video ya se está reproduciendo de fondo (autoplay+muted), pero
      JS recién le agrega ".visible" a los 10s (ver script.js), momento
