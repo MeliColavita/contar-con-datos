@@ -18,14 +18,13 @@
      .em-bar          -> la barra en sí (dentro de .em-col)
      .em-guess-*       -> la zona de arrastre para "adivinar" (Casos por tipo)
      .em-stack/.em-fly -> la pila "los otros 4 juntos" y sus clones voladores
-     .em-chips/.em-chip -> los 3 botones de rango rápido (Casos por edad)
      .em-btn           -> "Probar de nuevo" / "Ver los otros 4 juntos" / "Ver por separado"
      .em-prompt        -> la invitación a interactuar, con el punto que pulsa
      .em-feedback      -> el mensaje de resultado (Casos por tipo)
      .em-tipo-result   -> fila de "2 columnas" debajo de los botones
                          (Casos por tipo): respuesta variable + datos fijos
-     .em-tipo-foot     -> fila al pie de la tarjeta (Casos por tipo):
-                         bajada + "Fuente"
+     .em-foot          -> fila al pie de la tarjeta (Casos por tipo Y
+                         Casos por edad): bajada + "Fuente"
      .em-reveal-fade   -> oculta/muestra con opacity (no [hidden]) sin
                          sacar del flujo (Casos por tipo): así la
                          tarjeta no cambia de alto al revelar
@@ -122,6 +121,20 @@
    vaciar este contenedor con innerHTML = ''). */
 .em-panel{
   width:100%;
+}
+/* Animación de entrada al cambiar de pestaña (.em-tab): un fundido
+   corto + un pequeño desliz hacia arriba -- misma animación que ya
+   usa el módulo 2 al cambiar entre "Por provincia"/"Por año" (ver
+   @keyframes brFadeIn / .br-fade-in en modulo2.css), acá con el
+   prefijo em- de este archivo. modulo1.js se la agrega/saca (ver
+   animarEntrada()) cada vez que se clickea una pestaña -- no en el
+   primer dibujo al cargar la página. */
+@keyframes em-fade-in{
+  from{ opacity:0; transform:translateY(6px); }
+  to{ opacity:1; transform:translateY(0); }
+}
+.em-fade-in{
+  animation:em-fade-in 0.35s ease;
 }
 /* (Acá vivía .em-svg, el estilo del <svg> de los gráficos de barras
    viejos. Se borró junto con todo el dibujado por SVG de modulo1.js:
@@ -276,10 +289,20 @@
    "El tiempo" (módulo 2) con un margen vacío grande más abajo en la
    tarjeta -- Bren pidió aprovechar ese espacio en vez de dejarlo
    vacío, por eso acá las barras son más grandes/presentes (250px en
-   vez de 220px). "Casos por edad" se queda en 220px -- esa pestaña ya
-   medía lo que tenía que medir, no hacía falta tocarla. */
+   vez de 220px). */
 .em-chart-tipo{
   height:250px;
+}
+/* "Casos por edad" perdió los chips de rango y una línea de la
+   instrucción rosa (ver renderCasosPorEdad en modulo1.js -- ya no se
+   puede agrupar) -- Emi pidió aprovechar ese espacio liberado para que
+   las barras se vean más grandes/diferenciadas entre sí (280px, más
+   incluso que "Casos por tipo": acá no hace falta dejar lugar para
+   ningún eje/botón extra). Ver también EDAD_MAX en modulo1.js, bajado
+   de 8000 a 7000 para que la barra más alta llegue más cerca del
+   techo del gráfico, en vez de quedarse corta. */
+.em-chart-edad{
+  height:280px;
 }
 /* "Ver los otros 4 juntos": el grid pasa a 2 columnas centradas, del
    mismo ancho que tenía Mama sola -- --em-colw lo fija modulo1.js al
@@ -375,7 +398,7 @@
 .em-bar-sel{
   background:var(--rose-strong);
 }
-.em-col-age{ cursor:pointer; } /* toda la columna (no solo la barra) responde al clic/arrastre en "Casos por edad" */
+.em-col-age{ cursor:pointer; } /* toda la columna (no solo la barra) responde al clic en "Casos por edad" */
 
 .em-axis-note{
   text-align:center;
@@ -595,34 +618,6 @@
   text-align:center;
 }
 
-/* ---- "Casos por edad": chips de acceso rápido ---- */
-.em-chips{
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
-}
-.em-chip{
-  font-family:var(--sans);
-  font-size:0.8rem;
-  font-weight:600;
-  background:rgba(255,255,255,0.04);
-  color:var(--text-dim);
-  border:1px solid var(--panel-border);
-  border-radius:999px;
-  padding:6px 14px;
-  cursor:pointer;
-  transition:all .2s;
-}
-.em-chip:hover{ border-color:rgba(255,255,255,0.3); color:var(--text); }
-/* El chip activo lo marca modulo1.js con aria-pressed="true" cuando
-   el rango elegido coincide EXACTO con el de ese chip (si el usuario
-   arrastra un rango "suelto", ningún chip queda marcado). */
-.em-chip[aria-pressed="true"]{
-  background:var(--rose-strong);
-  border-color:var(--rose-strong);
-  color:#1a0510;
-}
-
 /* La nota chica al pie de "Casos por edad" (antes ".em-note", definida
    acá) ahora es ".ui-note", compartida en style.css -- módulo 3 la
    necesita también para su propia aclaración, mismo criterio visual.
@@ -669,7 +664,7 @@
    elementos nuevos (el.animate(), en modulo1.js, ya se salta solo con
    duration:0 cuando corresponde -- ver reduceMotion ahí). */
 @media (prefers-reduced-motion:reduce){
-  .em-bar, .em-val, .em-lbl, .em-col, .em-prompt-dot, .em-reveal-fade, .em-guess-bar{
+  .em-bar, .em-val, .em-lbl, .em-col, .em-prompt-dot, .em-reveal-fade, .em-guess-bar, .em-fade-in{
     transition:none !important;
     animation:none !important;
   }
@@ -793,15 +788,16 @@
   gap:6px;
 }
 
-/* .em-tipo-foot: la bajada que antes iba arriba de todo ("Casos
-   nuevos estimados...") + "Fuente", en la misma fila, al pie de la
-   tarjeta (pedido de Emi). "Fuente" es el MISMO elemento .ui-src
-   compartido de siempre (ver index.html) -- modulo1.js lo mueve acá
-   adentro en cada render de esta pestaña, y lo devuelve a su lugar de
-   origen (afuera de #em-chart-panel) antes de que cualquier otra
-   pestaña vuelva a vaciar el panel, para no perderlo (ver render1()
-   en modulo1.js). */
-.em-tipo-foot{
+/* .em-foot: la bajada que antes iba arriba de todo ("Casos nuevos
+   estimados...") + "Fuente", en la misma fila, al pie de la tarjeta
+   (pedido de Emi) -- usada por "Casos por tipo" Y "Casos por edad"
+   (esta última se sumó después, mismo criterio). "Fuente" es el
+   MISMO elemento .ui-src compartido de siempre (ver index.html) --
+   modulo1.js lo mueve acá adentro en cada render de la pestaña activa,
+   y lo devuelve a su lugar de origen (afuera de #em-chart-panel) antes
+   de que cualquier otra pestaña vuelva a vaciar el panel, para no
+   perderlo (ver render1() en modulo1.js). */
+.em-foot{
   display:flex;
   justify-content:space-between;
   align-items:flex-end;
@@ -809,10 +805,10 @@
   gap:8px 12px;
   margin-top:18px;
 }
-.em-tipo-foot .ui-sub{
+.em-foot .ui-sub{
   margin:0;
 }
-.em-tipo-foot .ui-src{
+.em-foot .ui-src{
   margin-top:0;
   flex:0 0 auto;
 }
@@ -1005,7 +1001,7 @@
   .em-tipo-result .em-feedback{min-height:2.6em;}
   .em-tipo-result{margin-top:4px; gap:8px 24px;}
   .em-tipo-actions{margin-bottom:6px;}
-  .em-tipo-foot{margin-top:6px;}
+  .em-foot{margin-top:6px;}
   .em-chart-tipo + .em-axis-note{margin-top:6px; margin-bottom:10px;}
 }
 

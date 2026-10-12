@@ -190,7 +190,12 @@
   // "opts.maxValue" al llamar a renderBarChart; ahora, sin esa
   // función, quedan como constantes nombradas.
   const TIPO_MAX = 25000;
-  const EDAD_MAX = 8000;
+  // Bajado de 8000 a 7000 (el valor más alto de casosPorEdad es 6.278,
+  // "60-74") -- con 8000 esa barra se quedaba a menos del 80% del
+  // alto del gráfico, lo que hacía que las 5 barras se vieran más
+  // parecidas entre sí de lo que son en realidad (pedido de Emi,
+  // sumado a agrandar .em-chart-edad -- ver modulo1.css).
+  const EDAD_MAX = 7000;
   // TIPO_PLACEHOLDER_PX: alto (en píxeles, no %) de las barras de los
   // otros 4 cánceres MIENTRAS Mama todavía no se reveló -- chico e
   // IGUAL para las 4, a propósito (pedido de Emi: "sin datos" hasta
@@ -284,16 +289,12 @@
   // estado "afuera", el usuario perdería su respuesta adivinada o el
   // rango de edad elegido apenas mira otra pestaña y vuelve.
   let tipoState = { revealed: false, guess: null, merged: false };
-  let edadState = { sel: [2, 3] }; // índices en casosPorEdad: "45-59".."60-74" (45 a 74 años)
-
-  // edadDragEnd: a qué función avisarle cuando se suelta el mouse/dedo
-  // durante un arrastre en "Casos por edad". Se declara acá (no
-  // adentro de renderCasosPorEdad) porque el listener de
-  // "pointerup" se registra UNA sola vez en <document> (ver el
-  // arranque, al final) -- si se registrara adentro de la función de
-  // render, cada redibujado apilaría un listener nuevo sin sacar el
-  // anterior.
-  let edadDragEnd = function () {};
+  // edadState.sel: [índice, índice] (siempre el MISMO índice 2 veces)
+  // de la única barra elegida en casosPorEdad -- ya no se puede elegir
+  // un rango de varias barras (ver renderCasosPorEdad, pedido de Emi:
+  // "ya no se permitirá agrupar"). Se mantiene como array de 2 nomás
+  // para no tocar el resto de paint(), que ya leía sel[0]/sel[1].
+  let edadState = { sel: [2, 2] }; // "45-59"
 
   // ============================================================
   // 6. RENDERIZADO DE GRÁFICOS
@@ -646,10 +647,10 @@
     // ("Casos nuevos estimados...") + "Fuente", en la misma fila
     // (pedido de Emi). "Fuente" es el elemento COMPARTIDO de siempre
     // (.ui-src, ver index.html) -- se mueve para acá adentro; "Casos
-    // por edad" y "Porcentaje" no se tocan, siguen con su propia
-    // bajada arriba, sin esta fila.
+    // por edad" usa esta misma fila (.em-foot, ver renderCasosPorEdad);
+    // "Porcentaje" no se toca, sigue con su propia bajada arriba.
     const footRow = document.createElement('div');
-    footRow.className = 'em-tipo-foot';
+    footRow.className = 'em-foot';
     const footSub = document.createElement('p');
     footSub.className = 'ui-sub';
     footSub.textContent = 'Casos nuevos estimados en mujeres, por tipo de cáncer. Argentina, 2024.';
@@ -1033,37 +1034,27 @@
       return s + d.valor;
     }, 0); // 20.750
 
+    // "Fuente" puede estar viviendo adentro del pie de un render
+    // anterior de esta misma pestaña (ver el final de esta función) --
+    // se la devuelve a su lugar de siempre ANTES de vaciar el
+    // contenedor, para no perderla con el innerHTML='' (mismo criterio
+    // que renderCasosPorTipo).
+    if (emSrc.parentElement !== panel1.parentElement) {
+      panel1.parentElement.appendChild(emSrc);
+    }
     container.innerHTML = '';
-    renderSubtitle(container, 'Casos nuevos estimados en mujeres, por edad. Argentina, 2024.');
+    // Ya NO va la bajada ("Casos nuevos estimados...") acá arriba --
+    // se movió al pie de la tarjeta, junto a "Fuente" (pedido de Emi,
+    // igual que "Casos por tipo"; ver el final de esta función).
 
+    // Ya no se puede elegir un RANGO de barras (pedido de Emi: "ya no
+    // se permitirá agrupar") -- la instrucción ya no menciona
+    // "arrastrá", solo invita a tocar una barra.
     const prompt = document.createElement('div');
     prompt.className = 'em-prompt em-prompt-tipo';
     prompt.innerHTML =
-      '<span class="em-prompt-dot" aria-hidden="true"></span>Tocá o arrastrá sobre las barras para elegir un rango de edad.';
+      '<span class="em-prompt-dot" aria-hidden="true"></span>Tocá una barra para ver los casos de esa edad.';
     container.appendChild(prompt);
-
-    // Chips de acceso rápido. "r" = [índice desde, índice hasta] en "data".
-    const chipDefs = [
-      { label: 'Menos de 45', r: [0, 1] },
-      { label: '45 a 74 años', r: [2, 3] },
-      { label: '75 o más', r: [4, 4] },
-      { label: 'Todas las edades', r: [0, 4] },
-    ];
-    const chipsWrap = document.createElement('div');
-    chipsWrap.className = 'em-chips';
-    const chipEls = chipDefs.map(function (c) {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'em-chip';
-      btn.textContent = c.label;
-      btn.dataset.r = c.r.join(',');
-      btn.addEventListener('click', function () {
-        setSel(c.r[0], c.r[1]);
-      });
-      chipsWrap.appendChild(btn);
-      return btn;
-    });
-    container.appendChild(chipsWrap);
 
     const chart = document.createElement('div');
     chart.className = 'em-chart-edad';
@@ -1087,8 +1078,6 @@
       );
     }
 
-    let dragging = false,
-      anchor = null;
     const cols = data.map(function (d, i) {
       const col = document.createElement('div');
       col.className = 'em-col em-col-age';
@@ -1103,13 +1092,8 @@
         d.categoria +
         '</div>';
       col.addEventListener('pointerdown', function (e) {
-        dragging = true;
-        anchor = i;
-        setSel(i, i);
+        setSel(i);
         e.preventDefault();
-      });
-      col.addEventListener('pointerenter', function () {
-        if (dragging) setSel(anchor, i);
       });
       const bar = col.querySelector('.em-bar');
       bar.addEventListener('pointermove', function (e) {
@@ -1120,21 +1104,6 @@
       return col;
     });
 
-    // El arrastre TÁCTIL no dispara "pointerenter" al pasar de una
-    // columna a otra (solo mouse) -- hace falta mirar a mano qué
-    // columna hay debajo del dedo con elementFromPoint.
-    chart.addEventListener('pointermove', function (e) {
-      if (!dragging || e.pointerType === 'mouse') return;
-      const el = document.elementFromPoint(e.clientX, e.clientY);
-      const col = el && el.closest('.em-col-age');
-      if (col) setSel(anchor, cols.indexOf(col));
-    });
-    // El "soltar" se escucha UNA sola vez en <document> (ver el
-    // arranque) -- acá solo se actualiza a qué función avisarle.
-    edadDragEnd = function () {
-      dragging = false;
-    };
-
     const axisNote = document.createElement('div');
     axisNote.className = 'em-axis-note';
     axisNote.textContent = 'Años';
@@ -1143,7 +1112,7 @@
     // Los 2 datos sueltos: se arman UNA vez con renderInlineStats (el
     // texto real lo pone paint(), de abajo) y después se actualizan
     // reescribiendo el texto directo -- no hace falta destruir y
-    // reconstruir el DOM en cada clic/arrastre.
+    // reconstruir el DOM en cada clic.
     const statsWrap = renderInlineStats(container, [
       { valor: '', label: '' },
       { valor: '', label: '' },
@@ -1160,52 +1129,48 @@
       'Son cantidades de casos, no riesgo: hay menos casos después de los 75 años porque hay menos mujeres de esa edad';
     container.appendChild(note);
 
-    // setSel(a, b): fija el rango elegido como [menor, mayor] (no
-    // importa en qué orden se arrastró -- de atrás para adelante o al
-    // revés da el mismo rango) y repinta.
-    function setSel(a, b) {
-      edadState.sel = [Math.min(a, b), Math.max(a, b)];
+    const footRow = document.createElement('div');
+    footRow.className = 'em-foot';
+    const footSub = document.createElement('p');
+    footSub.className = 'ui-sub';
+    footSub.textContent = 'Casos nuevos estimados en mujeres, por edad. Argentina, 2024.';
+    footRow.appendChild(footSub);
+    footRow.appendChild(emSrc);
+    container.appendChild(footRow);
+
+    // setSel(i): fija la única barra elegida y repinta. Ya no hay
+    // rango -- "i" se guarda 2 veces en edadState.sel nomás para no
+    // tocar el resto de paint(), que ya leía sel[0]/sel[1].
+    function setSel(i) {
+      edadState.sel = [i, i];
       paint();
     }
 
-    // paint(): pinta las barras del rango elegido, marca el chip que
-    // coincida (si alguno), recalcula el "X de cada 10" / casos / por
-    // día, y arma la frase -- todo calculado desde "data".
+    // paint(): pinta la barra elegida, recalcula el "X de cada 10" /
+    // casos / por día, y arma la frase -- todo calculado desde "data".
     function paint() {
-      const sel = edadState.sel;
+      const sel = edadState.sel[0];
       cols.forEach(function (col, i) {
-        col.querySelector('.em-bar').classList.toggle('em-bar-sel', i >= sel[0] && i <= sel[1]);
+        col.querySelector('.em-bar').classList.toggle('em-bar-sel', i === sel);
       });
-      chipEls.forEach(function (chip) {
-        chip.setAttribute('aria-pressed', chip.dataset.r === sel.join(','));
-      });
-      const sum = data.slice(sel[0], sel[1] + 1).reduce(function (s, d) {
-        return s + d.valor;
-      }, 0);
-      const share = sum / total;
-      const todas = sel[0] === 0 && sel[1] === 4;
+      const d = data[sel];
+      const share = d.valor / total;
+      // Última barra ("75 o más", sin "hasta"): "a partir de los X
+      // años"; el resto: "entre los X y Y años".
+      const rango =
+        d.hasta == null
+          ? 'a partir de los ' + d.desde + ' años'
+          : 'entre los ' + d.desde + ' y ' + d.hasta + ' años';
 
-      let rango;
-      if (todas) rango = 'en todas las edades';
-      else if (sel[0] === 0) rango = 'antes de los ' + (data[sel[1]].hasta + 1) + ' años';
-      else if (sel[1] === 4) rango = 'a partir de los ' + data[sel[0]].desde + ' años';
-      else rango = 'entre los ' + data[sel[0]].desde + ' y ' + data[sel[1]].hasta + ' años';
+      // "6 de cada 10"; si es menos del 5%, "3 de cada 100" (evita "0 de cada 10")
+      const proporcion =
+        share * 10 < 0.5
+          ? Math.round(share * 100) + ' de cada 100'
+          : Math.round(share * 10) + ' de cada 10';
+      selPctEl.textContent = proporcion;
+      selTxtEl.textContent = 'casos ocurren ' + rango + ' (' + formatNumber(d.valor) + ')';
 
-      if (todas) {
-        // Rango completo: en vez de "10 de cada 10", el total de casos.
-        selPctEl.textContent = formatNumber(sum);
-        selTxtEl.textContent = 'casos nuevos estimados en total';
-      } else {
-        // "6 de cada 10"; si es menos del 5%, "3 de cada 100" (evita "0 de cada 10")
-        const proporcion =
-          share * 10 < 0.5
-            ? Math.round(share * 100) + ' de cada 100'
-            : Math.round(share * 10) + ' de cada 10';
-        selPctEl.textContent = proporcion;
-        selTxtEl.textContent = 'casos ocurren ' + rango + ' (' + formatNumber(sum) + ')';
-      }
-
-      selDiaEl.textContent = String(Math.round(sum / 365));
+      selDiaEl.textContent = String(Math.round(d.valor / 365));
       selDiaTxtEl.textContent = 'diagnósticos por día ' + rango + '.';
     }
 
@@ -1224,14 +1189,20 @@
   // NO son "Mama" (que siempre va en rosa fuerte, para destacarla).
   // No hay una variable de :root para esto porque son colores
   // puntuales de ESTE gráfico nomás, no del resto del sitio.
-  // Calculados con pasos de LUMINOSIDAD PAREJOS (HSL, 92/74/56/38/22%,
-  // mismo matiz que la paleta rosa del sitio -- H=320, S=10%) en vez
-  // de elegidos a ojo: la versión anterior tenía un salto grande entre
-  // el 3er y 4to tono y los 2 últimos quedaban parecidos entre sí
-  // (reportado por Emi: "no se nota diferencia"). El más oscuro
-  // (#3e323a) queda igual bien por encima de --panel (#160f1b), para
-  // no perderse contra el fondo.
-  const WAFFLE_GRAYS = ['#ede9eb', '#c3b6bf', '#9a8493', '#6b5764', '#3e323a'];
+  // Calculados con pasos de LUMINOSIDAD PAREJOS (HSL, mismo matiz que
+  // la paleta rosa del sitio -- H=320, S=10%) en vez de elegidos a
+  // ojo: la versión anterior tenía un salto grande entre el 3er y 4to
+  // tono y los 2 últimos quedaban parecidos entre sí (reportado por
+  // Emi: "no se nota diferencia"). El 1er tono se corrió de 92% a 97%
+  // de luminosidad (más cerca del blanco puro) porque, aun con el
+  // paso de 18 puntos igual que el resto, costaba diferenciarlo del
+  // 2do -- los 2 tonos más claros, justo al lado del blanco de fondo
+  // del waffle, se perciben menos separados entre sí que la misma
+  // distancia de luminosidad en tonos más oscuros (reportado por
+  // Emi: su madre no distinguía el 1er y 2do tono, pero sí los
+  // últimos 3). El más oscuro (#3e323a) queda igual bien por encima
+  // de --panel (#160f1b), para no perderse contra el fondo.
+  const WAFFLE_GRAYS = ['#f8f7f8', '#c3b6bf', '#9a8493', '#6b5764', '#3e323a'];
 
   // colorForWaffle(d, index): devuelve el color que le toca a un
   // cuadrado del waffle según su categoría: rosa fuerte si es "Mama",
@@ -1446,6 +1417,22 @@
     if (renderFn) renderFn(panel1);
   }
 
+  // animarEntrada(): dispara la animación de entrada .em-fade-in (ver
+  // @keyframes em-fade-in en modulo1.css) sobre panel1 -- la misma
+  // animación que ya usa el módulo 2 al cambiar entre sus 2 pestañas
+  // (ver animarEntrada() en modulo2.js). Sacarle la clase y
+  // ponérsela de nuevo no alcanza por sí solo -- el navegador no
+  // "re-dispara" una animación CSS si la clase ya estaba puesta antes
+  // sin un reflow de por medio. "void panel1.offsetWidth" fuerza ese
+  // reflow (lee una propiedad de layout, lo que obliga al navegador a
+  // procesar el cambio anterior antes de seguir).
+  function animarEntrada() {
+    if (reduceMotion) return;
+    panel1.classList.remove('em-fade-in');
+    void panel1.offsetWidth;
+    panel1.classList.add('em-fade-in');
+  }
+
   tabs1.forEach(function (tab) {
     tab.addEventListener('click', function () {
       tabs1.forEach(function (t) {
@@ -1459,26 +1446,20 @@
       // resize a mitad de interacción no lo borre (ver tipoState/
       // edadState, arriba) -- pero eso también hacía que, al VOLVER a
       // la pestaña después de haber jugado, apareciera tal cual se
-      // había dejado (ya revelado/fusionado, o con un rango de edad
-      // viejo) en vez de arrancar de cero. Emi pidió lo contrario: que
+      // había dejado (ya revelado/fusionado, o con la barra elegida
+      // antes) en vez de arrancar de cero. Emi pidió lo contrario: que
       // cada click en la pestaña reinicie el estado, así "Casos por
       // tipo" siempre vuelve a mostrar el arrastre desde el principio,
-      // y "Casos por edad" siempre arranca en "Menos de 45".
+      // y "Casos por edad" siempre arranca en "15-29".
       if (activeKey === 'casosPorTipo') {
         tipoState = { revealed: false, guess: null, merged: false };
       } else if (activeKey === 'casosPorEdad') {
-        edadState.sel = [0, 1]; // "Menos de 45" (ver chips, más abajo: { label: 'Menos de 45', r: [0, 1] })
+        edadState.sel = [0, 0]; // "15-29"
       }
       render1();
+      animarEntrada();
     });
   });
 
   render1(); // primer dibujo, apenas carga la página
-
-  // "Soltar" global para el arrastre de "Casos por edad" (ver
-  // edadDragEnd, declarado en la sección 5). Se registra UNA sola vez
-  // acá, no adentro de renderCasosPorEdad.
-  document.addEventListener('pointerup', function () {
-    edadDragEnd();
-  });
 })();
