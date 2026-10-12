@@ -1164,11 +1164,8 @@
           ? 'a partir de los ' + d.desde + ' años'
           : 'entre los ' + d.desde + ' y ' + d.hasta + ' años';
 
-      // "6 de cada 10"; si es menos del 5%, "3 de cada 100" (evita "0 de cada 10")
-      const proporcion =
-        share * 10 < 0.5
-          ? Math.round(share * 100) + ' de cada 100'
-          : Math.round(share * 10) + ' de cada 10';
+      // Siempre "X de cada 100" (igual que el waffle de "% del total")
+      const proporcion = Math.round(share * 100) + ' de cada 100';
       selPctEl.textContent = proporcion;
       selTxtEl.textContent = 'casos ocurren ' + rango + ' (' + formatNumber(d.valor) + ')';
 
@@ -1204,7 +1201,7 @@
   // Emi: su madre no distinguía el 1er y 2do tono, pero sí los
   // últimos 3). El más oscuro (#3e323a) queda igual bien por encima
   // de --panel (#160f1b), para no perderse contra el fondo.
-  const WAFFLE_GRAYS = ['#f8f7f8', '#c3b6bf', '#9a8493', '#6b5764', '#3e323a'];
+  const WAFFLE_GRAYS = ['#f4e7e5', '#d8b8b5', '#b9898a', '#805e62', '#493b3d'];
 
   // colorForWaffle(d, index): devuelve el color que le toca a un
   // cuadrado del waffle según su categoría: rosa fuerte si es "Mama",
@@ -1239,7 +1236,7 @@
     const prompt = document.createElement('div');
     prompt.className = 'em-prompt em-prompt-pct';
     prompt.innerHTML =
-      '<span class="em-prompt-dot" aria-hidden="true"></span>Pasá el cursor sobre un cuadrado para ver a qué cáncer corresponde.';
+      '<span class="em-prompt-dot" aria-hidden="true"></span>¿Cómo se reparten los cánceres en mujeres? Explorá la grilla.';
     container.appendChild(prompt);
 
     const body = document.createElement('div');
@@ -1269,6 +1266,17 @@
     body.appendChild(grid);
     body.appendChild(info);
     container.appendChild(body);
+    // Pie de la tarjeta: igual que "Casos por tipo" y "Casos por edad",
+    // bajada + "Fuente" en la misma fila (.em-foot).
+    const footRow = document.createElement('div');
+    footRow.className = 'em-foot';
+    const footSub = document.createElement('p');
+    footSub.className = 'ui-sub';
+    footSub.textContent =
+      'Distribución de casos de todos los cánceres en mujeres. Argentina, 2024.';
+    footRow.appendChild(footSub);
+    footRow.appendChild(emSrc);
+    container.appendChild(footRow);
 
     const squares = []; // referencia a cada <div> cuadradito, para poder tocarlos después
     let pinned = null; // qué categoría quedó "clavada" por un click (null = ninguna)
@@ -1371,15 +1379,7 @@
       renderCasosPorEdad(container);
     },
     porcentaje: function (container) {
-      // La pista de interacción ("Pasá el cursor...") ya NO va acá --
-      // tiene su propio prompt separado (ver renderWaffleChart), igual
-      // criterio que "Casos por tipo". Esta bajada ahora solo da
-      // contexto: de dónde sale el 100% del waffle (69.449 casos/año,
-      // Argentina 2024).
-      renderWaffleChart(container, chapter1Data.porcentaje, {
-        subtitle:
-          'Si tomamos todos los cánceres que se diagnostican en mujeres en Argentina (69.449 casos al año), así se reparten. Cada cuadrado es el 1%. Argentina, 2024.',
-      });
+      renderWaffleChart(container, chapter1Data.porcentaje);
     },
   };
 
