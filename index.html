@@ -7,7 +7,7 @@
       name="description"
       content="Cáncer de mama en Argentina: presente, pasado y futuro de su detección. Una historia contada a través de los datos."
     />
-    <meta name="theme-color" content="#07050a" />
+    <meta name="theme-color" content="#000" />
     <meta property="og:title" content="Cáncer de mama en Argentina" />
     <meta
       property="og:description"
@@ -49,15 +49,158 @@
         <source src="AUDIO_FINAL.mp3" type="audio/mpeg" />
       </audio>
 
-      <!-- Botón para activar/pausar el audio. Cuando el audio termina (evento
-       'ended'), script.js reconvierte ESTE MISMO botón en el "Tocá para
-       comenzar ↓" que entra a la experiencia: no hace falta un segundo
-       elemento aparte. -->
-      <button class="audio-btn" id="audioBtn">🔊 Activar audio ▶</button>
+      <!-- Botón "Saltear intro": aparece (abajo a la derecha) una vez que
+       terminaron de aparecer el título y los 2 subtítulos. Entra directo a
+       la experiencia sin esperar al audio (ver script.js). -->
+      <button class="skip-btn" id="skipBtn" type="button">Saltear intro ⏭</button>
 
-      <h1 class="intro-title">Cáncer de mama en Argentina</h1>
-      <p class="intro-sub">Presente, pasado y futuro de su detección</p>
-      <p class="intro-note">Una historia contada a través de los datos.</p>
+      <!-- Mensaje central: aparece después de la animación de los textos.
+       "Apretá acá para comenzar" arranca el audio y el mensaje se oculta
+       (clase "started" en #intro). Cuando el audio termina (evento 'ended'),
+       script.js vuelve a mostrar ESTE MISMO botón con el texto
+       "Tocá para comenzar ↓" para entrar a la experiencia. -->
+      <div class="intro-start" id="introStart">
+        <!-- Al apretar "Apretá acá para comenzar", este mismo botón se
+         convierte en una barra de reproducción: el relleno translúcido
+         (#pFill) va avanzando con el audio y aparecen los controles
+         (play/pausa, reiniciar, silenciar, tiempo y subtítulos).
+         Toda la lógica está en script.js. -->
+        <div class="player-wrap">
+          <p class="intro-volume">Subí el volumen</p>
+          <!-- Solo se ve cuando terminó el audio: permite volver a escucharlo -->
+          <button
+            class="pbtn player-replay"
+            id="pReplay"
+            type="button"
+            aria-label="Volver a escuchar"
+          >
+            <svg class="i-restart" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+              <path
+                fill="currentColor"
+                d="M12 5V2L7 6.5 12 11V8c3.3 0 6 2.7 6 6s-2.7 6-6 6-6-2.7-6-6H4c0 4.4 3.6 8 8 8s8-3.6 8-8-3.6-8-8-8z"
+              />
+            </svg>
+          </button>
+          <p class="intro-caption" id="introCaption" aria-live="polite" hidden></p>
+          <div class="intro-player" id="introPlayer">
+            <div class="player-track" id="pTrack" title="Tocá para ir a ese momento">
+              <div class="player-fill" id="pFill"></div>
+            </div>
+            <button class="audio-btn player-start" id="audioBtn" type="button">
+              Presioná acá para comenzar ▶
+            </button>
+            <div class="player-controls">
+              <button
+                class="pbtn"
+                id="pPlay"
+                type="button"
+                data-state="paused"
+                aria-label="Reproducir"
+              >
+                <svg class="i-play" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                  <path fill="currentColor" d="M8 5v14l11-7z" /></svg
+                ><svg class="i-pause" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                  <path fill="currentColor" d="M6 5h4v14H6zM14 5h4v14h-4z" />
+                </svg>
+              </button>
+              <button class="pbtn" id="pRestart" type="button" aria-label="Reiniciar audio">
+                <svg
+                  class="i-restart"
+                  viewBox="0 0 24 24"
+                  width="20"
+                  height="20"
+                  aria-hidden="true"
+                >
+                  <path
+                    fill="currentColor"
+                    d="M12 5V2L7 6.5 12 11V8c3.3 0 6 2.7 6 6s-2.7 6-6 6-6-2.7-6-6H4c0 4.4 3.6 8 8 8s8-3.6 8-8-3.6-8-8-8z"
+                  />
+                </svg>
+              </button>
+              <button class="pbtn" id="pMute" type="button" data-state="on" aria-label="Silenciar">
+                <svg class="i-vol" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                  <path
+                    fill="currentColor"
+                    d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4z"
+                  /></svg
+                ><svg class="i-muted" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                  <path fill="currentColor" d="M3 9v6h4l5 5V4L7 9H3z" />
+                  <path
+                    d="M16 9.5l5 5m0-5l-5 5"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    fill="none"
+                    stroke-linecap="round"
+                  />
+                </svg>
+              </button>
+              <span class="player-time" id="pTime">0:00 / 0:00</span>
+              <button
+                class="pbtn pbtn-cc"
+                id="pCC"
+                type="button"
+                aria-pressed="false"
+                aria-label="Subtítulos"
+              >
+                <svg class="i-cc" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                  <rect
+                    x="3"
+                    y="5"
+                    width="18"
+                    height="14"
+                    rx="3"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
+                  <text
+                    x="12"
+                    y="15.3"
+                    text-anchor="middle"
+                    font-size="8"
+                    font-weight="700"
+                    fill="currentColor"
+                    font-family="sans-serif"
+                  >
+                    CC
+                  </text>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Título y subtítulos: cada uno aparece rápido, uno tras otro, con
+       los mismos puntitos rosa que los títulos de los módulos. -->
+      <!-- Título + subtítulos: abajo al principio; al arrancar el audio suben
+       arriba del todo (ver .intro-head en style.css). -->
+      <div class="intro-head">
+        <h1 class="intro-title">
+          <span class="intro-text"
+            >Cáncer de mama en Argentina
+            <span class="title-dots" aria-hidden="true">
+              <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+              <span class="dot"></span><span class="dot"></span><span class="dot"></span> </span
+          ></span>
+        </h1>
+        <p class="intro-sub">
+          <span class="intro-text"
+            >Presente, pasado y futuro de su detección
+            <span class="title-dots" aria-hidden="true">
+              <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+              <span class="dot"></span><span class="dot"></span><span class="dot"></span> </span
+          ></span>
+        </p>
+        <p class="intro-note">
+          <span class="intro-text"
+            >Una historia contada a través de los datos.
+            <span class="title-dots" aria-hidden="true">
+              <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+              <span class="dot"></span><span class="dot"></span><span class="dot"></span> </span
+          ></span>
+        </p>
+      </div>
     </div>
 
     <!-- ================= EXPERIENCE ================= -->
@@ -396,9 +539,7 @@
              ============================================================ -->
             <div class="ui-wrap">
               <div class="ui-panel me-card">
-                <h3 class="ui-card-title">
-                  ¿Puede la IA detectar más cánceres de mama?
-                </h3>
+                <h3 class="ui-card-title">¿Puede la IA detectar más cánceres de mama?</h3>
 
                 <div class="ui-tabs" role="tablist" aria-label="Elegí una visualización">
                   <button
@@ -453,7 +594,8 @@
                    pasado nada. Vuelve a aparecer si se vuelve a "Un
                    radiólogo". -->
                       <div class="me-prompt" id="me-prompt1">
-                        <span class="me-prompt-dot" aria-hidden="true"></span>Tocá "IA sola" para ver qué pasa.
+                        <span class="me-prompt-dot" aria-hidden="true"></span>Tocá "IA sola" para
+                        ver qué pasa.
                       </div>
                       <!-- Selector: cambia qué puntos están encendidos en la
                    grilla. -->
@@ -461,9 +603,7 @@
                         <button id="me-m-sin" type="button" aria-pressed="true">
                           Un radiólogo
                         </button>
-                        <button id="me-m-con" type="button" aria-pressed="false">
-                          IA sola
-                        </button>
+                        <button id="me-m-con" type="button" aria-pressed="false">IA sola</button>
                       </div>
 
                       <!-- La grilla de 1.000 puntos + leyenda + número. 40
@@ -484,7 +624,9 @@
                           <!-- Texto chico que explica qué representa cada punto
                        de la grilla (pedido puntual de Meli: antes esto
                        solo estaba en el aria-label, invisible). -->
-                          <p class="ui-note">Cada punto es una de 1.000 mujeres que se hacen el control.</p>
+                          <p class="ui-note">
+                            Cada punto es una de 1.000 mujeres que se hacen el control.
+                          </p>
                           <div class="ui-legend">
                             <span><i style="background: var(--flame)"></i>Cáncer detectado</span
                             ><!-- Este 2do ítem arranca oculto ([hidden]): modulo3.js
@@ -524,7 +666,8 @@
                    mismo tipo en el panel 1): antes era el único .ui-sub
                    del módulo; ahora cada pestaña tiene el suyo. -->
                       <p class="ui-sub">
-                      Los cánceres que aparecen entre un control y el siguiente, después de una mamografía que había salido normal, se llaman cánceres de intervalo.
+                        Los cánceres que aparecen entre un control y el siguiente, después de una
+                        mamografía que había salido normal, se llaman cánceres de intervalo.
                       </p>
                       <!-- Sin pista de interacción rosa acá (a diferencia del
                    panel 1): el botón de abajo ("Ver qué marca la IA") ya es
@@ -588,7 +731,12 @@
                           </div>
                           <div class="ui-legend">
                             <span
-                              ><i style="background: var(--dot-off); border: 1px solid rgba(255,255,255,0.35)"></i
+                              ><i
+                                style="
+                                  background: var(--dot-off);
+                                  border: 1px solid rgba(255, 255, 255, 0.35);
+                                "
+                              ></i
                               >Cáncer de intervalo</span
                             ><!-- 2do ítem: arranca oculto, aparece junto con los
                          puntos rosas al tocar el botón. -->
@@ -623,9 +771,7 @@
                  de siempre: abajo a la derecha, popover hacia arriba. -->
                 <details class="ui-src">
                   <summary>Fuente</summary>
-                  <p>
-                  Kelly et al., Nature Cancer, 2026 (estudio AIMS). IA de Google.
-                  </p>
+                  <p>Kelly et al., Nature Cancer, 2026 (estudio AIMS). IA de Google.</p>
                 </details>
               </div>
               <!-- /.ui-panel.me-card -->
