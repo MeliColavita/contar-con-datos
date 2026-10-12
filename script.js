@@ -71,16 +71,30 @@ function enterExperience() {
   }
 }
 
-const AUDIO_FAIL_TEXT = 'Tocá para comenzar ↓';
+const AUDIO_FAIL_TEXT = 'Continuar →';
 // Si el audio no carga, no dejamos la intro trabada: se puede entrar igual.
 function audioFailed() {
   audioHasEnded = true;
   audioBtn.textContent = AUDIO_FAIL_TEXT;
+  intro.classList.remove('started');
+  intro.classList.add('ended', 'failed'); // vuelve a mostrar el botón para poder entrar igual
 }
 audio.addEventListener('error', audioFailed);
 const audioSrc = audio.querySelector('source');
 if (audioSrc) audioSrc.addEventListener('error', audioFailed);
 
+// Botón "Saltear intro" (abajo a la derecha): entra directo a la experiencia
+// sin esperar a que termine el audio.
+const skipBtn = document.getElementById('skipBtn');
+skipBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  enterExperience();
+});
+
+// Botón central "Apretá acá para comenzar": arranca el audio y, si salió
+// bien, se convierte en la barra de reproducción (clase "started" en
+// #intro; el CSS hace la transformación). Cuando el audio termina, vuelve
+// a ser un botón: "Continuar →", con un botón al lado para volver a escuchar.
 audioBtn.addEventListener('click', (e) => {
   e.stopPropagation();
 
@@ -89,22 +103,121 @@ audioBtn.addEventListener('click', (e) => {
     return;
   }
 
-  if (audio.paused) {
-    audio.volume = 0;
-    audio
-      .play()
-      .then(() => {
-        fadeVolume(0.45); // sube el volumen gradualmente hasta 0.45
-        audioBtn.textContent = '🔊 Silenciar ⏸';
-      })
-      .catch((err) => {
-        console.warn('No se pudo reproducir el audio:', err);
-        audioFailed();
-      });
+  audio.volume = 0;
+  intro.classList.add('started'); // la barra responde al toque al instante, sin esperar a que cargue el audio
+  audio
+    .play()
+    .then(() => {
+      fadeVolume(0.45); // sube el volumen gradualmente hasta 0.45
+    })
+    .catch((err) => {
+      console.warn('No se pudo reproducir el audio:', err);
+      audioFailed();
+    });
+});
+
+// ---------- Barra de reproducción de la intro ----------
+// SUBTÍTULOS del audio (AUDIO_FINAL.mp3). start/end = segundos del audio
+// en los que se muestra cada frase. Si la lista queda vacía, el botón CC
+// se oculta solo.
+
+const CAPTIONS = [
+  { start: 2.14, end: 4.0, text: 'Hola, doctor.' },
+  { start: 5.2, end: 6.0, text: 'Hola, Mariana.' },
+  { start: 6.1, end: 7.5, text: 'Tomá asiento.' },
+  { start: 8.2, end: 12.3, text: 'Bueno, Mari, llegaron los resultados de la biopsia.' },
+  { start: 12.25, end: 15.2, text: 'En la muestra que tomamos de la mama,' },
+  { start: 15.1, end: 18.05, text: 'aparecieron células anormales.' },
+  { start: 18.3, end: 20.12, text: '¿Tengo cáncer?' },
+  { start: 20.5, end: 22.0, text: 'Sí.' },
+  { start: 23.5, end: 25.28, text: 'Sé que es muy difícil escuchar esto,' },
+  { start: 26.3, end: 29.9, text: 'pero lo encontramos a tiempo y tiene tratamiento.' },
+];
+
+const pFill = document.getElementById('pFill');
+const pTrack = document.getElementById('pTrack');
+const pTime = document.getElementById('pTime');
+const pPlay = document.getElementById('pPlay');
+const pRestart = document.getElementById('pRestart');
+const pMute = document.getElementById('pMute');
+const pCC = document.getElementById('pCC');
+const introCaption = document.getElementById('introCaption');
+let captionsOn = false; // los subtítulos arrancan apagados: hay que activarlos con CC
+if (CAPTIONS.length === 0) pCC.hidden = true;
+
+function fmtTime(s) {
+  if (!isFinite(s)) s = 0;
+  return Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
+}
+
+function updateCaption(t) {
+  const cue =
+    captionsOn && !audio.ended && !intro.classList.contains('ended')
+      ? CAPTIONS.find((c) => t >= c.start && t < c.end)
+      : null;
+  if (cue) {
+    if (introCaption.textContent !== cue.text) introCaption.textContent = cue.text;
+    introCaption.hidden = false;
   } else {
-    audio.pause();
-    audioBtn.textContent = '🔇 Activar audio ▶';
+    introCaption.hidden = true;
   }
+}
+
+// Avance (relleno de la barra), tiempo "0:12 / 1:05" y subtítulo actual
+function updatePlayer() {
+  const d = audio.duration || 0;
+  const t = audio.currentTime || 0;
+  pFill.style.width = (d ? (t / d) * 100 : 0) + '%';
+  pTime.textContent = fmtTime(t) + ' / ' + fmtTime(d);
+  updateCaption(t);
+}
+['timeupdate', 'loadedmetadata', 'durationchange', 'seeked'].forEach((ev) =>
+  audio.addEventListener(ev, updatePlayer),
+);
+
+function updatePlayState() {
+  pPlay.dataset.state = audio.paused ? 'paused' : 'playing';
+  pPlay.setAttribute('aria-label', audio.paused ? 'Reproducir' : 'Pausar');
+}
+audio.addEventListener('play', updatePlayState);
+audio.addEventListener('pause', updatePlayState);
+
+pPlay.addEventListener('click', () => {
+  if (audio.paused) audio.play().catch(() => {});
+  else audio.pause();
+});
+pRestart.addEventListener('click', () => {
+  audio.currentTime = 0;
+  audio.play().catch(() => {});
+});
+pMute.addEventListener('click', () => {
+  audio.muted = !audio.muted;
+  pMute.dataset.state = audio.muted ? 'muted' : 'on';
+  pMute.setAttribute('aria-label', audio.muted ? 'Activar sonido' : 'Silenciar');
+});
+pCC.addEventListener('click', () => {
+  captionsOn = !captionsOn;
+  pCC.setAttribute('aria-pressed', captionsOn);
+  updateCaption(audio.currentTime);
+});
+// "Volver a escuchar" (solo se ve con el audio terminado): reinicia el audio
+// y la barra de reproducción vuelve a aparecer, junto con "Saltear intro".
+const pReplay = document.getElementById('pReplay');
+pReplay.addEventListener('click', () => {
+  audioHasEnded = false;
+  intro.classList.remove('ended');
+  intro.classList.add('started');
+  audio.currentTime = 0;
+  audio.play().catch((err) => {
+    console.warn('No se pudo reproducir el audio:', err);
+    audioFailed();
+  });
+});
+// Tocar la barra lleva el audio a ese momento (solo con la barra activa)
+pTrack.addEventListener('click', (e) => {
+  if (!intro.classList.contains('started') || !audio.duration) return;
+  const r = pTrack.getBoundingClientRect();
+  audio.currentTime = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)) * audio.duration;
 });
 
 // Cuando el audio termina (el <audio> NO tiene "loop", así que este evento
@@ -113,7 +226,10 @@ audioBtn.addEventListener('click', (e) => {
 // activar/pausar audio.
 audio.addEventListener('ended', () => {
   audioHasEnded = true;
-  audioBtn.textContent = 'Tocá para comenzar ↓';
+  audioBtn.textContent = AUDIO_FAIL_TEXT; // "Continuar →"
+  intro.classList.remove('started');
+  intro.classList.add('ended'); // la barra vuelve a ser el botón "Continuar" (+ volver a escuchar)
+  introCaption.hidden = true;
 });
 
 // Sube el volumen del audio de a poco (en "steps" pasos) para que no entre
