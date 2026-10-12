@@ -56,6 +56,15 @@
   const panel1 = root.querySelector('#em-chart-panel');
   if (!panel1) return;
 
+  // emSrc = el acordeón "Fuente" (.ui-src), hijo directo de .em-card
+  // -- VIVE AFUERA de #em-chart-panel (ver index.html), compartido
+  // por las 3 pestañas. "Casos por tipo" lo mueve adentro suyo (al
+  // pie, junto a la bajada) para que quede en la misma fila que el
+  // subtítulo -- ver renderCasosPorTipo() y render1(), más abajo, que
+  // se encargan de devolverlo a este lugar antes de vaciar el panel
+  // con innerHTML='', para no perderlo.
+  const emSrc = panel1.parentElement.querySelector('.ui-src');
+
   // ============================================================
   // 2. PALETA, TIPOGRAFÍA Y "REDUCIR MOVIMIENTO"
   // ============================================================
@@ -104,7 +113,10 @@
   // en los momentos en que un dato "se revela" (la respuesta real de
   // Mama, el total de los otros 4 cánceres sumados).
   function countUp(el, to) {
-    if (reduceMotion) { el.textContent = formatNumber(to); return; }
+    if (reduceMotion) {
+      el.textContent = formatNumber(to);
+      return;
+    }
     const t0 = performance.now();
     (function tick(t) {
       const p = Math.min(1, (t - t0) / 600);
@@ -179,6 +191,11 @@
   // función, quedan como constantes nombradas.
   const TIPO_MAX = 25000;
   const EDAD_MAX = 8000;
+  // TIPO_PLACEHOLDER_PX: alto (en píxeles, no %) de las barras de los
+  // otros 4 cánceres MIENTRAS Mama todavía no se reveló -- chico e
+  // IGUAL para las 4, a propósito (pedido de Emi: "sin datos" hasta
+  // revelar, nada de alturas reales que den una pista antes de tiempo).
+  const TIPO_PLACEHOLDER_PX = 6;
 
   const chapter1Data = {
     // Top 5 cánceres más frecuentes en mujeres en Argentina, 2024.
@@ -204,12 +221,55 @@
     // Distribución de TODOS los cánceres en mujeres, AR 2024 (69.449
     // casos en total), para el waffle de 100 cuadrados.
     porcentaje: [
-      { key: 'mama', categoria: 'Mama', porcentaje: 29.9, sq: 30, casos: 20750, headline: '3 de cada 10', text: 'son de mama' },
-      { key: 'crc', categoria: 'Colorrectal', porcentaje: 11.1, sq: 11, casos: 7698, text: 'son colorrectales' },
-      { key: 'cu', categoria: 'Cuello uterino', porcentaje: 6.7, sq: 7, casos: 4679, text: 'son de cuello uterino' },
-      { key: 'pul', categoria: 'Pulmón', porcentaje: 6.4, sq: 6, casos: 4469, text: 'son de pulmón' },
-      { key: 'tir', categoria: 'Tiroides', porcentaje: 4.9, sq: 5, casos: 3370, text: 'son de tiroides' },
-      { key: 'otr', categoria: 'Otros', porcentaje: 41.0, sq: 41, casos: 28483, text: 'corresponden a otros tipos de cáncer' },
+      {
+        key: 'mama',
+        categoria: 'Mama',
+        porcentaje: 29.9,
+        sq: 30,
+        casos: 20750,
+        headline: '3 de cada 10',
+        text: 'son de mama',
+      },
+      {
+        key: 'crc',
+        categoria: 'Colorrectal',
+        porcentaje: 11.1,
+        sq: 11,
+        casos: 7698,
+        text: 'son colorrectales',
+      },
+      {
+        key: 'cu',
+        categoria: 'Cuello uterino',
+        porcentaje: 6.7,
+        sq: 7,
+        casos: 4679,
+        text: 'son de cuello uterino',
+      },
+      {
+        key: 'pul',
+        categoria: 'Pulmón',
+        porcentaje: 6.4,
+        sq: 6,
+        casos: 4469,
+        text: 'son de pulmón',
+      },
+      {
+        key: 'tir',
+        categoria: 'Tiroides',
+        porcentaje: 4.9,
+        sq: 5,
+        casos: 3370,
+        text: 'son de tiroides',
+      },
+      {
+        key: 'otr',
+        categoria: 'Otros',
+        porcentaje: 41.0,
+        sq: 41,
+        casos: 28483,
+        text: 'corresponden a otros tipos de cáncer',
+      },
     ],
   };
 
@@ -290,22 +350,24 @@
     const stagger = opts.stagger != null ? opts.stagger : 110;
     const easing = opts.easing || 'cubic-bezier(.3,.7,.2,1)';
     const onLand = opts.onLand || function () {};
-    return Promise.all(from.map(function (f, k) {
-      const d = document.createElement('div');
-      d.className = 'em-fly';
-      Object.assign(d.style, f);
-      chartEl.appendChild(d);
-      const anim = d.animate([f, to[k]], {
-        duration: reduceMotion ? 0 : duration,
-        delay: reduceMotion ? 0 : k * stagger,
-        easing: easing,
-        fill: 'forwards',
-      });
-      return anim.finished.then(function () {
-        onLand(k);
-        d.remove();
-      });
-    }));
+    return Promise.all(
+      from.map(function (f, k) {
+        const d = document.createElement('div');
+        d.className = 'em-fly';
+        Object.assign(d.style, f);
+        chartEl.appendChild(d);
+        const anim = d.animate([f, to[k]], {
+          duration: reduceMotion ? 0 : duration,
+          delay: reduceMotion ? 0 : k * stagger,
+          easing: easing,
+          fill: 'forwards',
+        });
+        return anim.finished.then(function () {
+          onLand(k);
+          d.remove();
+        });
+      }),
+    );
   }
 
   // slide(el, dx): técnica FLIP (First-Last-Invert-Play) para que un
@@ -318,10 +380,10 @@
   // anima hacia transform:none (la posición nueva, real).
   function slide(el, dx) {
     if (!dx || reduceMotion) return;
-    el.animate(
-      [{ transform: 'translateX(' + dx + 'px)' }, { transform: 'translateX(0)' }],
-      { duration: 800, easing: 'cubic-bezier(.3,.7,.2,1)' }
-    );
+    el.animate([{ transform: 'translateX(' + dx + 'px)' }, { transform: 'translateX(0)' }], {
+      duration: 800,
+      easing: 'cubic-bezier(.3,.7,.2,1)',
+    });
   }
 
   // rel(el, relativeTo): posición/tamaño de "el" en píxeles RELATIVOS
@@ -331,7 +393,12 @@
   function rel(el, relativeTo) {
     const r = el.getBoundingClientRect();
     const c = relativeTo.getBoundingClientRect();
-    return { left: (r.left - c.left) + 'px', top: (r.top - c.top) + 'px', width: r.width + 'px', height: r.height + 'px' };
+    return {
+      left: r.left - c.left + 'px',
+      top: r.top - c.top + 'px',
+      width: r.width + 'px',
+      height: r.height + 'px',
+    };
   }
 
   // ------------------------------------------------------------
@@ -348,20 +415,37 @@
   function renderCasosPorTipo(container) {
     const data = chapter1Data.casosPorTipo;
     const real = data[0].valor; // 20.750, el valor real de Mama
-    const otherTotal = data.slice(1).reduce(function (s, d) { return s + d.valor; }, 0); // 20.216
+    const otherTotal = data.slice(1).reduce(function (s, d) {
+      return s + d.valor;
+    }, 0); // 20.216
 
+    // "Fuente" puede estar viviendo adentro del pie de un render
+    // anterior de esta misma pestaña (ver el final de esta función) --
+    // se la devuelve a su lugar de siempre ANTES de vaciar el
+    // contenedor, para no perderla con el innerHTML=''.
+    if (emSrc.parentElement !== panel1.parentElement) {
+      panel1.parentElement.appendChild(emSrc);
+    }
     container.innerHTML = '';
-    renderSubtitle(container, 'Casos nuevos estimados en mujeres, por tipo de cáncer. Argentina, 2024.');
+    // Ya NO va la bajada ("Casos nuevos estimados...") acá arriba --
+    // se movió al pie de la tarjeta, junto a "Fuente" (pedido de Emi,
+    // ver el final de esta función).
 
-    // Invitación a jugar, con el punto rosa que pulsa -- se oculta en
-    // cuanto se revela la respuesta (y se queda oculta para siempre,
-    // salvo que se aprete "Volver a adivinar"). "em-prompt-tipo" (además
-    // de la "em-prompt" compartida con "Casos por edad") es lo que deja
+    // Invitación a jugar, con el punto rosa que pulsa -- se desvanece en
+    // cuanto se revela la respuesta (y se queda invisible hasta que se
+    // aprete "Probar de nuevo"). "em-prompt-tipo" (además de la
+    // "em-prompt" compartida con "Casos por edad") es lo que deja
     // agrandar/centrar el texto SOLO acá, sin afectar el prompt de edad.
+    // "em-reveal-fade": en vez de [hidden] (display:none, que sacaba
+    // del flujo y hacía que la tarjeta cambiara de alto entre el
+    // estado inicial y el revelado -- pedido de Emi: que mida SIEMPRE
+    // lo mismo), esta clase oculta con opacity/visibility, que SÍ
+    // sigue ocupando su lugar. "em-shown" es el estado visible -- acá
+    // arranca con ella (si todavía no se reveló) y reveal() se la saca.
     const prompt = document.createElement('div');
-    prompt.className = 'em-prompt em-prompt-tipo';
-    prompt.innerHTML = '<span class="em-prompt-dot" aria-hidden="true"></span>Arrastrá la barra rosa y soltala para ver el dato.';
-    prompt.hidden = tipoState.revealed;
+    prompt.className = 'em-prompt em-prompt-tipo em-reveal-fade' + (tipoState.revealed ? '' : ' em-shown');
+    prompt.innerHTML =
+      '<span class="em-prompt-dot" aria-hidden="true"></span>¿Cuántos casos de mama creés que hay? Arrastrá la barra para adivinar.';
     container.appendChild(prompt);
 
     const chart = document.createElement('div');
@@ -370,32 +454,71 @@
 
     // tipoTipHTML(d): contenido del tooltip de una barra/segmento.
     function tipoTipHTML(d) {
-      return '<strong>' + d.categoria + '</strong>' +
-        '<div><span>Casos</span><span>' + formatNumber(d.valor) + '</span></div>' +
-        '<div><span>Por día</span><span>' + Math.round(d.valor / 365) + '</span></div>' +
-        '<div><span>Tasa ajustada</span><span>' + d.tasa.toLocaleString('es-AR') + '</span></div>';
+      return (
+        '<strong>' +
+        d.categoria +
+        '</strong>' +
+        '<div><span>Casos</span><span>' +
+        formatNumber(d.valor) +
+        '</span></div>' +
+        '<div><span>Por día</span><span>' +
+        Math.round(d.valor / 365) +
+        '</span></div>' +
+        '<div><span>Tasa ajustada</span><span>' +
+        d.tasa.toLocaleString('es-AR') +
+        '</span></div>'
+      );
     }
 
-    // Las 5 columnas (Mama primero). La de Mama arranca en 0/"?" si
-    // todavía no se reveló; si ya se reveló (reconstruyendo estado),
-    // arranca directo mostrando el valor real.
+    // Las 5 columnas (Mama primero). MIENTRAS NO SE REVELÓ: Mama
+    // arranca en 0/"?" (la maneja setupDrag, más abajo); las otras 4
+    // arrancan SIN datos -- ni número ni nombre, barra a una altura
+    // chica fija e igual para las 4 (TIPO_PLACEHOLDER_PX) -- para que
+    // no den ninguna pista del tamaño real antes de que Mama se
+    // revele. Al revelar (ver reveal(), más abajo) se completan con
+    // su altura/valor/nombre reales. Si se reconstruye un estado YA
+    // revelado (ej. al volver de otra pestaña), arrancan directo con
+    // sus datos reales.
     const cols = data.map(function (d, i) {
       const isMama = i === 0;
-      const showReal = !isMama || tipoState.revealed;
-      const pct = (showReal ? d.valor : 0) / TIPO_MAX * 100;
+      const showReal = tipoState.revealed;
+      const pct = showReal ? (d.valor / TIPO_MAX) * 100 : 0;
       const col = document.createElement('div');
       col.className = 'em-col';
-      // em-val-q: SOLO mientras se muestra "?" (antes de arrastrar) --
+      // em-val-q: SOLO mientras Mama muestra "?" (antes de arrastrar) --
       // agranda ese signo para que invite más a jugar. Se saca sola en
       // cuanto el usuario arrastra (ver setFromPx, más abajo), que
       // reemplaza el "?" por el número que va adivinando.
+      const valHTML = isMama
+        ? '<div class="em-val' +
+          (showReal ? '' : ' em-val-q') +
+          '">' +
+          (showReal ? formatNumber(d.valor) : '?') +
+          '</div>'
+        : '<div class="em-val">' + (showReal ? formatNumber(d.valor) : '') + '</div>';
+      const barStyle = showReal
+        ? 'height:' + pct + '%'
+        : isMama
+          ? 'height:0%'
+          : 'height:' + TIPO_PLACEHOLDER_PX + 'px';
+      // El nombre de Mama se ve siempre (igual que antes); el de las
+      // otras 4 solo aparece junto con sus datos, al revelar.
+      const lblText = showReal || isMama ? d.categoria : '';
       col.innerHTML =
-        '<div class="em-val' + (showReal ? '' : ' em-val-q') + '">' + (showReal ? formatNumber(d.valor) : '?') + '</div>' +
-        '<div class="em-bar' + (isMama ? ' em-bar-mama' : '') + '" style="height:' + pct + '%"></div>' +
-        '<div class="em-lbl">' + d.categoria + '</div>';
+        valHTML +
+        '<div class="em-bar' +
+        (isMama ? ' em-bar-mama' : '') +
+        '" style="' +
+        barStyle +
+        '"></div>' +
+        '<div class="em-lbl">' +
+        lblText +
+        '</div>';
       const bar = col.querySelector('.em-bar');
+      // El tooltip con el detalle (casos/día/tasa) solo tiene sentido
+      // una vez que la columna ya muestra su dato real.
       bar.addEventListener('pointermove', function (e) {
-        if (!isMama || tipoState.revealed) showTip(e, tipoTipHTML(d));
+        if (tipoState.revealed) showTip(e, tipoTipHTML(d));
       });
       bar.addEventListener('pointerleave', hideTip);
       chart.appendChild(col);
@@ -411,53 +534,119 @@
     sumCol.id = 'em-sum-col';
     sumCol.hidden = true;
     sumCol.innerHTML =
-      '<div class="em-val">' + formatNumber(otherTotal) + '</div>' +
-      '<div class="em-stack" style="height:' + (otherTotal / TIPO_MAX * 100) + '%">' +
-      [1, 2, 3, 4].map(function (i) {
-        return '<div data-i="' + i + '" style="flex:' + data[i].valor + '">' + data[i].categoria + '</div>';
-      }).join('') +
+      '<div class="em-val">' +
+      formatNumber(otherTotal) +
+      '</div>' +
+      '<div class="em-stack" style="height:' +
+      (otherTotal / TIPO_MAX) * 100 +
+      '%">' +
+      [1, 2, 3, 4]
+        .map(function (i) {
+          return (
+            '<div data-i="' +
+            i +
+            '" style="flex:' +
+            data[i].valor +
+            '">' +
+            data[i].categoria +
+            '</div>'
+          );
+        })
+        .join('') +
       '</div>' +
       '<div class="em-lbl">Los otros 4 cánceres</div>';
     sumCol.querySelectorAll('.em-stack > div').forEach(function (seg) {
       const d = data[+seg.dataset.i];
-      seg.addEventListener('pointermove', function (e) { showTip(e, tipoTipHTML(d)); });
+      seg.addEventListener('pointermove', function (e) {
+        showTip(e, tipoTipHTML(d));
+      });
       seg.addEventListener('pointerleave', hideTip);
     });
     mama.after(sumCol);
 
+    // El eje "Los 5 cánceres más frecuentes" no se muestra al
+    // principio -- recién tiene sentido una vez que hay algo que leer
+    // ahí abajo, cuando se revela la comparación completa. Mismo
+    // criterio "em-reveal-fade" que el prompt (ver ahí el comentario):
+    // ocupa su lugar siempre, para que la tarjeta no cambie de alto.
     const axisNote = document.createElement('div');
-    axisNote.className = 'em-axis-note';
+    axisNote.className = 'em-axis-note em-reveal-fade' + (tipoState.revealed ? ' em-shown' : '');
     axisNote.textContent = 'Los 5 cánceres más frecuentes en mujeres'; // antes "Top 5 cánceres frecuentes"
     container.appendChild(axisNote);
 
-    const feedback = document.createElement('div');
-    feedback.className = 'em-feedback';
-    container.appendChild(feedback);
-
-    // Textos de los botones: "Ver los otros 4 juntos" (antes "Sumá los
-    // otros 4") y "Probar de nuevo" (antes "Volver a adivinar") -- el
-    // texto que aparece al separar (más abajo, dentro de
-    // applyMergeState) y el de la frase de abajo ("Tocá...") se
-    // actualizaron junto con este para que todos digan lo mismo.
+    // Botones: "Probar de nuevo" primero, "Ver los otros 4 juntos"
+    // segundo (orden pedido por Emi; antes iba al revés), los 2
+    // centrados (ver .em-tipo-actions en modulo1.css). Al "Probar de
+    // nuevo" se le llama render1() en vez de renderCasosPorTipo(container)
+    // directo, para que de paso corra el mismo paso que devuelve
+    // "Fuente" a su lugar si hiciera falta (ver render1(), al final del
+    // archivo) -- ahora que "Fuente" puede terminar movida adentro del
+    // pie de esta pestaña, siempre hay que pasar por ahí antes de
+    // volver a vaciar el contenedor.
     const actions = document.createElement('div');
-    actions.className = 'em-tipo-actions';
-    actions.hidden = !tipoState.revealed;
-    const btnSum = document.createElement('button');
-    btnSum.type = 'button';
-    btnSum.className = 'em-btn';
-    btnSum.textContent = tipoState.merged ? 'Ver por separado' : 'Ver los otros 4 juntos';
+    actions.className = 'em-tipo-actions em-reveal-fade' + (tipoState.revealed ? ' em-shown' : '');
     const btnReset = document.createElement('button');
     btnReset.type = 'button';
     btnReset.className = 'em-btn em-btn-ghost';
     btnReset.textContent = 'Probar de nuevo';
-    actions.appendChild(btnSum);
+    const btnSum = document.createElement('button');
+    btnSum.type = 'button';
+    btnSum.className = 'em-btn';
+    btnSum.textContent = tipoState.merged ? 'Ver por separado' : 'Ver los otros 4 juntos';
     actions.appendChild(btnReset);
+    actions.appendChild(btnSum);
     container.appendChild(actions);
 
-    // Clase extra (además de la que ya pone renderInlineStats) para
-    // poder empujar ESTOS datos más abajo sin tocar los de "Casos por
-    // edad" -- ver .em-inline-stats-tipo en modulo1.css.
-    renderInlineStats(container, chapter1Stats).classList.add('em-inline-stats-tipo');
+    // "2 columnas" mitad y mitad debajo de los botones (pedido de
+    // Emi): a la izquierda la respuesta variable (.em-feedback, el
+    // mismo mensaje de siempre, reubicado acá -- antes iba arriba,
+    // entre el eje y los botones); a la derecha los 2 datos fijos que
+    // no dependen del juego ("1°"/"66,2", antes en
+    // .em-inline-stats-tipo con una línea divisoria arriba, que ahora
+    // se saca -- ver .em-tipo-result en modulo1.css, no reusa
+    // .em-inline-stats). Los datos fijos TAMPOCO se ven al principio
+    // -- aparecen recién al revelar, junto con todo lo demás (pedido
+    // de Emi: "aparecen cuando se desliza la barra, al mismo tiempo
+    // que las barras se modifican"), por eso también llevan
+    // "em-reveal-fade".
+    const resultRow = document.createElement('div');
+    resultRow.className = 'em-tipo-result';
+
+    const feedback = document.createElement('div');
+    feedback.className = 'em-feedback';
+    resultRow.appendChild(feedback);
+
+    const statsCol = document.createElement('div');
+    statsCol.className = 'em-tipo-result-stats em-reveal-fade' + (tipoState.revealed ? ' em-shown' : '');
+    chapter1Stats.forEach(function (s) {
+      const item = document.createElement('div');
+      item.className = 'em-stat';
+      item.innerHTML =
+        '<div class="em-stat-value">' +
+        s.valor +
+        '</div>' +
+        '<div class="em-stat-label">' +
+        s.label +
+        '</div>';
+      statsCol.appendChild(item);
+    });
+    resultRow.appendChild(statsCol);
+    container.appendChild(resultRow);
+
+    // Pie de la tarjeta: la bajada que antes iba arriba de todo
+    // ("Casos nuevos estimados...") + "Fuente", en la misma fila
+    // (pedido de Emi). "Fuente" es el elemento COMPARTIDO de siempre
+    // (.ui-src, ver index.html) -- se mueve para acá adentro; "Casos
+    // por edad" y "Porcentaje" no se tocan, siguen con su propia
+    // bajada arriba, sin esta fila.
+    const footRow = document.createElement('div');
+    footRow.className = 'em-tipo-foot';
+    const footSub = document.createElement('p');
+    footSub.className = 'ui-sub';
+    footSub.textContent = 'Casos nuevos estimados en mujeres, por tipo de cáncer. Argentina, 2024.';
+    footRow.appendChild(footSub);
+    footRow.appendChild(emSrc);
+    container.appendChild(footRow);
 
     // reveal(doAnimate): muestra la respuesta real de Mama. Se llama
     // con doAnimate=true SOLO desde el soltar del arrastre (la ÚNICA
@@ -466,8 +655,25 @@
     // resultado final sin repetir la animación).
     function reveal(doAnimate) {
       tipoState.revealed = true;
-      prompt.hidden = true;
-      actions.hidden = false;
+      // classList.toggle (no .hidden): ver el comentario de "em-reveal-fade"
+      // más arriba, en la creación de "prompt" -- estos 4 elementos
+      // quedan siempre ocupando su lugar, solo cambia su opacidad/
+      // visibilidad, así la tarjeta no cambia de alto al revelar.
+      prompt.classList.remove('em-shown');
+      actions.classList.add('em-shown');
+      axisNote.classList.add('em-shown');
+      statsCol.classList.add('em-shown');
+
+      // Las otras 4 columnas (vacías/chiquitas hasta ahora) pasan a su
+      // altura y datos reales. El crecimiento de la barra lo anima
+      // solo el CSS (.em-bar ya tiene transition:height) -- no hace
+      // falta nada más acá para que se vea suave.
+      data.slice(1).forEach(function (d, idx) {
+        const col = cols[idx + 1];
+        col.querySelector('.em-bar').style.height = (d.valor / TIPO_MAX) * 100 + '%';
+        col.querySelector('.em-val').textContent = formatNumber(d.valor);
+        col.querySelector('.em-lbl').textContent = d.categoria;
+      });
 
       const bar = mama.querySelector('.em-bar');
       const valEl = mama.querySelector('.em-val');
@@ -502,7 +708,7 @@
       if (oldLine) oldLine.remove();
       const line = document.createElement('div');
       line.className = 'em-guess-line';
-      line.style.bottom = (barBottomOffset + guessPx) + 'px';
+      line.style.bottom = barBottomOffset + guessPx + 'px';
       line.innerHTML = '<span>Tu respuesta</span>';
       mama.appendChild(line);
 
@@ -524,14 +730,33 @@
       const ratio = real / guess;
       let msg;
       if (Math.abs(ratio - 1) < 0.1) {
-        msg = 'Dijiste <b>' + formatNumber(guess) + '</b>. ¡Muy cerca! Son <b>' + formatNumber(real) + '</b> casos por año.';
+        msg =
+          'Dijiste <b>' +
+          formatNumber(guess) +
+          '</b>. ¡Muy cerca! Son <b>' +
+          formatNumber(real) +
+          '</b> casos por año.';
       } else if (ratio > 1) {
-        const cuanto = ratio >= 2.9 ? 'más del triple' : ratio >= 1.9 ? 'más del doble' : 'bastantes más';
-        msg = 'Dijiste <b>' + formatNumber(guess) + '</b>. Son <b>' + formatNumber(real) + '</b>: ' + cuanto + ' de lo que pensabas.';
+        const cuanto =
+          ratio >= 2.9 ? 'más del triple' : ratio >= 1.9 ? 'más del doble' : 'bastantes más';
+        msg =
+          'Dijiste <b>' +
+          formatNumber(guess) +
+          '</b>. Son <b>' +
+          formatNumber(real) +
+          '</b>: ' +
+          cuanto +
+          ' de lo que pensabas.';
       } else {
-        msg = 'Dijiste <b>' + formatNumber(guess) + '</b>. Son <b>' + formatNumber(real) + '</b>, menos de lo que pensabas, pero casi el triple que el segundo.';
+        msg =
+          'Dijiste <b>' +
+          formatNumber(guess) +
+          '</b>. Son <b>' +
+          formatNumber(real) +
+          '</b>, menos de lo que pensabas, pero casi el triple que el segundo.';
       }
-      feedback.innerHTML = msg + ' Eso es <b>' + Math.round(real / 365) + ' diagnósticos por día</b>.';
+      feedback.innerHTML =
+        msg + ' Eso es <b>' + Math.round(real / 365) + ' diagnósticos por día</b>.';
     }
 
     // setupDrag(): arma la zona de arrastre sobre la columna de Mama
@@ -543,15 +768,18 @@
       const lblH = mama.querySelector('.em-lbl').offsetHeight;
       const zone = document.createElement('div');
       zone.className = 'em-guess-zone';
-      zone.style.bottom = (lblH + 10) + 'px';
+      zone.style.bottom = lblH + 10 + 'px';
       zone.innerHTML = '<div class="em-guess-bar"><div class="em-handle">↕</div></div>';
       mama.appendChild(zone);
       const gb = zone.querySelector('.em-guess-bar');
 
+      // setFromPx(px): redondea a múltiplos de 50 (antes 100) -- con
+      // 50 SÍ se puede caer justo en 20.750, el valor real de Mama
+      // (pedido de Emi: "poder acertar exacto").
       function setFromPx(px) {
         px = Math.max(6, Math.min(zone.clientHeight, px));
         gb.style.height = px + 'px';
-        tipoState.guess = Math.max(100, Math.round((px / zone.clientHeight) * TIPO_MAX / 100) * 100);
+        tipoState.guess = Math.max(50, Math.round(((px / zone.clientHeight) * TIPO_MAX) / 50) * 50);
         valEl.classList.remove('em-val-q'); // ya hay un número real adivinado: el "?" grande deja de aplicar
         valEl.textContent = formatNumber(tipoState.guess);
       }
@@ -561,23 +789,36 @@
         valEl.textContent = '?'; // el valor arranca oculto -- recién se ve al mover el dedo/mouse
       });
 
+      // Solo la MANIJA ("↕", .em-handle) inicia el arrastre -- antes
+      // escuchaba toda "zone" (la columna entera, de la etiqueta hacia
+      // arriba), así que tocar en CUALQUIER punto de la barra, o
+      // incluso arriba de ella, se tomaba de una como respuesta final,
+      // sin haber arrastrado nada. Eso generaba respuestas "sin
+      // querer" y frustración (pedido explícito de Emi). Ahora tocar
+      // en cualquier otro lugar de la zona/barra no hace nada: hay que
+      // agarrar la manija.
+      const handle = zone.querySelector('.em-handle');
       let dragging = false;
-      zone.addEventListener('pointerdown', function (e) {
+      handle.addEventListener('pointerdown', function (e) {
         dragging = true;
         // setPointerCapture: asegura que sigamos recibiendo
-        // pointermove/pointerup aunque el mouse/dedo se salga del
-        // área de "zone" en pleno arrastre rápido. try/catch porque
-        // algunos navegadores lo rechazan en ciertos casos (puntero
-        // ya no activo) -- si falla, el arrastre igual funciona
-        // mientras el cursor se quede adentro de la zona, así que no
-        // vale la pena cortar el resto del gesto por esto.
-        try { zone.setPointerCapture(e.pointerId); } catch (err) {}
+        // pointermove/pointerup aunque el mouse/dedo se salga de la
+        // manija en pleno arrastre rápido. try/catch porque algunos
+        // navegadores lo rechazan en ciertos casos (puntero ya no
+        // activo) -- si falla, el arrastre igual funciona mientras el
+        // cursor se quede sobre la manija, así que no vale la pena
+        // cortar el resto del gesto por esto.
+        try {
+          handle.setPointerCapture(e.pointerId);
+        } catch (err) {}
         setFromPx(zone.getBoundingClientRect().bottom - e.clientY);
+        e.preventDefault();
+        e.stopPropagation();
       });
-      zone.addEventListener('pointermove', function (e) {
+      handle.addEventListener('pointermove', function (e) {
         if (dragging) setFromPx(zone.getBoundingClientRect().bottom - e.clientY);
       });
-      zone.addEventListener('pointerup', function () {
+      handle.addEventListener('pointerup', function () {
         if (!dragging) return;
         dragging = false;
         zone.remove();
@@ -593,7 +834,9 @@
     async function applyMergeState(doAnimate) {
       btnSum.disabled = true;
       hideTip();
-      const others = [1, 2, 3, 4].map(function (i) { return cols[i]; });
+      const others = [1, 2, 3, 4].map(function (i) {
+        return cols[i];
+      });
       const stackEl = sumCol.querySelector('.em-stack');
       const sumValEl = sumCol.querySelector('.em-val');
 
@@ -621,12 +864,17 @@
         // al final, aparecía la pila ya armada. Midiendo acá, con las 4
         // columnas todavía visibles en su lugar de siempre, cada clon
         // arranca exactamente donde está su barra real.
-        const src = (doAnimate && !reduceMotion)
-          ? others.map(function (c) { return rel(c.querySelector('.em-bar'), chart); })
-          : null;
+        const src =
+          doAnimate && !reduceMotion
+            ? others.map(function (c) {
+                return rel(c.querySelector('.em-bar'), chart);
+              })
+            : null;
 
         chart.classList.add('em-merged');
-        others.forEach(function (c) { c.hidden = true; });
+        others.forEach(function (c) {
+          c.hidden = true;
+        });
         sumCol.hidden = false;
         slide(mama, x0 - mama.getBoundingClientRect().left);
 
@@ -638,7 +886,9 @@
           // debajo) -- que apareciera de golpe dentro del clon quedaba
           // raro. Ahora el clon es solo el rectángulo de color viajando.
           const segs = Array.prototype.slice.call(stackEl.querySelectorAll('div'));
-          const tgt = segs.map(function (seg) { return rel(seg, chart); });
+          const tgt = segs.map(function (seg) {
+            return rel(seg, chart);
+          });
           // Cada clon se saca del DOM apenas TERMINA SU PROPIO vuelo (ver
           // fly()) -- como tienen demoras escalonadas (stagger), terminan
           // en momentos distintos. Antes se ocultaba la pila ENTERA
@@ -652,30 +902,48 @@
           // que ya usa "Ver por separado" con sus barras reales). El
           // total ("20.216") sigue esperando a que terminen los 4, tiene
           // sentido que cuente recién cuando la pila está completa.
-          segs.forEach(function (s) { s.style.visibility = 'hidden'; });
+          segs.forEach(function (s) {
+            s.style.visibility = 'hidden';
+          });
           sumValEl.style.visibility = 'hidden';
           await fly(chart, src, tgt, {
-            onLand: function (k) { segs[k].style.visibility = ''; },
+            onLand: function (k) {
+              segs[k].style.visibility = '';
+            },
           });
           sumValEl.style.visibility = '';
           countUp(sumValEl, otherTotal);
         } else {
           sumValEl.textContent = formatNumber(otherTotal);
         }
-        feedback.innerHTML = 'Colorrectal + cuello uterino + pulmón + tiroides = <b>' + formatNumber(otherTotal) + '</b>. Mama sola (<b>' + formatNumber(real) + '</b>) supera a los cuatro juntos.';
+        feedback.innerHTML =
+          'Colorrectal + cuello uterino + pulmón + tiroides = <b>' +
+          formatNumber(otherTotal) +
+          '</b>. Mama sola (<b>' +
+          formatNumber(real) +
+          '</b>) supera a los cuatro juntos.';
         btnSum.textContent = 'Ver por separado';
       } else {
         const x0 = mama.getBoundingClientRect().left;
         if (doAnimate && !reduceMotion) {
           const segs = Array.prototype.slice.call(stackEl.querySelectorAll('div'));
-          const src = segs.map(function (seg) { return rel(seg, chart); });
+          const src = segs.map(function (seg) {
+            return rel(seg, chart);
+          });
           sumValEl.style.visibility = 'hidden';
           chart.classList.remove('em-merged');
           sumCol.hidden = true;
-          others.forEach(function (c) { c.hidden = false; c.classList.add('em-ghost'); });
+          others.forEach(function (c) {
+            c.hidden = false;
+            c.classList.add('em-ghost');
+          });
           slide(mama, x0 - mama.getBoundingClientRect().left);
-          const bars = others.map(function (c) { return c.querySelector('.em-bar'); });
-          bars.forEach(function (b) { b.style.visibility = 'hidden'; });
+          const bars = others.map(function (c) {
+            return c.querySelector('.em-bar');
+          });
+          bars.forEach(function (b) {
+            b.style.visibility = 'hidden';
+          });
           // Vuelan en orden INVERSO (Tiroides -- el de más arriba en
           // la pila -- primero), como pide la consigna. duration/
           // stagger más cortos que antes (eran 1100/140, hasta 1,5s
@@ -694,9 +962,15 @@
           // .em-lbl/.em-val hacen su propio fade-in al aterrizar
           // (onLand saca .em-ghost), un solo movimiento limpio.
           const srcRev = src.slice().reverse();
-          const tgtRev = bars.map(function (b) { return rel(b, chart); }).reverse();
+          const tgtRev = bars
+            .map(function (b) {
+              return rel(b, chart);
+            })
+            .reverse();
           await fly(chart, srcRev, tgtRev, {
-            duration: 650, stagger: 90, easing: 'cubic-bezier(.45,.05,.25,1)',
+            duration: 650,
+            stagger: 90,
+            easing: 'cubic-bezier(.45,.05,.25,1)',
             onLand: function (k) {
               const realIdx = others.length - 1 - k; // deshace el reverse
               bars[realIdx].style.visibility = '';
@@ -706,7 +980,10 @@
         } else {
           chart.classList.remove('em-merged');
           sumCol.hidden = true;
-          others.forEach(function (c) { c.hidden = false; c.classList.remove('em-ghost'); });
+          others.forEach(function (c) {
+            c.hidden = false;
+            c.classList.remove('em-ghost');
+          });
           slide(mama, x0 - mama.getBoundingClientRect().left);
         }
         feedback.innerHTML = 'Tocá <b>Ver los otros 4 juntos</b> para compararlos con Mama.';
@@ -722,7 +999,7 @@
     });
     btnReset.addEventListener('click', function () {
       tipoState = { revealed: false, guess: null, merged: false };
-      renderCasosPorTipo(container);
+      render1();
     });
 
     // ---- reconstruye el estado actual (si lo había) ----
@@ -736,16 +1013,19 @@
   // ------------------------------------------------------------
   // "Casos por edad"
   // ------------------------------------------------------------
-    function renderCasosPorEdad(container) {
+  function renderCasosPorEdad(container) {
     const data = chapter1Data.casosPorEdad;
-    const total = data.reduce(function (s, d) { return s + d.valor; }, 0); // 20.750
+    const total = data.reduce(function (s, d) {
+      return s + d.valor;
+    }, 0); // 20.750
 
     container.innerHTML = '';
     renderSubtitle(container, 'Casos nuevos estimados en mujeres, por edad. Argentina, 2024.');
 
     const prompt = document.createElement('div');
     prompt.className = 'em-prompt em-prompt-tipo';
-    prompt.innerHTML = '<span class="em-prompt-dot" aria-hidden="true"></span>Tocá o arrastrá sobre las barras para elegir un rango de edad.';
+    prompt.innerHTML =
+      '<span class="em-prompt-dot" aria-hidden="true"></span>Tocá o arrastrá sobre las barras para elegir un rango de edad.';
     container.appendChild(prompt);
 
     // Chips de acceso rápido. "r" = [índice desde, índice hasta] en "data".
@@ -763,7 +1043,9 @@
       btn.className = 'em-chip';
       btn.textContent = c.label;
       btn.dataset.r = c.r.join(',');
-      btn.addEventListener('click', function () { setSel(c.r[0], c.r[1]); });
+      btn.addEventListener('click', function () {
+        setSel(c.r[0], c.r[1]);
+      });
       chipsWrap.appendChild(btn);
       return btn;
     });
@@ -775,29 +1057,50 @@
 
     // edadTipHTML(d): contenido del tooltip de una barra de edad.
     function edadTipHTML(d) {
-      return '<strong>' + d.categoria + ' años</strong>' +
-        '<div><span>Casos</span><span>' + formatNumber(d.valor) + '</span></div>' +
-        '<div><span>Del total</span><span>' + pctLabel(d.valor / total) + '%</span></div>' +
-        '<div><span>Por día</span><span>' + (d.valor / 365).toLocaleString('es-AR', { maximumFractionDigits: 1 }) + '</span></div>';
+      return (
+        '<strong>' +
+        d.categoria +
+        ' años</strong>' +
+        '<div><span>Casos</span><span>' +
+        formatNumber(d.valor) +
+        '</span></div>' +
+        '<div><span>Del total</span><span>' +
+        pctLabel(d.valor / total) +
+        '%</span></div>' +
+        '<div><span>Por día</span><span>' +
+        (d.valor / 365).toLocaleString('es-AR', { maximumFractionDigits: 1 }) +
+        '</span></div>'
+      );
     }
 
-    let dragging = false, anchor = null;
+    let dragging = false,
+      anchor = null;
     const cols = data.map(function (d, i) {
       const col = document.createElement('div');
       col.className = 'em-col em-col-age';
       col.innerHTML =
-        '<div class="em-val">' + formatNumber(d.valor) + '</div>' +
-        '<div class="em-bar" style="height:' + (d.valor / EDAD_MAX * 100) + '%"></div>' +
-        '<div class="em-lbl">' + d.categoria + '</div>';
+        '<div class="em-val">' +
+        formatNumber(d.valor) +
+        '</div>' +
+        '<div class="em-bar" style="height:' +
+        (d.valor / EDAD_MAX) * 100 +
+        '%"></div>' +
+        '<div class="em-lbl">' +
+        d.categoria +
+        '</div>';
       col.addEventListener('pointerdown', function (e) {
         dragging = true;
         anchor = i;
         setSel(i, i);
         e.preventDefault();
       });
-      col.addEventListener('pointerenter', function () { if (dragging) setSel(anchor, i); });
+      col.addEventListener('pointerenter', function () {
+        if (dragging) setSel(anchor, i);
+      });
       const bar = col.querySelector('.em-bar');
-      bar.addEventListener('pointermove', function (e) { showTip(e, edadTipHTML(d)); });
+      bar.addEventListener('pointermove', function (e) {
+        showTip(e, edadTipHTML(d));
+      });
       bar.addEventListener('pointerleave', hideTip);
       chart.appendChild(col);
       return col;
@@ -814,7 +1117,9 @@
     });
     // El "soltar" se escucha UNA sola vez en <document> (ver el
     // arranque) -- acá solo se actualiza a qué función avisarle.
-    edadDragEnd = function () { dragging = false; };
+    edadDragEnd = function () {
+      dragging = false;
+    };
 
     const axisNote = document.createElement('div');
     axisNote.className = 'em-axis-note';
@@ -825,7 +1130,10 @@
     // texto real lo pone paint(), de abajo) y después se actualizan
     // reescribiendo el texto directo -- no hace falta destruir y
     // reconstruir el DOM en cada clic/arrastre.
-    const statsWrap = renderInlineStats(container, [{ valor: '', label: '' }, { valor: '', label: '' }]);
+    const statsWrap = renderInlineStats(container, [
+      { valor: '', label: '' },
+      { valor: '', label: '' },
+    ]);
     const stats = statsWrap.querySelectorAll('.em-stat');
     const selPctEl = stats[0].querySelector('.em-stat-value');
     const selTxtEl = stats[0].querySelector('.em-stat-label');
@@ -834,7 +1142,8 @@
 
     const note = document.createElement('p');
     note.className = 'ui-note'; // antes 'em-note' (propia de este módulo) -- ahora compartida en style.css, módulo 3 también la usa
-    note.textContent = 'Son cantidades de casos, no riesgo: hay menos casos después de los 75 años porque hay menos mujeres de esa edad';
+    note.textContent =
+      'Son cantidades de casos, no riesgo: hay menos casos después de los 75 años porque hay menos mujeres de esa edad';
     container.appendChild(note);
 
     // setSel(a, b): fija el rango elegido como [menor, mayor] (no
@@ -851,12 +1160,14 @@
     function paint() {
       const sel = edadState.sel;
       cols.forEach(function (col, i) {
-      col.querySelector('.em-bar').classList.toggle('em-bar-sel', i >= sel[0] && i <= sel[1]);
+        col.querySelector('.em-bar').classList.toggle('em-bar-sel', i >= sel[0] && i <= sel[1]);
       });
       chipEls.forEach(function (chip) {
         chip.setAttribute('aria-pressed', chip.dataset.r === sel.join(','));
       });
-      const sum = data.slice(sel[0], sel[1] + 1).reduce(function (s, d) { return s + d.valor; }, 0);
+      const sum = data.slice(sel[0], sel[1] + 1).reduce(function (s, d) {
+        return s + d.valor;
+      }, 0);
       const share = sum / total;
       const todas = sel[0] === 0 && sel[1] === 4;
 
@@ -872,9 +1183,10 @@
         selTxtEl.textContent = 'casos nuevos estimados en total';
       } else {
         // "6 de cada 10"; si es menos del 5%, "3 de cada 100" (evita "0 de cada 10")
-        const proporcion = share * 10 < 0.5
-          ? Math.round(share * 100) + ' de cada 100'
-          : Math.round(share * 10) + ' de cada 10';
+        const proporcion =
+          share * 10 < 0.5
+            ? Math.round(share * 100) + ' de cada 100'
+            : Math.round(share * 10) + ' de cada 10';
         selPctEl.textContent = proporcion;
         selTxtEl.textContent = 'casos ocurren ' + rango + ' (' + formatNumber(sum) + ')';
       }
@@ -902,14 +1214,16 @@
   // oscuro) para que las 5 categorías se distingan mejor a simple
   // vista -- antes quedaban muy parecidas entre sí, sobre todo las 3
   // del medio.
-  const WAFFLE_GRAYS = ['#d6dce3', '#aab2bd', '#7f8794', '#555d68', '#2c313a'];
+  const WAFFLE_GRAYS = ['#ebeff3', '#bcc3cd', '#99a0ac', '#555d68', '#2c313a'];
 
   // colorForWaffle(d, index): devuelve el color que le toca a un
   // cuadrado del waffle según su categoría: rosa fuerte si es "Mama",
   // o un gris de la lista de arriba (repartidos en orden, repitiendo
   // en ciclo con el "%" si hubiera más de 5 categorías no-Mama).
   function colorForWaffle(d, index) {
-    return d.key === 'mama' ? THEME.colors.roseStrong : WAFFLE_GRAYS[(index - 1) % WAFFLE_GRAYS.length];
+    return d.key === 'mama'
+      ? THEME.colors.roseStrong
+      : WAFFLE_GRAYS[(index - 1) % WAFFLE_GRAYS.length];
   }
 
   // renderWaffleChart(container, data, opts): dibuja el gráfico de
@@ -934,7 +1248,8 @@
     // tener su propio tamaño/color sin agrandar la bajada entera.
     const prompt = document.createElement('div');
     prompt.className = 'em-prompt em-prompt-pct';
-    prompt.innerHTML = '<span class="em-prompt-dot" aria-hidden="true"></span>Pasá el cursor o tocá un cuadrado para ver a qué cáncer corresponde.';
+    prompt.innerHTML =
+      '<span class="em-prompt-dot" aria-hidden="true"></span>Pasá el cursor o tocá un cuadrado para ver a qué cáncer corresponde.';
     container.appendChild(prompt);
 
     const body = document.createElement('div');
@@ -943,7 +1258,10 @@
     const grid = document.createElement('div');
     grid.className = 'em-waffle-grid';
     grid.setAttribute('role', 'img');
-    grid.setAttribute('aria-label', 'Gráfico de 100 cuadrados: ' + data[0].sq + ' corresponden a cáncer de mama');
+    grid.setAttribute(
+      'aria-label',
+      'Gráfico de 100 cuadrados: ' + data[0].sq + ' corresponden a cáncer de mama',
+    );
 
     const info = document.createElement('div');
     info.className = 'em-waffle-info';
@@ -963,14 +1281,14 @@
     container.appendChild(body);
 
     const squares = []; // referencia a cada <div> cuadradito, para poder tocarlos después
-    let pinned = null;  // qué categoría quedó "clavada" por un click (null = ninguna)
+    let pinned = null; // qué categoría quedó "clavada" por un click (null = ninguna)
 
     // updateHeadline(d): actualiza el texto grande (headline/hlText/
     // hlMeta) para mostrar los datos de la categoría "d" (o de
     // data[0] = "Mama" si no se pasa ninguna, el estado por defecto).
     function updateHeadline(d) {
       const show = d || data[0];
-      headline.textContent = show.headline || (show.sq + ' de cada 100');
+      headline.textContent = show.headline || show.sq + ' de cada 100';
       headline.style.color = show.key === 'mama' ? THEME.colors.roseStrong : THEME.colors.text;
       hlText.textContent = show.text;
       // toFixed(1) -> siempre 1 decimal (ej "29.9"); .replace('.',',')
@@ -978,7 +1296,8 @@
       // porcentaje al final (antes el % iba pegado a los casos, en
       // el medio -- "20.750 casos (29,9%) de un total de 69.449").
       const pctLbl = show.porcentaje.toFixed(1).replace('.', ',');
-      hlMeta.textContent = formatNumber(show.casos) + ' casos de un total de 69.449 (' + pctLbl + '%)';
+      hlMeta.textContent =
+        formatNumber(show.casos) + ' casos de un total de 69.449 (' + pctLbl + '%)';
     }
 
     // setActive(key, pin): marca una categoría como "activa"
@@ -992,11 +1311,15 @@
     //         estaba clavada esa misma categoría, un segundo click la
     //         "despina" (vuelve a null).
     function setActive(key, pin) {
-      if (pin) key = pinned = (pinned === key ? null : key);
+      if (pin) key = pinned = pinned === key ? null : key;
       if (key === null && pinned) key = pinned; // si hay algo clavado, no lo pierde al sacar el mouse
-      const d = data.filter(function (x) { return x.key === key; })[0];
+      const d = data.filter(function (x) {
+        return x.key === key;
+      })[0];
       grid.classList.toggle('is-focused', !!d); // baja la opacidad general de la grilla
-      squares.forEach(function (sq) { sq.classList.toggle('is-active', !!d && sq.dataset.k === key); });
+      squares.forEach(function (sq) {
+        sq.classList.toggle('is-active', !!d && sq.dataset.k === key);
+      });
       updateHeadline(d);
     }
 
@@ -1011,9 +1334,15 @@
         sq.className = 'em-waffle-sq';
         sq.style.background = color;
         sq.dataset.k = d.key;
-        sq.addEventListener('mouseenter', function () { setActive(d.key); });
-        sq.addEventListener('mouseleave', function () { setActive(pinned); });
-        sq.addEventListener('click', function () { setActive(d.key, true); });
+        sq.addEventListener('mouseenter', function () {
+          setActive(d.key);
+        });
+        sq.addEventListener('mouseleave', function () {
+          setActive(pinned);
+        });
+        sq.addEventListener('click', function () {
+          setActive(d.key, true);
+        });
         grid.appendChild(sq);
         squares.push(sq);
       }
@@ -1028,8 +1357,16 @@
     // grilla en vez de aparecer todos de golpe. reduceMotion se saltea
     // la cadena y los muestra directo.
     squares.forEach(function (sq, i) {
-      if (reduceMotion) { sq.classList.add('is-in'); return; }
-      setTimeout(function () { sq.classList.add('is-in'); }, 200 + i * 14);
+      if (reduceMotion) {
+        sq.classList.add('is-in');
+        return;
+      }
+      setTimeout(
+        function () {
+          sq.classList.add('is-in');
+        },
+        200 + i * 14,
+      );
     });
   }
 
@@ -1050,7 +1387,8 @@
       // contexto: de dónde sale el 100% del waffle (69.449 casos/año,
       // Argentina 2024).
       renderWaffleChart(container, chapter1Data.porcentaje, {
-        subtitle: 'Si tomamos todos los cánceres que se diagnostican en mujeres en Argentina (69.449 casos al año), así se reparten. Cada cuadrado es el 1%. Argentina, 2024.',
+        subtitle:
+          'Si tomamos todos los cánceres que se diagnostican en mujeres en Argentina (69.449 casos al año), así se reparten. Cada cuadrado es el 1%. Argentina, 2024.',
       });
     },
   };
@@ -1059,7 +1397,9 @@
   // 8. ARRANQUE
   // ============================================================
   const tabs1 = root.querySelectorAll('.em-tab');
-  let activeKey = (root.querySelector('.em-tab.active') && root.querySelector('.em-tab.active').dataset.chart) || 'casosPorTipo';
+  let activeKey =
+    (root.querySelector('.em-tab.active') && root.querySelector('.em-tab.active').dataset.chart) ||
+    'casosPorTipo';
 
   // render1(): vuelve a dibujar el gráfico activo. Se llama al cargar
   // la página y al clickear una pestaña.
@@ -1075,6 +1415,16 @@
   // animación de fusión cambiaba el alto del panel, lo que disparaba
   // un redibujado A MITAD de esa animación (perdiendo el resultado).
   function render1() {
+    // "Fuente" (emSrc) puede haber quedado movida adentro del pie de
+    // "Casos por tipo" (ver renderCasosPorTipo) -- si se cambia a
+    // OTRA pestaña, esa otra función también vacía el panel con
+    // innerHTML='', así que hay que devolverla a su lugar ACÁ, antes
+    // de llamar a renderFn, para no perderla. Si ya está en su lugar,
+    // esto no hace nada (appendChild de un nodo que ya es el último
+    // hijo es un no-op).
+    if (emSrc.parentElement !== panel1.parentElement) {
+      panel1.parentElement.appendChild(emSrc);
+    }
     const renderFn = chartRenderers[activeKey];
     if (renderFn) renderFn(panel1);
   }
@@ -1111,5 +1461,7 @@
   // "Soltar" global para el arrastre de "Casos por edad" (ver
   // edadDragEnd, declarado en la sección 5). Se registra UNA sola vez
   // acá, no adentro de renderCasosPorEdad.
-  document.addEventListener('pointerup', function () { edadDragEnd(); });
+  document.addEventListener('pointerup', function () {
+    edadDragEnd();
+  });
 })();

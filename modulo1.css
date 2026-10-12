@@ -19,9 +19,16 @@
      .em-guess-*       -> la zona de arrastre para "adivinar" (Casos por tipo)
      .em-stack/.em-fly -> la pila "los otros 4 juntos" y sus clones voladores
      .em-chips/.em-chip -> los 3 botones de rango rápido (Casos por edad)
-     .em-btn           -> "Sumá los otros 4" / "Ver por separado" / "Volver a adivinar"
+     .em-btn           -> "Probar de nuevo" / "Ver los otros 4 juntos" / "Ver por separado"
      .em-prompt        -> la invitación a interactuar, con el punto que pulsa
      .em-feedback      -> el mensaje de resultado (Casos por tipo)
+     .em-tipo-result   -> fila de "2 columnas" debajo de los botones
+                         (Casos por tipo): respuesta variable + datos fijos
+     .em-tipo-foot     -> fila al pie de la tarjeta (Casos por tipo):
+                         bajada + "Fuente"
+     .em-reveal-fade   -> oculta/muestra con opacity (no [hidden]) sin
+                         sacar del flujo (Casos por tipo): así la
+                         tarjeta no cambia de alto al revelar
      .em-tip           -> el tooltip compartido, hover sobre cualquier barra
      .em-stat*        -> los "datos sueltos" (número grande + etiqueta)
      .em-waffle-*     -> todo lo del gráfico de 100 cuadrados (Porcentaje)
@@ -211,17 +218,42 @@
   50%{ box-shadow:0 0 0 8px rgba(255,111,156,0); }
 }
 
-/* .em-col y .em-tipo-actions definen su propio "display" (flex, ver
-   abajo) -- eso empata en especificidad contra el estilo por defecto
-   del navegador para el atributo [hidden] (que normalmente alcanza
-   solo con poner hidden="" para ocultar cualquier cosa) y, al
-   empatar, GANA la regla más nueva en el archivo, o sea la nuestra:
-   sin esto, modulo1.js podía marcar un elemento hidden=true y
-   igual se seguía viendo. Se fuerza acá explícitamente. */
-.em-col[hidden],
-.em-tipo-actions[hidden],
-.em-prompt[hidden]{
+/* .em-col define su propio "display" (flex, ver abajo) -- eso empata
+   en especificidad contra el estilo por defecto del navegador para el
+   atributo [hidden] (que normalmente alcanza solo con poner hidden=""
+   para ocultar cualquier cosa) y, al empatar, GANA la regla más nueva
+   en el archivo, o sea la nuestra: sin esto, modulo1.js podía marcar
+   una columna hidden=true (ej. al fusionar "Los otros 4 cánceres") e
+   igual se seguía viendo. Se fuerza acá explícitamente. ("Casos por
+   tipo" NO usa [hidden] para su prompt/botones/eje -- ver
+   .em-reveal-fade, más abajo, que los oculta sin sacarlos del flujo.) */
+.em-col[hidden]{
   display:none;
+}
+
+/* .em-reveal-fade: "Casos por tipo" -- el prompt, el eje, los botones
+   y los datos fijos (1°/66,2) pasan por acá para mostrarse/ocultarse
+   SIN sacarse del flujo (a diferencia de [hidden], que es display:none
+   y los sacaba del todo): opacity+visibility los oculta pero siguen
+   ocupando su alto real. Pedido explícito de Emi: que la tarjeta mida
+   SIEMPRE lo mismo que mide una vez revelada la respuesta, en vez de
+   agrandarse recién en ese momento. "em-shown" es el estado visible;
+   modulo1.js se la agrega/saca según corresponda (ver
+   renderCasosPorTipo/reveal()).
+   El "transition:visibility" con demora (0s linear .4s al ocultar, 0s
+   sin demora al mostrar) hace que la visibilidad cambie DESPUÉS de
+   que termina el fundido al ocultar (si no, el elemento desaparece de
+   golpe y la opacity nunca llega a animarse), pero ANTES al mostrar
+   (para que sea clickeable/enfocable apenas se empieza a ver). */
+.em-reveal-fade{
+  opacity:0;
+  visibility:hidden;
+  transition:opacity .4s ease, visibility 0s linear .4s;
+}
+.em-reveal-fade.em-shown{
+  opacity:1;
+  visibility:visible;
+  transition:opacity .4s ease, visibility 0s linear;
 }
 
 /* Fila de columnas: mismo criterio para "tipo" (6 columnas posibles,
@@ -241,15 +273,11 @@
   touch-action:none; /* evita que el navegador interprete el arrastre como scroll en celular */
 }
 /* Antes "Casos por tipo" compensaba la diferencia de alto con
-   "El tiempo" (módulo 2) con un margen vacío grande antes de los 2
-   datos de abajo (ver .em-inline-stats-tipo) -- Bren pidió aprovechar
-   ese espacio en vez de dejarlo vacío. Gran parte de ese alto pasa
-   ACÁ: barras más grandes/presentes (250px en vez de 220px). El
-   resto (no todo: así no vuelve a quedar un hueco vacío) se lo queda
-   .em-inline-stats-tipo, que empuja los 2 datos de abajo un poco más
-   -- entre las dos cosas, la tarjeta sigue midiendo lo mismo que
-   módulo 2, sin crecer. "Casos por edad" se queda en 220px -- esa
-   pestaña ya medía lo que tenía que medir, no hacía falta tocarla. */
+   "El tiempo" (módulo 2) con un margen vacío grande más abajo en la
+   tarjeta -- Bren pidió aprovechar ese espacio en vez de dejarlo
+   vacío, por eso acá las barras son más grandes/presentes (250px en
+   vez de 220px). "Casos por edad" se queda en 220px -- esa pestaña ya
+   medía lo que tenía que medir, no hacía falta tocarla. */
 .em-chart-tipo{
   height:250px;
 }
@@ -364,14 +392,7 @@
    que ahí el -4px de base sigue andando bien -- no se tocó. */
 .em-chart-tipo + .em-axis-note{
   margin-top:9px;
-  /* Más separación de lo que viene después (.em-feedback) -- Emi marcó
-     que esta zona se veía toda apretada, con mucho espacio libre sin
-     usar más abajo (antes de los 2 datos sueltos). Ese espacio se
-     reparte ahora entre acá, .em-feedback y .em-tipo-actions en vez de
-     juntarse todo en un solo hueco grande antes de los datos (ver
-     .em-inline-stats-tipo, que se achicó para compensar y que la
-     tarjeta no creciera).
-     color: probé con var(--text) (más contraste) en la vuelta
+  /* color: probé con var(--text) (más contraste) en una vuelta
      anterior, pero Emi pidió volver al gris apagado -- el mismo
      var(--text-dim) que ya usa .ui-sub (la bajada "Casos nuevos
      estimados..."), para que las dos notas chicas de la tarjeta
@@ -388,16 +409,18 @@
 }
 
 /* ---- "Casos por tipo": zona de arrastre + línea "Tu respuesta" ---- */
-/* Capa invisible sobre la columna de Mama, desde la etiqueta hacia
-   arriba -- ahí es donde se puede arrastrar para adivinar.
-   cursor:ns-resize = el ícono del mouse avisa "esto se mueve
-   vertical", aunque en celular el touch lo ignora (no hace falta). */
+/* Capa sobre la columna de Mama, desde la etiqueta hacia arriba --
+   pointer-events:none a propósito (pedido de Emi): solo la MANIJA
+   (.em-handle, más abajo) tiene que responder al click/arrastre, no
+   toda esta zona ni la barra -- antes cualquier toque acá adentro se
+   tomaba como respuesta final sin haber arrastrado nada, lo que
+   generaba respuestas "sin querer". */
 .em-guess-zone{
   position:absolute;
   left:0;
   right:0;
   top:0;
-  cursor:ns-resize;
+  pointer-events:none;
 }
 /* La barra punteada que sigue al arrastre, con la manija "↕" arriba. */
 .em-guess-bar{
@@ -410,6 +433,12 @@
   border-radius:7px 7px 3px 3px;
   background:rgba(255,111,156,0.18);
 }
+/* .em-handle es la ÚNICA parte interactiva de toda la zona de
+   arrastre (ver el comentario de .em-guess-zone, arriba) --
+   pointer-events:auto le devuelve la interactividad que su padre le
+   sacó. cursor:ns-resize (antes en .em-guess-zone) se mueve para acá,
+   así el ícono del mouse avisa "esto se arrastra" justo donde
+   corresponde. */
 .em-handle{
   position:absolute;
   left:50%;
@@ -424,6 +453,8 @@
   font-weight:700;
   display:grid;
   place-items:center;
+  pointer-events:auto;
+  cursor:ns-resize;
 }
 /* Línea punteada que marca dónde quedó la respuesta adivinada, una
    vez revelada la real -- queda puesta ahí de forma permanente (hasta
@@ -507,15 +538,18 @@
 }
 .em-feedback b{ color:var(--rose-strong); }
 
-/* Botones "Ver los otros 4 juntos" / "Ver por separado" / "Probar de
-   nuevo". Mismo look de píldora que .em-tab, pero CONTORNEADOS (fondo
-   transparente) en vez de rellenos -- para que se lean como una acción
-   secundaria, no como otra pestaña más. */
+/* Botones "Probar de nuevo" / "Ver los otros 4 juntos" / "Ver por
+   separado". Mismo look de píldora que .em-tab, pero CONTORNEADOS
+   (fondo transparente) en vez de rellenos -- para que se lean como
+   una acción secundaria, no como otra pestaña más.
+   justify-content:center: pedido explícito de Emi (antes quedaban
+   pegados a la izquierda). */
 .em-tipo-actions{
   display:flex;
   flex-wrap:wrap;
+  justify-content:center;
   gap:10px;
-  margin-bottom:16px; /* antes 0, pegados contra los datos sueltos de abajo */
+  margin-bottom:16px; /* antes 0, pegados contra lo de abajo */
 }
 .em-btn{
   font-family:var(--sans);
@@ -610,7 +644,7 @@
    elementos nuevos (el.animate(), en modulo1.js, ya se salta solo con
    duration:0 cuando corresponde -- ver reduceMotion ahí). */
 @media (prefers-reduced-motion:reduce){
-  .em-bar, .em-val, .em-lbl, .em-col, .em-prompt-dot{
+  .em-bar, .em-val, .em-lbl, .em-col, .em-prompt-dot, .em-reveal-fade{
     transition:none !important;
     animation:none !important;
   }
@@ -678,25 +712,67 @@
   padding-top:10px;
   border-top:1px solid var(--panel-border);
 }
-/* "Casos por tipo" únicamente: un poco más de separación que la base
-   (10px) antes de estos 2 datos y su línea divisoria (el border-top
-   de .em-inline-stats se mueve con el bloque, al moverse con
-   margin-top). Antes este valor era mucho más grande (92px) para
-   compensar la diferencia de alto con "El tiempo" (módulo 2) -- eso
-   dejaba un hueco vacío grande que no se veía bien. Ahora esa
-   diferencia la absorbe el GRÁFICO en sí (más alto, ver
-   .em-chart-tipo más arriba), así que acá alcanza con un empujón
-   chico. No se tocó "Casos por edad": esa pestaña ya medía
-   prácticamente lo mismo que módulo 2 de entrada.
+/* ============================================================
+   "Casos por tipo": resultado y pie (reemplazan a .em-inline-stats
+   para esta pestaña -- "Casos por edad" sigue usando esa, sin cambios)
+   ============================================================ */
+/* .em-tipo-result: las "2 columnas" mitad y mitad debajo de los
+   botones (pedido de Emi: "debe ser mitad mitad") -- a la izquierda
+   .em-feedback (la respuesta variable, el mismo mensaje de siempre,
+   reubicado acá); a la derecha los 2 datos fijos ("1°"/"66,2"),
+   apilados en vez de uno al lado del otro porque acá ya son "la
+   columna derecha", no 2 columnas propias. 1fr/1fr (en vez de que
+   cada columna mida lo que su contenido pida) reparte el ancho
+   EXACTO a la mitad -- en la práctica la izquierda se ve "más
+   ocupada" porque el texto de la respuesta es más largo y llena esa
+   mitad, mientras la derecha (2 líneas cortas) deja aire. A propósito
+   NO reusa .em-inline-stats: esa clase trae una línea divisoria
+   arriba (border-top) que acá se pidió sacar. */
+.em-tipo-result{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  align-items:flex-start;
+  gap:16px 24px;
+  margin-top:4px;
+}
+.em-tipo-result .em-feedback{
+  /* min-height más alto que la base de .em-feedback (1.5em, una sola
+     línea): acá el mensaje puede ocupar 2-3 líneas (la columna mide
+     la mitad del ancho de la tarjeta, no todo), y reservar el lugar
+     de entrada evita que la tarjeta cambie de alto al revelar (pedido
+     de Emi: "el tamaño de la tarjeta luego de adivinar sea el tamaño
+     en todo momento"). */
+  min-height:4.2em;
+  margin-bottom:0; /* el margin-bottom base de .em-feedback era para cuando iba pegada a los botones de abajo; acá ya no hace falta */
+}
+.em-tipo-result-stats{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
 
-   Bajado de 49px a 6px: Emi pidió repartir ese hueco vacío entre
-   .em-axis-note/.em-feedback/.em-tipo-actions (que se veían todos
-   apretados entre sí) en vez de dejarlo todo junto, de una, acá abajo
-   -- la tarjeta sigue midiendo prácticamente lo mismo que antes, el
-   espacio libre simplemente ahora está distribuido en vez de
-   amontonado. */
-.em-inline-stats-tipo{
-  margin-top:6px;
+/* .em-tipo-foot: la bajada que antes iba arriba de todo ("Casos
+   nuevos estimados...") + "Fuente", en la misma fila, al pie de la
+   tarjeta (pedido de Emi). "Fuente" es el MISMO elemento .ui-src
+   compartido de siempre (ver index.html) -- modulo1.js lo mueve acá
+   adentro en cada render de esta pestaña, y lo devuelve a su lugar de
+   origen (afuera de #em-chart-panel) antes de que cualquier otra
+   pestaña vuelva a vaciar el panel, para no perderlo (ver render1()
+   en modulo1.js). */
+.em-tipo-foot{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  flex-wrap:wrap;
+  gap:8px 12px;
+  margin-top:18px;
+}
+.em-tipo-foot .ui-sub{
+  margin:0;
+}
+.em-tipo-foot .ui-src{
+  margin-top:0;
+  flex:0 0 auto;
 }
 
 /* ============================================================
@@ -879,6 +955,15 @@
   .em-waffle-hlmeta{margin:0 0 8px;}
   .em-chart-tipo{height:min(193px,30vh);} /* bajado de 203px/31vh: el .chapter-header ahora deja más aire antes del título (ver style.css), así que el gráfico tiene que ceder esos px */
   .em-chart-edad{height:min(140px,21vh);} /* mismo motivo */
+  /* "Casos por tipo" ahora reserva SIEMPRE el alto de la versión
+     revelada (pedido de Emi, ver .em-reveal-fade) -- eso agrega alto
+     fijo que antes no estaba en pantallas bajas (el eje, los botones y
+     el min-height de .em-feedback para 2-3 líneas). Se achica acá lo
+     mismo que ya se achicaba el resto del sitio en este escalón. */
+  .em-tipo-result .em-feedback{min-height:2.6em;}
+  .em-tipo-result{margin-top:2px; gap:8px 24px;}
+  .em-tipo-actions{margin-bottom:6px;}
+  .em-tipo-foot{margin-top:6px;}
 }
 
 /* ============ PANTALLAS MUY BAJAS (segundo escalón) ============
