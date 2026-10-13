@@ -3,6 +3,7 @@
 // ============================================================
 // 1) Botón "Final": pausa el video 3, oculta su fundido y reproduce
 //    04_FINAL.mp4 desde el principio (si se vuelve a tocar, reinicia).
+//    Con la frase final se va el título del capítulo y, a los 4 s, aparece "Volver a comenzar".
 //    Al cambiar de capítulo con el menú, script.js pausa y oculta el video 4.
 // 2) Pestaña 3: buscador de mamógrafos con animación de puntos (más abajo).
 //    Necesita buscador-datos.js cargado ANTES que este archivo.
@@ -13,13 +14,89 @@
   const video4 = document.getElementById('me-video4');
   if (!bFinal || !video3 || !video4) return;
 
+  // Cierre: la tarjeta se desvanece y aparece la frase final (misma animación que el título de la intro)
+  const card = bFinal.closest('.me-card');
+  const cierre = document.getElementById('me-cierre');
+  const partes = card
+    ? card.querySelectorAll(
+        ':scope > .ui-card-title, :scope > .ui-sub, :scope > .me-prompt-donde, :scope > .me-body, :scope > .me-final, :scope > .ui-src',
+      )
+    : [];
+
+  // Pantalla final: aparece la frase y se va el título del capítulo ("Capítulo 3 /
+  // El futuro"). A los 4 segundos de la frase aparece, discreto y abajo, el botón
+  // "Volver a comenzar": al tocarlo todo se desvanece y se vuelve al inicio
+  // (recarga la página: vuelve a la intro sin tocar script.js).
+  const BOTON_MS = 3000; // 0,8 s de espera de la frase + 4 s con la frase en pantalla
+  const REDUCIDO = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reinicio = document.getElementById('me-reinicio');
+  const bReiniciar = document.getElementById('me-reiniciar');
+  const capitulo = card ? card.closest('.chapter') : null;
+  let tBoton = null;
+
+  function mostrarCierre() {
+    if (!card || !cierre) return;
+    clearTimeout(tBoton);
+    card.classList.add('me-cierre-on');
+    if (capitulo) capitulo.classList.add('me-cierre-on'); // oculta "Capítulo 3 / El futuro"
+    partes.forEach((el) => {
+      el.inert = true; // sin foco ni lectores de pantalla en lo que se ocultó
+    });
+    cierre.hidden = false;
+    void cierre.offsetWidth; // para que la transición arranque
+    cierre.classList.add('on');
+    tBoton = setTimeout(
+      () => {
+        if (!reinicio) return;
+        reinicio.hidden = false;
+        void reinicio.offsetWidth; // para que la transición arranque
+        reinicio.classList.add('on');
+      },
+      REDUCIDO ? 0 : BOTON_MS,
+    );
+  }
+
+  function ocultarCierre() {
+    if (!card || !cierre) return;
+    clearTimeout(tBoton);
+    cierre.classList.remove('on');
+    cierre.hidden = true;
+    card.classList.remove('me-cierre-on');
+    if (capitulo) capitulo.classList.remove('me-cierre-on');
+    if (reinicio) {
+      reinicio.classList.remove('on');
+      reinicio.hidden = true;
+    }
+    partes.forEach((el) => {
+      el.inert = false;
+    });
+  }
+
   bFinal.onclick = () => {
     video3.pause();
     video3.classList.remove('active');
     video4.classList.add('active');
     video4.currentTime = 0;
     video4.play().catch((err) => console.warn('No se pudo reproducir 04_FINAL:', err));
+    mostrarCierre();
   };
+
+  // "Volver a comenzar": un velo oscuro tapa todo y recién ahí se recarga la página
+  if (bReiniciar)
+    bReiniciar.addEventListener('click', () => {
+      bReiniciar.disabled = true;
+      const velo = document.createElement('div');
+      velo.className = 'me-velo';
+      document.body.appendChild(velo);
+      void velo.offsetWidth; // para que la transición arranque
+      velo.classList.add('on');
+      setTimeout(() => location.reload(), REDUCIDO ? 0 : 1300);
+    });
+
+  // Al cambiar de capítulo, script.js oculta el video 4: se restaura la tarjeta
+  new MutationObserver(() => {
+    if (!video4.classList.contains('active')) ocultarCierre();
+  }).observe(video4, { attributes: true, attributeFilter: ['class'] });
 })();
 
 // ============================================================
