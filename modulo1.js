@@ -447,12 +447,34 @@
     // lo mismo), esta clase oculta con opacity/visibility, que SÍ
     // sigue ocupando su lugar. "em-shown" es el estado visible -- acá
     // arranca con ella (si todavía no se reveló) y reveal() se la saca.
+    // "em-tipo-top": el prompt rosa y el mensaje de resultado (.em-feedback)
+    // comparten el MISMO espacio -- un grid de una sola celda donde los
+    // dos hijos se superponen (grid-area:1/1, mismo truco que
+    // .ui-panels en style.css), en vez de ser 2 bloques separados uno
+    // debajo del otro. Así, cuando el prompt se apaga al revelar (ver
+    // reveal(), más abajo), el mensaje de resultado aparece JUSTO AHÍ
+    // en vez de dejar ese lugar vacío y reservar otro espacio aparte
+    // más abajo -- pedido de Emi: aprovechar el lugar que deja el
+    // prompt en vez de perderlo.
+    const top = document.createElement('div');
+    top.className = 'em-tipo-top';
+
     const prompt = document.createElement('div');
     prompt.className =
       'em-prompt em-prompt-tipo em-reveal-fade' + (tipoState.revealed ? '' : ' em-shown');
     prompt.innerHTML =
       '<span class="em-prompt-dot" aria-hidden="true"></span>¿Cuántos casos de mama creés que hay? Arrastrá la barra para adivinar.';
-    container.appendChild(prompt);
+    top.appendChild(prompt);
+
+    // .em-feedback se crea ACÁ ahora (antes vivía más abajo, adentro de
+    // .em-tipo-result) -- mismo elemento de siempre, movido a este
+    // lugar nuevo. reveal() le agrega "em-shown" al mismo tiempo que le
+    // saca esa clase a "prompt".
+    const feedback = document.createElement('div');
+    feedback.className = 'em-feedback em-reveal-fade' + (tipoState.revealed ? ' em-shown' : '');
+    top.appendChild(feedback);
+
+    container.appendChild(top);
 
     const chart = document.createElement('div');
     chart.className = 'em-chart-tipo';
@@ -608,24 +630,16 @@
     actions.appendChild(btnSum);
     container.appendChild(actions);
 
-    // "2 columnas" mitad y mitad debajo de los botones (pedido de
-    // Emi): a la izquierda la respuesta variable (.em-feedback, el
-    // mismo mensaje de siempre, reubicado acá -- antes iba arriba,
-    // entre el eje y los botones); a la derecha los 2 datos fijos que
-    // no dependen del juego ("1°"/"66,2", antes en
-    // .em-inline-stats-tipo con una línea divisoria arriba, que ahora
-    // se saca -- ver .em-tipo-result en modulo1.css, no reusa
-    // .em-inline-stats). Los datos fijos TAMPOCO se ven al principio
-    // -- aparecen recién al revelar, junto con todo lo demás (pedido
-    // de Emi: "aparecen cuando se desliza la barra, al mismo tiempo
-    // que las barras se modifican"), por eso también llevan
-    // "em-reveal-fade".
+    // Fila con los 2 datos fijos que no dependen del juego ("1°"/"66,2"),
+    // en un solo renglón (pedido de Emi) -- antes compartían esta fila
+    // con .em-feedback (la respuesta variable), que ahora se movió
+    // arriba, al lugar del prompt (ver "top", más arriba). Los datos
+    // fijos TAMPOCO se ven al principio -- aparecen recién al revelar,
+    // junto con todo lo demás (pedido de Emi: "aparecen cuando se
+    // desliza la barra, al mismo tiempo que las barras se modifican"),
+    // por eso llevan "em-reveal-fade".
     const resultRow = document.createElement('div');
     resultRow.className = 'em-tipo-result';
-
-    const feedback = document.createElement('div');
-    feedback.className = 'em-feedback';
-    resultRow.appendChild(feedback);
 
     const statsCol = document.createElement('div');
     statsCol.className =
@@ -654,7 +668,12 @@
     const footRow = document.createElement('div');
     footRow.className = 'em-foot';
     const footSub = document.createElement('p');
-    footSub.className = 'ui-sub';
+    // "em-foot-sub-lg": el tamaño de esta bajada ahora tiene que
+    // igualar al nuevo tamaño (agrandado) de los datos fijos -- ver
+    // .em-tipo-result-stats .em-stat-label en modulo1.css (pedido de
+    // Emi). Clase propia, solo para esta pestaña: "Casos por edad" y
+    // "Porcentaje" siguen con el tamaño de .ui-sub de siempre.
+    footSub.className = 'ui-sub em-foot-sub-lg';
     footSub.textContent = 'Casos nuevos estimados en mujeres, por tipo de cáncer. Argentina, 2024.';
     footRow.appendChild(footSub);
     footRow.appendChild(emSrc);
@@ -668,10 +687,13 @@
     function reveal(doAnimate) {
       tipoState.revealed = true;
       // classList.toggle (no .hidden): ver el comentario de "em-reveal-fade"
-      // más arriba, en la creación de "prompt" -- estos 4 elementos
+      // más arriba, en la creación de "prompt" -- estos elementos
       // quedan siempre ocupando su lugar, solo cambia su opacidad/
       // visibilidad, así la tarjeta no cambia de alto al revelar.
+      // "prompt" y "feedback" comparten la misma celda (ver "top", más
+      // arriba): uno se apaga justo cuando el otro se prende.
       prompt.classList.remove('em-shown');
+      feedback.classList.add('em-shown');
       actions.classList.add('em-shown');
       axisNote.classList.add('em-shown');
       statsCol.classList.add('em-shown');
@@ -772,8 +794,9 @@
           formatNumber(real) +
           '</b>, menos de lo que pensabas, pero casi el triple que el segundo.';
       }
-      feedback.innerHTML =
-        msg + ' Eso es <b>' + Math.round(real / 365) + ' diagnósticos por día</b>.';
+      // Ya no agrega "Eso es N diagnósticos por día" al final (pedido
+      // de Emi: sacarlo de la respuesta variable).
+      feedback.innerHTML = msg;
     }
 
     // setupDrag(): arma la zona de arrastre sobre la columna de Mama
@@ -1125,12 +1148,6 @@
     const selDiaEl = stats[1].querySelector('.em-stat-value');
     const selDiaTxtEl = stats[1].querySelector('.em-stat-label');
 
-    const note = document.createElement('p');
-    note.className = 'ui-note'; // antes 'em-note' (propia de este módulo) -- ahora compartida en style.css, módulo 3 también la usa
-    note.textContent =
-      'Son cantidades de casos, no riesgo: hay menos casos después de los 75 años porque hay menos mujeres de esa edad';
-    container.appendChild(note);
-
     const footRow = document.createElement('div');
     footRow.className = 'em-foot';
     const footSub = document.createElement('p');
@@ -1236,7 +1253,7 @@
     const prompt = document.createElement('div');
     prompt.className = 'em-prompt em-prompt-pct';
     prompt.innerHTML =
-      '<span class="em-prompt-dot" aria-hidden="true"></span>¿Cómo se reparten los cánceres en mujeres? Explorá la grilla.';
+      '<span class="em-prompt-dot" aria-hidden="true"></span>“Pasá el cursor o tocá un cuadrado: cada uno es 1 de cada 100 casos.”.';
     container.appendChild(prompt);
 
     const body = document.createElement('div');
@@ -1280,22 +1297,52 @@
 
     const squares = []; // referencia a cada <div> cuadradito, para poder tocarlos después
     let pinned = null; // qué categoría quedó "clavada" por un click (null = ninguna)
+    let lastKey = null; // qué categoría se mostró la última vez (para no re-animar al pasar de cuadrado a cuadrado DENTRO de la misma categoría)
+
+    // animarEntradaInfo(): dispara sobre "info" (headline+hlText+hlMeta
+    // juntos) la MISMA animación de entrada que ya usan las pestañas de
+    // este módulo y las de módulo 2 al cambiar (ver .em-fade-in /
+    // @keyframes em-fade-in en modulo1.css) -- mismo truco de sacar la
+    // clase, forzar reflow y volver a ponerla (si no, el navegador no
+    // "re-dispara" la animación si la clase ya estaba puesta).
+    function animarEntradaInfo() {
+      if (reduceMotion) return;
+      info.classList.remove('em-fade-in');
+      void info.offsetWidth;
+      info.classList.add('em-fade-in');
+    }
 
     // updateHeadline(d): actualiza el texto grande (headline/hlText/
-    // hlMeta) para mostrar los datos de la categoría "d" (o de
-    // data[0] = "Mama" si no se pasa ninguna, el estado por defecto).
+    // hlMeta) para mostrar los datos de la categoría "d". Si "d" es
+    // null/undefined (nada enfocado: ni hover ni click), lo deja en
+    // blanco -- antes caía en un "show = d || data[0]" que mostraba
+    // Mama fija de entrada y de nuevo cada vez que se sacaba el mouse
+    // sin haber clickeado nada; pedido de Emi: que al principio (y
+    // cada vez que no hay nada enfocado) solo se vea la grilla, sin
+    // ningún dato fijo mostrándose solo.
     function updateHeadline(d) {
-      const show = d || data[0];
-      headline.textContent = show.headline || show.sq + ' de cada 100';
-      headline.style.color = show.key === 'mama' ? THEME.colors.roseStrong : THEME.colors.text;
-      hlText.textContent = show.text;
+      if (!d) {
+        headline.textContent = '';
+        hlText.textContent = '';
+        hlMeta.textContent = '';
+        lastKey = null;
+        return;
+      }
+      // Solo anima si la categoría CAMBIÓ -- moverse entre varios
+      // cuadrados de la MISMA categoría (todos del mismo color) no
+      // tiene que reiniciar la animación una y otra vez.
+      const isNewCategory = d.key !== lastKey;
+      headline.textContent = d.headline || d.sq + ' de cada 100';
+      headline.style.color = d.key === 'mama' ? THEME.colors.roseStrong : THEME.colors.text;
+      hlText.textContent = d.text;
       // toFixed(1) -> siempre 1 decimal (ej "29.9"); .replace('.',',')
       // -> formato argentino ("29,9"). Orden pedido: casos, total,
       // porcentaje al final (antes el % iba pegado a los casos, en
       // el medio -- "20.750 casos (29,9%) de un total de 69.449").
-      const pctLbl = show.porcentaje.toFixed(1).replace('.', ',');
-      hlMeta.textContent =
-        formatNumber(show.casos) + ' casos de un total de 69.449 (' + pctLbl + '%)';
+      const pctLbl = d.porcentaje.toFixed(1).replace('.', ',');
+      hlMeta.textContent = formatNumber(d.casos) + ' casos de un total de 69.449 (' + pctLbl + '%)';
+      if (isNewCategory) animarEntradaInfo();
+      lastKey = d.key;
     }
 
     // setActive(key, pin): marca una categoría como "activa"
@@ -1335,9 +1382,6 @@
         sq.addEventListener('mouseenter', function () {
           setActive(d.key);
         });
-        sq.addEventListener('mouseleave', function () {
-          setActive(pinned);
-        });
         sq.addEventListener('click', function () {
           setActive(d.key, true);
         });
@@ -1345,8 +1389,27 @@
         squares.push(sq);
       }
     });
+    // El "soltar" (volver al estado sin nada enfocado, o al pinned si
+    // hay uno) se escucha en la GRILLA ENTERA, no en cada cuadrado --
+    // antes cada cuadrado tenía su propio mouseleave, y al pasar el
+    // mouse de un cuadrado a otro (aunque sea el de al lado) se
+    // disparaba ese mouseleave una fracción de segundo ANTES del
+    // mouseenter del siguiente, vaciando el texto de golpe entre
+    // medio -- se veía como una transición brusca/con parpadeo en vez
+    // del cambio suave de categoría a categoría (reportado por Emi).
+    // Con el mouseleave acá, en la grilla, moverse entre cuadrados
+    // vecinos ya no pasa por ese estado "en blanco" intermedio: el
+    // texto solo se vacía (o vuelve al pinned) cuando el mouse sale de
+    // la grilla por completo.
+    grid.addEventListener('mouseleave', function () {
+      setActive(pinned);
+    });
 
-    updateHeadline(data[0]); // estado inicial: "Mama"
+    // Sin llamado a updateHeadline() acá: arranca en blanco a propósito
+    // (headline/hlText/hlMeta son <p> vacíos recién creados) -- pedido
+    // de Emi, "inicialmente solo esté la grilla". Los datos de cada
+    // categoría aparecen recién al pasar el mouse o tocar un cuadrado
+    // (ver setActive(), más arriba).
 
     // Animación de entrada: cada cuadrado aparece (agregándole la
     // clase .is-in, que en el CSS tiene su propia transición de

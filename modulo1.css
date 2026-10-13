@@ -205,7 +205,7 @@
   font-size:1.05rem;
   justify-content:center;
   text-align:center;
-  margin-bottom:10px;
+  margin-bottom:12px; /* antes 10px, después 26px (daba barra de scroll) -- Emi pidió más separación entre la instrucción y la grilla, pero menos que esa primera vuelta */
 }
 /* .em-prompt-dot, NO ".dot" a secas: style.css ya tiene una clase
    ".dot" (los puntitos decorativos alrededor del título del
@@ -279,7 +279,7 @@
 .em-chart-edad{
   display:flex;
   align-items:flex-end;
-  gap:clamp(8px,2.5vw,24px);
+  gap:clamp(4px,1vw,10px); /* antes clamp(6px,1.6vw,16px), y antes de eso clamp(8px,2.5vw,24px) -- Emi pidió juntar más las barras, también en el estado inicial (antes de revelar) */
   height:220px;
   padding-top:30px; /* aire arriba para que el número más alto no se pegue al borde */
   position:relative;
@@ -733,59 +733,102 @@
   border-top:1px solid var(--panel-border);
 }
 /* ============================================================
-   "Casos por tipo": resultado y pie (reemplazan a .em-inline-stats
-   para esta pestaña -- "Casos por edad" sigue usando esa, sin cambios)
+   "Casos por tipo": prompt/resultado y pie (reemplazan a
+   .em-inline-stats para esta pestaña -- "Casos por edad" sigue
+   usando esa, sin cambios)
    ============================================================ */
-/* .em-tipo-result: las "2 columnas" mitad y mitad debajo de los
-   botones (pedido de Emi: "debe ser mitad mitad") -- a la izquierda
-   .em-feedback (la respuesta variable, el mismo mensaje de siempre,
-   reubicado acá); a la derecha los 2 datos fijos ("1°"/"66,2"),
-   apilados en vez de uno al lado del otro porque acá ya son "la
-   columna derecha", no 2 columnas propias. 1fr/1fr (en vez de que
-   cada columna mida lo que su contenido pida) reparte el ancho
-   EXACTO a la mitad -- en la práctica la izquierda se ve "más
-   ocupada" porque el texto de la respuesta es más largo y llena esa
-   mitad, mientras la derecha (2 líneas cortas) deja aire. A propósito
-   NO reusa .em-inline-stats: esa clase trae una línea divisoria
-   arriba (border-top) que acá se pidió sacar. */
-.em-tipo-result{
+/* .em-tipo-top: el prompt rosa ("¿Cuántos casos...") y el mensaje de
+   resultado (.em-feedback) comparten el MISMO lugar -- un grid de una
+   sola celda donde los 2 hijos se superponen (grid-area:1/1, mismo
+   truco que .ui-panels en style.css), así que solo se ve el que esté
+   "em-shown" (ver .em-reveal-fade, más arriba). Antes eran 2 bloques
+   separados (el prompt arriba, el feedback más abajo con los datos
+   fijos) y al revelar quedaba un hueco vacío donde estaba el prompt
+   -- pedido de Emi: que el mensaje de resultado aproveche ESE lugar
+   en vez de dejarlo perdido. */
+.em-tipo-top{
   display:grid;
-  grid-template-columns:1fr 1fr;
-  align-items:flex-start;
-  gap:16px 24px;
-  margin-top:20px; /* antes 4px -- Emi pidió que las 2 columnas arranquen un poco más abajo de los botones */
 }
-.em-tipo-result .em-feedback{
-  /* min-height más alto que la base de .em-feedback (1.5em, una sola
-     línea): acá el mensaje puede ocupar 2-3 líneas (la columna mide
-     la mitad del ancho de la tarjeta, no todo), y reservar el lugar
-     de entrada evita que la tarjeta cambie de alto al revelar (pedido
-     de Emi: "el tamaño de la tarjeta luego de adivinar sea el tamaño
-     en todo momento"). */
-  min-height:4.2em;
-  margin-bottom:0; /* el margin-bottom base de .em-feedback era para cuando iba pegada a los botones de abajo; acá ya no hace falta */
-  /* text-align:justify (pedido de Emi): pareja los 2 bordes del texto
-     en vez de dejar el derecho irregular -- se nota sobre todo acá,
-     que el mensaje ocupa 2-3 líneas en una columna angosta (la mitad
-     de la tarjeta). */
-  text-align:justify;
+.em-tipo-top > *{
+  grid-area:1/1;
+}
+.em-tipo-top .em-feedback{
+  /* Antes (cuando compartía fila con los datos fijos, en una columna
+     de medio ancho) hacía falta más min-height para 2-3 líneas; acá,
+     con el ancho COMPLETO de la tarjeta disponible (el mismo lugar
+     que ocupaba el prompt), el mensaje entra casi siempre en 1-2
+     líneas -- 2.6em alcanza de sobra y evita que la tarjeta salte de
+     alto al revelar. */
+  min-height:2.6em;
+  margin-bottom:6px; /* mismo margen que .em-prompt-tipo, para que no cambie el alto de este lugar al pasar de uno a otro */
+  text-align:center; /* antes justify -- Emi pidió que quede centrada, como el prompt al que reemplaza en este mismo lugar */
+}
+
+/* .em-tipo-result: ahora solo contiene los 2 datos fijos ("1°"/"66,2"),
+   EN UN SOLO RENGLÓN (pedido de Emi) -- antes compartía esta fila con
+   .em-feedback (que se movió a .em-tipo-top, arriba).
+   flex:1 + display:flex + justify-content:center: el contenedor del
+   gráfico (.em-panel, más abajo) es flex-column y suele quedar MÁS
+   ALTO que la suma de su contenido (se estira a la altura de la vela
+   del capítulo, al costado) -- antes esa sobra quedaba como espacio
+   vacío al pie, debajo de todo. Con flex:1 esta fila CRECE para
+   ocupar ese sobrante, y justify-content:center centra los datos
+   fijos adentro de ese espacio (entre los botones de arriba y la
+   bajada+Fuente de abajo), en vez de quedar pegados contra los
+   botones (pedido de Emi: "los bajaría más, que queden centrados en
+   el espacio que hay"). Si no hay sobra (tarjeta justa), esto no
+   cambia nada -- flex:1 no tiene de dónde crecer. */
+.em-tipo-result{
+  /* Antes 20px: la tarjeta NO se estira para llenar el alto de la
+     vela de al lado (se midió -- .ui-panel/.em-panel siempre terminan
+     midiendo justo lo que su contenido necesita, nunca más), así que
+     no hay "espacio sobrante" real para centrar algo adentro con
+     flexbox -- probado y descartado. En cambio, se baja más este
+     margen a mano (pedido de Emi: "los bajaría más, que queden
+     centrados en el espacio que hay entre los botones y la
+     descripción de abajo") para que no queden pegados contra los
+     botones de arriba. */
+  margin-top:44px;
 }
 .em-tipo-result-stats{
-  display:flex;
-  flex-direction:column;
-  gap:10px;
+  /* Vuelve a grid de 2 columnas (pedido de Emi: "volvé a la
+     estructura de división de dos columnas") -- cada dato arranca
+     justo al principio de SU columna, en vez de ir uno pegado al otro
+     con un gap fijo (que con flex podía dejar al segundo dato
+     empezando en cualquier punto, según el ancho del primero). */
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px 24px;
 }
 /* .em-stat de base apila el número arriba de la etiqueta (2 líneas,
    ver más arriba) -- acá, en la columna de datos fijos, Emi pidió que
    cada dato sea UN SOLO renglón: número en rosa seguido del texto en
    gris, en la misma línea. align-items:baseline los alinea por el
    PISO del texto (no por el borde de la caja), que es lo que se ve
-   prolijo cuando el número (1.4rem) y la etiqueta (0.8rem) tienen
-   tamaños de letra distintos. */
+   prolijo cuando el número y la etiqueta tienen tamaños de letra
+   distintos. */
 .em-tipo-result-stats .em-stat{
   flex-direction:row;
   align-items:baseline;
   gap:6px;
+}
+/* El tamaño de letra de estos 2 datos se agranda un poco (pedido de
+   Emi) -- SCOPEADO acá, a propósito: .em-stat-value/.em-stat-label son
+   clases compartidas que también usa "Casos por edad" (ver
+   renderInlineStats en modulo1.js), y ese gráfico no pidió el mismo
+   cambio. */
+.em-tipo-result-stats .em-stat-value{
+  font-size:1.55rem; /* antes 1.4rem (el tamaño base de .em-stat-value) */
+}
+.em-tipo-result-stats .em-stat-label{
+  font-size:0.9rem; /* antes 0.8rem (el tamaño base de .em-stat-label) */
+}
+/* La bajada del pie ("Casos nuevos estimados...") iguala su tamaño al
+   nuevo tamaño (agrandado) de los datos fijos de arriba -- pedido de
+   Emi. Clase propia (no toca la .ui-sub compartida): "Casos por edad"
+   y "Porcentaje" se quedan con el tamaño de siempre. */
+.em-foot-sub-lg{
+  font-size:0.9rem;
 }
 
 /* .em-foot: la bajada que antes iba arriba de todo ("Casos nuevos
@@ -837,7 +880,7 @@
   display:flex;
   flex-direction:column;
   align-items:center;
-  gap:20px;
+  gap:10px; /* antes 20px, después 14px -- se achica un poco más para hacerle lugar a la grilla más grande/más abajo (ver .em-prompt-pct y .em-waffle-grid) sin agrandar la tarjeta entera */
 }
 
 /* La grilla en sí: 10 columnas iguales (con 10 filas automáticas se
@@ -862,7 +905,7 @@
   gap:6px;
   aspect-ratio:1;
   width:100%;
-  max-width:290px;
+  max-width:292px; /* antes 290px, después 320px (daba barra de scroll) -- Emi pidió la grilla apenas más grande, pero menos que esa primera vuelta */
   margin:0 auto;
 }
 /* El texto informativo, ahora abajo de la grilla (ver .em-waffle-body
@@ -925,6 +968,14 @@
   color:var(--rose-strong);
   margin:0;
   transition:color .2s;
+  /* min-height:1em (con line-height:1, es exactamente 1 línea, SIEMPRE,
+     tenga texto o no): antes, en blanco (nada explorado), este <p>
+     vacío ocupaba 0px -- hlText/hlMeta ya reservaban su línea con
+     min-height propio, pero a ESTE le faltaba, así que la tarjeta
+     entera cambiaba de alto (medido: ~38px más) apenas se exploraba
+     un cuadrado. Pedido de Emi: que el tamaño de la tarjeta sea
+     siempre el mismo, el de cuando se explora. */
+  min-height:1em;
 }
 /* Texto explicativo debajo del titular (ej. "cánceres diagnosticados
    en mujeres son de mama") y el texto con los números exactos (ej.
@@ -939,17 +990,37 @@
    solísima) -- soportado en los navegadores modernos; donde no lo
    esté, el texto simplemente se envuelve normal (sin romper nada). */
 .em-waffle-hltext{
-  font-size:0.95rem;
+  font-size:1.15rem; /* antes 0.95rem, y antes de eso 0.68rem fue el piso de .em-waffle-hlmeta de abajo -- Emi pidió agrandar bastante los dos: "casi que ni se lee" */
   color:var(--text);
-  margin:8px 0 2px;
-  min-height:1.3em;
+  margin:2px 0 0; /* antes 8px 0 2px, después 4px 0 0 -- se achica un poco más, mismo motivo */
+  /* min-height a 2 líneas (antes 1.3em, una sola): "corresponden a
+     otros tipos de cáncer" (la categoría "Otros") se envuelve a 2
+     líneas en pantallas angostas, mientras el resto entra en 1 -- con
+     el piso de 1 línea nomás, la tarjeta cambiaba de alto según cuál
+     categoría se explorara. Medido en el navegador a 375px de ancho
+     para confirmar el caso real. */
+  min-height:2.6em;
+  /* display:flex + align-items:center: cuando el texto real mide 1
+     línea nomás (la mayoría de las categorías) pero el min-height de
+     arriba reserva 2, por defecto el texto queda pegado arriba y el
+     aire de sobra se nota abajo, pegado contra .em-waffle-hlmeta --
+     esto lo centra en el alto reservado, a mitad de camino entre el
+     titular de arriba y el dato de abajo (pedido de Emi). */
+  display:flex;
+  align-items:center;
+  justify-content:center;
   text-wrap:balance;
 }
 .em-waffle-hlmeta{
-  font-size:0.68rem; /* bajado de 0.8rem: Emi pidió que este dato (ej. "20.750 casos (29,9%) de un total de 69.449") se vea más chico */
+  font-size:1rem; /* antes 0.68rem (bajado en una vuelta anterior; ahora Emi pidió agrandarlo mucho, al punto de casi igualar a .em-waffle-hltext) */
   color:var(--text-dim);
-  margin:0 0 16px;
-  min-height:1.3em;
+  margin:0 0 4px; /* antes 16px, después 8px -- se achica un poco más, mismo motivo que .em-waffle-hltext */
+  /* mismo motivo que .em-waffle-hltext, arriba: a este tamaño de
+     letra más grande, la oración completa ("20.750 casos de un total
+     de 69.449 (29,9%)") ya se envuelve a 2 líneas en pantallas
+     angostas para CUALQUIER categoría -- medido: con 1.3em (1 línea)
+     el blanco medía menos que el explorado. */
+  min-height:2.6em;
 }
 
 /* ============ "FUENTE" ============
@@ -989,8 +1060,10 @@
   .em-waffle-body{gap:12px;}
   .em-waffle-grid{max-width:min(195px,29vh);} /* bajado de 210px/30vh: el subtítulo con la pista de "pasá el cursor" agregó una línea más de alto */
   .em-prompt-pct{margin-bottom:4px;} /* el prompt propio (antes era parte del subtítulo) suma una línea más -- se compensa achicando este margen */
-  .em-waffle-hltext{margin:4px 0 2px;}
-  .em-waffle-hlmeta{margin:0 0 8px;}
+  /* .em-waffle-hltext/.em-waffle-hlmeta ya NO tienen override acá: sus
+     márgenes base (ver más arriba) se achicaron tanto que ya quedaron
+     iguales a los de este escalón -- los 2 overrides de acá eran
+     redundantes, se sacaron. */
   .em-chart-tipo{height:min(193px,30vh);} /* bajado de 203px/31vh: el .chapter-header ahora deja más aire antes del título (ver style.css), así que el gráfico tiene que ceder esos px */
   .em-chart-edad{height:min(140px,21vh);} /* mismo motivo */
   /* "Casos por tipo" ahora reserva SIEMPRE el alto de la versión
@@ -998,8 +1071,9 @@
      fijo que antes no estaba en pantallas bajas (el eje, los botones y
      el min-height de .em-feedback para 2-3 líneas). Se achica acá lo
      mismo que ya se achicaba el resto del sitio en este escalón. */
-  .em-tipo-result .em-feedback{min-height:2.6em;}
-  .em-tipo-result{margin-top:4px; gap:8px 24px;}
+  .em-tipo-top .em-feedback{min-height:1.5em;}
+  .em-tipo-result{margin-top:10px;}
+  .em-tipo-result-stats{gap:6px 24px;}
   .em-tipo-actions{margin-bottom:6px;}
   .em-foot{margin-top:6px;}
   .em-chart-tipo + .em-axis-note{margin-top:6px; margin-bottom:10px;}
