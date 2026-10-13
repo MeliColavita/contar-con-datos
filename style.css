@@ -557,17 +557,24 @@ body {
      tarjeta arrancaba mucho más lejos del título que la del 3. Unificado
      ahora: los 3 capítulos usan este mismo espaciado chico -- el
      override de #chapter-3 en modulo3.css ya no hace falta, se sacó.) */
-/* margin-bottom subido de 2px a 20px: los puntitos rosa del título
-     (.title-dots, ver más abajo) se extienden 14px por debajo del
-     borde inferior del texto -- con solo 2px de margen acá (+ los 4px
-     de .chapter-title y los 2px de .ui-wrap, ver más abajo) quedaban
-     apenas 8px de aire real, así que los puntos de abajo (nth-child 5
-     y 6) terminaban superpuestos sobre la tarjeta. 20px deja los 14px
-     de los puntos con margen de sobra. */
+/* margin-bottom: antes era un fijo 20px -- pero .chapter-title (más
+     abajo) tiene font-size:clamp(2.2rem,4.5vw,3.4rem), que SÍ crece
+     con el ancho de pantalla. Con el margen fijo, en una pantalla
+     ancha el título se veía grande pero "pegado" a la tarjeta, y en
+     una angosta, chico pero con el mismo aire de sobra -- no quedaba
+     la misma proporción título↔tarjeta en todas las pantallas (pedido
+     de Emi). Se pasa a un clamp() con la misma lógica (mismo técnica
+     que .chapter-title, escalado a sus proporciones: ~1.25rem-1.9rem
+     en vez de 2.2rem-3.4rem) para que crezca en sintonía con el
+     título. El piso (1.25rem=20px a la fuente de siempre) es
+     exactamente el valor de antes, así que en pantallas angostas los
+     puntitos rosa del título (.title-dots, ver más abajo, se
+     extienden 14px por debajo del texto) siguen con el mismo margen
+     de sobra que ya tenían para no superponerse con la tarjeta. */
 .chapter-header {
   position: relative;
   z-index: 1;
-  margin-bottom: 20px;
+  margin-bottom: clamp(1.25rem, 2.5vw, 1.9rem);
 }
 .chapter-eyebrow {
   font-family: var(--sans);
@@ -899,7 +906,7 @@ body {
   color: var(--text-dim);
   max-width: 68ch;
   margin: 0 0 6px;
-  font-size: 0.85rem;
+  font-size: 0.9125rem; /* 0.85rem +1px (14.6px) */
   line-height: 1.28;
 }
 
@@ -911,7 +918,7 @@ body {
    porque módulo 3 también la necesita: mismo criterio visual, dos
    módulos. */
 .ui-note {
-  font-size: 0.7rem;
+  font-size: 0.7625rem; /* 0.7rem +1px (12.2px) */
   color: var(--text-dim);
   opacity: 0.7;
   line-height: 1.3;
@@ -931,7 +938,7 @@ body {
 }
 .ui-tab {
   font: inherit;
-  font-size: 0.8rem;
+  font-size: 0.8625rem; /* 0.8rem +1px (13.8px) */
   font-family: var(--sans);
   text-align: left;
   border: 1px solid var(--panel-border);
@@ -1018,14 +1025,14 @@ body {
 .ui-card-title {
   font-family: var(--serif);
   font-weight: 500;
-  font-size: clamp(1.1rem, 2.2vw, 1.5rem);
+  font-size: clamp(1.1625rem, 2.2vw, 1.5625rem); /* clamp(1.1rem,2.2vw,1.5rem) +1px en cada extremo */
   color: var(--text);
   margin: 0 0 8px;
 }
 .ui-sub {
   color: var(--text-dim);
   margin: 0 0 6px;
-  font-size: 0.84rem;
+  font-size: 0.9025rem; /* 0.84rem +1px (14.44px) */
   line-height: 1.28;
   max-width: 64ch;
 }
@@ -1042,7 +1049,7 @@ body {
 }
 .ui-seg button {
   font: inherit;
-  font-size: 0.82rem;
+  font-size: 0.8825rem; /* 0.82rem +1px (14.12px) */
   border: 0;
   background: transparent;
   color: var(--text-dim);
@@ -1119,7 +1126,7 @@ body {
 }
 .ui-big {
   font-family: var(--serif);
-  font-size: 1.4rem;
+  font-size: 1.4625rem; /* 1.4rem +1px (23.4px) */
   line-height: 1;
   color: var(--text);
   font-variant-numeric: tabular-nums;
@@ -1129,7 +1136,7 @@ body {
 }
 .ui-lab {
   color: var(--text-dim);
-  font-size: 0.8rem;
+  font-size: 0.8625rem; /* 0.8rem +1px (13.8px) */
 }
 
 /* .ui-src ahora es un <details>: por defecto el navegador solo
@@ -1157,7 +1164,7 @@ body {
   list-style: none;
   cursor: pointer;
   user-select: none;
-  font-size: 0.72rem;
+  font-size: 0.7825rem; /* 0.72rem +1px (12.52px) */
   color: var(--text-dim);
   border: 1px solid var(--panel-border);
   border-radius: 999px;
@@ -1175,7 +1182,7 @@ body {
 } /* Firefox */
 .ui-src summary::before {
   content: '▸';
-  font-size: 0.65rem;
+  font-size: 0.7125rem; /* 0.65rem +1px (11.4px) */
   transition: transform 0.2s;
 }
 .ui-src[open] summary::before {
@@ -1206,7 +1213,7 @@ body {
   padding: 12px 14px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
   color: var(--text-dim);
-  font-size: 0.72rem;
+  font-size: 0.7825rem; /* 0.72rem +1px (12.52px) */
   line-height: 1.35;
   z-index: 20; /* por encima de la grilla y del resto del panel */
 }
@@ -1223,7 +1230,7 @@ body {
   display: flex;
   gap: 14px;
   flex-wrap: wrap;
-  font-size: 0.76rem;
+  font-size: 0.8225rem; /* 0.76rem +1px (13.16px) */
   color: var(--text-dim);
   margin-top: 4px;
 }
@@ -1340,8 +1347,8 @@ body {
     gap: 16px;
   }
   .chapter-header {
-    margin-bottom: 12px;
-  } /* antes 0: volvía a juntar el título con la tarjeta y los puntitos (ver el margin-bottom:20px de arriba) quedaban otra vez superpuestos en pantallas bajas */
+    margin-bottom: clamp(1rem, 2.25vw, 1.45rem);
+  } /* antes fijo en 12px -- mismo motivo que el clamp() de más arriba: acá .chapter-title también usa vw (ver la línea de abajo), así que el margen tiene que escalar con él. El piso (1rem=16px) es MÁS que el 12px de antes, así que los puntitos (ver el margin-bottom:20px de más arriba) siguen sin superponerse */
   .chapter-title {
     font-size: clamp(1.8rem, 4vw, 2.6rem);
   }
