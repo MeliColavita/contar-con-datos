@@ -379,3 +379,30 @@
 .me-final:hover {
   filter: brightness(1.1);
 }
+
+/* "¿Dónde vivís?" resaltado en rosa, con el mismo look de píldora
+   que el resto de los acentos rosa del sitio. */
+.me-where {
+  display: inline-block;
+  color: var(--rose-strong);
+  font-weight: 600;
+  background: rgba(255, 111, 156, 0.12);
+  border: 1px solid var(--rose-strong);
+  border-radius: 999px;
+  padding: 2px 12px;
+  margin-top: 4px;
+  box-shadow: 0 0 14px rgba(255, 111, 156, 0.3);
+}
+
+/* Cuerpo de la tarjeta: ocupa el espacio libre, así el botón queda abajo.
+   Ajustá el min-height para que la tarjeta mida lo mismo que la del módulo 1. */
+.me-body {
+  flex: 1;
+  min-height: 220px;
+}
+
+/* Botón "Final": centrado horizontalmente y pegado abajo. */
+.me-final {
+  align-self: center;
+  margin-top: auto;
+}
