@@ -81,7 +81,7 @@
                             que forzar una letra más chica */
 .em-tab{
   font-family:var(--sans);
-  font-size:0.8625rem;      /* 0.8rem +1px (13.8px) -- mismo tamaño que .ui-tab compartida, para que no se note la diferencia */
+  font-size:0.8rem;      /* mismo tamaño que .ui-tab compartida, para que no se note la diferencia */
   font-weight:600;
   color:var(--text-dim);
   background:rgba(255,255,255,0.04);
@@ -175,7 +175,7 @@
   gap:8px;
   color:var(--rose-strong);
   font-weight:600;
-  font-size:0.9125rem; /* 0.85rem +1px (14.6px) */
+  font-size:0.85rem;
   margin-bottom:12px;
 }
 /* .em-prompt-tipo: variante SOLO del prompt de "Casos por tipo"
@@ -191,7 +191,7 @@
    respuesta, y fusionar solo es posible DESPUÉS de revelar, así que
    los dos nunca están visibles a la vez. */
 .em-prompt-tipo{
-  font-size:1.1125rem; /* 1.05rem +1px (17.8px) */
+  font-size:1.05rem;
   justify-content:center;
   text-align:center;
   margin-bottom:6px;
@@ -202,7 +202,7 @@
    -- separada en su propio prompt, se lee mejor y de paso avisa que
    se puede interactuar (antes no había ninguna señal visual propia). */
 .em-prompt-pct{
-  font-size:1.1125rem; /* 1.05rem +1px (17.8px) */
+  font-size:1.05rem;
   justify-content:center;
   text-align:center;
   margin-bottom:10px;
@@ -280,7 +280,7 @@
   display:flex;
   align-items:flex-end;
   gap:clamp(8px,2.5vw,24px);
-  height:13.75rem; /* 220px -- en rem (no px) para que este alto crezca junto con el texto de .em-val/.em-lbl (ver por qué más abajo) */
+  height:220px;
   padding-top:30px; /* aire arriba para que el número más alto no se pegue al borde */
   position:relative;
   touch-action:none; /* evita que el navegador interprete el arrastre como scroll en celular */
@@ -291,7 +291,7 @@
    vacío, por eso acá las barras son más grandes/presentes (250px en
    vez de 220px). */
 .em-chart-tipo{
-  height:15.625rem; /* 250px */
+  height:250px;
 }
 /* "Casos por edad" perdió los chips de rango y una línea de la
    instrucción rosa (ver renderCasosPorEdad en modulo1.js -- ya no se
@@ -302,20 +302,8 @@
    de 8000 a 7000 para que la barra más alta llegue más cerca del
    techo del gráfico, en vez de quedarse corta. */
 .em-chart-edad{
-  height:17.5rem; /* 280px */
+  height:280px;
 }
-/* .em-chart-tipo/.em-chart-edad (y sus 2 @media(max-height) de acá
-   abajo) están en REM, no en px -- es lo único que pasa a rem en todo
-   el archivo. Motivo: .em-col (adentro de estas 2) es flex-direction:
-   column con .em-val/.em-lbl (ya en rem) + .em-bar compartiendo esa
-   altura; .em-bar no tiene flex-shrink:0, así que si el contenedor se
-   queda FIJO en px mientras el texto de arriba/abajo crece (ej. con
-   un futuro control de zoom de fuente, o con el zoom de texto del
-   navegador), flexbox achica la BARRA para que todo entre -- las
-   barras de "Casos por edad" llegan a verse como líneas planas. Con
-   el contenedor en rem, crece en la misma proporción que el texto y
-   nunca le "roba" espacio a la barra. A 100% de zoom (el tamaño de
-   siempre) esto no cambia ni un píxel: 16px sigue siendo 1rem. */
 /* "Ver los otros 4 juntos": el grid pasa a 2 columnas centradas, del
    mismo ancho que tenía Mama sola -- --em-colw lo fija modulo1.js al
    momento de fusionar, leyendo el ancho real de Mama en ese instante.
@@ -371,7 +359,7 @@
 .em-val{
   font-weight:700;
   font-variant-numeric:tabular-nums;
-  font-size:clamp(0.8425rem,2vw,1.0125rem); /* clamp(0.78rem,2vw,0.95rem) +1px en cada extremo */
+  font-size:clamp(0.78rem,2vw,0.95rem);
   color:var(--text);
   margin-bottom:6px;
   white-space:nowrap;
@@ -382,11 +370,11 @@
    saca esta clase apenas hay un número real (arrastrando o ya
    revelado), así que nunca agranda un número de verdad, solo el "?". */
 .em-val-q{
-  font-size:clamp(1.6625rem,4vw,2.1625rem); /* clamp(1.6rem,4vw,2.1rem) +1px en cada extremo */
+  font-size:clamp(1.6rem,4vw,2.1rem);
 }
 .em-lbl{
   margin-top:10px;
-  font-size:clamp(0.7625rem,1.8vw,0.9125rem); /* clamp(0.7rem,1.8vw,0.85rem) +1px en cada extremo */
+  font-size:clamp(0.7rem,1.8vw,0.85rem);
   color:var(--text);
   text-align:center;
   transition:opacity .3s ease;
@@ -416,7 +404,7 @@
   text-align:center;
   color:var(--text-dim);
   font-style:italic;
-  font-size:0.9125rem; /* 0.85rem +1px (14.6px) */
+  font-size:0.85rem;
   margin-top:-4px;
 }
 /* Solo "Casos por tipo": acá sí hace falta más aire que el -4px base
@@ -498,7 +486,7 @@
   border-radius:999px;
   background:var(--rose-strong);
   color:#1a0510;
-  font-size:0.8125rem; /* 0.75rem +1px (13px) */
+  font-size:0.75rem;
   font-weight:700;
   display:grid;
   place-items:center;
@@ -520,7 +508,7 @@
   position:absolute;
   right:0;
   top:-1.4em;
-  font-size:0.7825rem; /* 0.72rem +1px (12.52px) */
+  font-size:0.72rem;
   color:var(--text);
   white-space:nowrap;
   background:var(--panel);
@@ -545,7 +533,7 @@
   align-items:center;
   justify-content:center;
   text-align:center;
-  font-size:clamp(0.6425rem,1.5vw,0.7425rem); /* clamp(0.58rem,1.5vw,0.68rem) +1px en cada extremo */
+  font-size:clamp(0.58rem,1.5vw,0.68rem);
   font-weight:600;
   line-height:1.1;
   color:var(--text);
@@ -566,7 +554,7 @@
   justify-content:center;
   text-align:center;
   line-height:1.1;
-  font-size:clamp(0.6425rem,1.5vw,0.7425rem); /* clamp(0.58rem,1.5vw,0.68rem) +1px en cada extremo */
+  font-size:clamp(0.58rem,1.5vw,0.68rem);
   font-weight:600;
   color:var(--text);
   background:rgba(255,182,206,0.4);
@@ -581,7 +569,7 @@
    "salte" el layout cuando pasa de vacío a tener texto. */
 .em-feedback{
   min-height:1.5em;
-  font-size:1.0125rem; /* 0.95rem +1px (15.2px) */
+  font-size:0.95rem;
   color:var(--text);
   margin-bottom:16px; /* antes 0, pegado contra los botones de abajo -- mismo motivo que el margin-bottom de .em-axis-note */
 }
@@ -602,7 +590,7 @@
 }
 .em-btn{
   font-family:var(--sans);
-  font-size:0.9125rem; /* 0.85rem +1px (14.6px) */
+  font-size:0.85rem;
   font-weight:600;
   background:transparent;
   color:var(--text);
@@ -649,7 +637,7 @@
   border:1px solid var(--panel-border);
   border-radius:12px;
   padding:10px 12px;
-  font-size:0.9125rem; /* 0.85rem +1px (14.6px) */
+  font-size:0.85rem;
   min-width:170px;
   box-shadow:0 10px 30px rgba(0,0,0,0.5);
   font-variant-numeric:tabular-nums;
@@ -657,7 +645,7 @@
 .em-tip strong{
   font-family:var(--serif);
   color:var(--rose-strong);
-  font-size:1.0625rem; /* 1rem +1px (17px) */
+  font-size:1rem;
   display:block;
   margin-bottom:4px;
 }
@@ -687,7 +675,7 @@
    aclaración al pie (por ejemplo, una nota corta sobre algún dato). */
 .em-caption{
   font-family:var(--sans);
-  font-size:0.8425rem; /* 0.78rem +1px (12.48px) */
+  font-size:0.78rem;
   color:var(--text-dim);
   margin:12px 0 0;
 }
@@ -709,14 +697,14 @@
 .em-stat-value{
   font-family:var(--serif);
   font-weight:600;
-  font-size:1.4625rem;            /* 1.4rem +1px (23.4px) -- igual que .ui-big */
+  font-size:1.4rem;            /* igual que .ui-big */
   color:var(--rose-strong);
   line-height:1;                /* sin aire extra arriba/abajo del número */
   font-variant-numeric:tabular-nums; /* todos los dígitos del mismo ancho: los números no "bailan" al cambiar */
 }
 .em-stat-label{
   font-family:var(--sans);
-  font-size:0.8625rem;             /* 0.8rem +1px (13.8px) -- igual que .ui-lab */
+  font-size:0.8rem;             /* igual que .ui-lab */
   color:var(--text-dim);
   line-height:1.3;
 }
@@ -932,7 +920,7 @@
 .em-waffle-headline{
   font-family:var(--serif);
   font-weight:600;
-  font-size:clamp(1.8625rem,5vw,2.4625rem); /* clamp(1.8rem,5vw,2.4rem) +1px en cada extremo */
+  font-size:clamp(1.8rem,5vw,2.4rem); /* responsivo: nunca menos de 1.8rem ni más de 2.4rem */
   line-height:1;
   color:var(--rose-strong);
   margin:0;
@@ -951,14 +939,14 @@
    solísima) -- soportado en los navegadores modernos; donde no lo
    esté, el texto simplemente se envuelve normal (sin romper nada). */
 .em-waffle-hltext{
-  font-size:1.0125rem; /* 0.95rem +1px (15.2px) */
+  font-size:0.95rem;
   color:var(--text);
   margin:8px 0 2px;
   min-height:1.3em;
   text-wrap:balance;
 }
 .em-waffle-hlmeta{
-  font-size:0.7425rem; /* 0.68rem +1px (10.88px); bajado de 0.8rem originalmente: Emi pidió que este dato (ej. "20.750 casos (29,9%) de un total de 69.449") se vea más chico */
+  font-size:0.68rem; /* bajado de 0.8rem: Emi pidió que este dato (ej. "20.750 casos (29,9%) de un total de 69.449") se vea más chico */
   color:var(--text-dim);
   margin:0 0 16px;
   min-height:1.3em;
@@ -1003,8 +991,8 @@
   .em-prompt-pct{margin-bottom:4px;} /* el prompt propio (antes era parte del subtítulo) suma una línea más -- se compensa achicando este margen */
   .em-waffle-hltext{margin:4px 0 2px;}
   .em-waffle-hlmeta{margin:0 0 8px;}
-  .em-chart-tipo{height:min(12.0625rem,30vh);} /* 193px -- bajado de 203px/31vh: el .chapter-header ahora deja más aire antes del título (ver style.css), así que el gráfico tiene que ceder esos px. En rem por el mismo motivo que la regla base, más arriba. */
-  .em-chart-edad{height:min(8.75rem,21vh);} /* 140px -- mismo motivo */
+  .em-chart-tipo{height:min(193px,30vh);} /* bajado de 203px/31vh: el .chapter-header ahora deja más aire antes del título (ver style.css), así que el gráfico tiene que ceder esos px */
+  .em-chart-edad{height:min(140px,21vh);} /* mismo motivo */
   /* "Casos por tipo" ahora reserva SIEMPRE el alto de la versión
      revelada (pedido de Emi, ver .em-reveal-fade) -- eso agrega alto
      fijo que antes no estaba en pantallas bajas (el eje, los botones y
@@ -1027,6 +1015,6 @@
    (seguían pasándose 57-77px) porque sus barras no se achicaban lo
    suficiente. */
 @media (max-height:660px){
-  .em-chart-tipo{height:min(11.625rem,31vh);} /* 186px -- bajado de 193px/32vh: el .chapter-header ahora deja más aire antes del título (ver style.css), así que el gráfico tiene que ceder esos px. En rem, mismo motivo que la regla base. */
-  .em-chart-edad{height:min(8.5rem,23vh);} /* 136px -- mismo motivo */
+  .em-chart-tipo{height:min(186px,31vh);} /* bajado de 193px/32vh: el .chapter-header ahora deja más aire antes del título (ver style.css), así que el gráfico tiene que ceder esos px */
+  .em-chart-edad{height:min(136px,23vh);} /* mismo motivo */
 }
