@@ -558,7 +558,7 @@
                     id="me-tabbtn-1"
                     type="button"
                     role="tab"
-                    aria-selected="true"
+                    aria-selected="false"
                     aria-controls="me-tabpanel-1"
                   >
                     Los que se detectan
@@ -573,12 +573,22 @@
                   >
                     Los que no se detectan
                   </button>
+                  <button
+                    class="ui-tab"
+                    id="me-tabbtn-3"
+                    type="button"
+                    role="tab"
+                    aria-selected="true"
+                    aria-controls="me-tabpanel-3"
+                  >
+                    ¿Dónde hay un mamógrafo?
+                  </button>
                 </div>
 
                 <!-- Pestañas vacías (pedido): los paneles quedan sin contenido. -->
                 <div class="ui-panels">
                   <div
-                    class="ui-tabpanel active"
+                    class="ui-tabpanel"
                     id="me-tabpanel-1"
                     role="tabpanel"
                     aria-labelledby="me-tabbtn-1"
@@ -589,6 +599,43 @@
                     role="tabpanel"
                     aria-labelledby="me-tabbtn-2"
                   ></div>
+                  <!-- Pestaña 3: buscador de mamógrafos por localidad (ver modulo3.js) -->
+                  <div
+                    class="ui-tabpanel active"
+                    id="me-tabpanel-3"
+                    role="tabpanel"
+                    aria-labelledby="me-tabbtn-3"
+                  >
+                    <div class="me-search">
+                      <label class="me-search-label" for="me-search-input">¿Dónde hay un mamógrafo cerca tuyo?</label>
+                      <div class="me-search-box">
+                        <input
+                          id="me-search-input"
+                          class="me-search-input"
+                          type="text"
+                          placeholder="Escribí tu localidad"
+                          autocomplete="off"
+                          role="combobox"
+                          aria-autocomplete="list"
+                          aria-expanded="false"
+                          aria-controls="me-suggest"
+                        />
+                        <button id="me-search-clear" class="me-search-clear" type="button" aria-label="Borrar búsqueda" hidden>×</button>
+                        <ul id="me-suggest" class="me-suggest" role="listbox" hidden></ul>
+                      </div>
+                    </div>
+                    <div class="me-finder">
+                      <div id="me-stage" class="me-stage" role="img" aria-label="Lazo rosa hecho de puntos. Elegí una localidad para ver sus mamógrafos.">
+                        <canvas id="me-canvas" class="me-canvas"></canvas>
+                        <div id="me-tip" class="me-tip" hidden></div>
+                      </div>
+                      <div class="me-side">
+                        <p id="me-finder-prompt" class="me-prompt"><span class="me-prompt-dot"></span>Elegí una localidad: cada punto es un mamógrafo</p>
+                        <div id="me-result" class="me-result" aria-live="polite" hidden></div>
+                      </div>
+                    </div>
+                    <p class="ui-note me-fuente">Fuente: Mapa Mamográfico Federal (Fundación Instituto Natura / Surcos).</p>
+                  </div>
                 </div>
 
                 <!-- Único botón del módulo: inicia el video 04_FINAL (ver modulo3.js). -->
@@ -663,6 +710,7 @@
     <script src="modulo1.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
     <script src="modulo2.js"></script>
+    <script src="buscador-datos.js"></script>
     <script src="modulo3.js"></script>
   </body>
 </html>
