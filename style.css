@@ -26,6 +26,28 @@
   --dot-pink: var(--rose-strong); /* detectado gracias a la IA */
 }
 
+/* ============ MEDIDAS COMPARTIDAS POR LOS 3 MÓDULOS ============
+   Se definen UNA sola vez acá y cada módulo las usa con var(...):
+   si se quiere cambiar el valor, se cambia en este bloque y se
+   actualizan los 3 módulos juntos.
+     --ui-gap-titulo -> espacio entre el título de la tarjeta y lo que
+                        viene abajo (pestañas en módulos 1 y 2,
+                        descripción en módulo 3)
+     --ui-fs-pie     -> tamaño de la descripción del pie de la tarjeta
+                        (al lado de "Fuente") -- 0.9rem = 14,4px, el
+                        que ya tenía "Por tipo" en el módulo 1
+   En pantallas bajas el espacio del título se achica (ver el @media
+   de abajo) para no sumar barra de scroll. */
+:root {
+  --ui-gap-titulo: 20px; /* antes 14px: Emi pidió más separación */
+  --ui-fs-pie: 0.9rem;
+}
+@media (max-height: 760px) {
+  :root {
+    --ui-gap-titulo: 14px; /* antes 10px */
+  }
+}
+
 /* ============ RESET BÁSICO ============ */
 * {
   box-sizing: border-box;
@@ -1020,7 +1042,7 @@ body {
   font-weight: 500;
   font-size: clamp(1.1rem, 2.2vw, 1.5rem);
   color: var(--text);
-  margin: 0 0 8px;
+  margin: 0 0 var(--ui-gap-titulo); /* antes 8px fijo: ver "MEDIDAS COMPARTIDAS", arriba de todo */
 }
 .ui-sub {
   color: var(--text-dim);

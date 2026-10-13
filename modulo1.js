@@ -190,12 +190,15 @@
   // "opts.maxValue" al llamar a renderBarChart; ahora, sin esa
   // función, quedan como constantes nombradas.
   const TIPO_MAX = 25000;
-  // Bajado de 8000 a 7000 (el valor más alto de casosPorEdad es 6.278,
-  // "60-74") -- con 8000 esa barra se quedaba a menos del 80% del
-  // alto del gráfico, lo que hacía que las 5 barras se vieran más
-  // parecidas entre sí de lo que son en realidad (pedido de Emi,
-  // sumado a agrandar .em-chart-edad -- ver modulo1.css).
-  const EDAD_MAX = 7000;
+  // EDAD_MAX ya no es un número fijo (era 8000, después 7000): ahora
+  // es el valor más alto de casosPorEdad (6.278, "60-74"), calculado
+  // más abajo, después de chapter1Data. Así la barra más alta llega
+  // justo al techo del gráfico y su número queda pegado arriba -- el
+  // espacio entre la instrucción rosa y lo que se VE del gráfico es
+  // exactamente el espacio parejo entre bloques (--ui-gap-titulo, ver
+  // style.css). Con 7000 quedaba una franja vacía arriba de la barra
+  // más alta que sumaba ~20px de más. Las barras siguen siendo
+  // proporcionales entre sí.
   // TIPO_PLACEHOLDER_PX: alto (en píxeles, no %) de las barras de los
   // otros 4 cánceres MIENTRAS Mama todavía no se reveló -- chico e
   // IGUAL para las 4, a propósito (pedido de Emi: "sin datos" hasta
@@ -281,6 +284,16 @@
       },
     ],
   };
+
+  // Techo del eje de "Casos por edad" = la barra más alta (ver el
+  // comentario de EDAD_MAX, más arriba). Si cambian los datos, se
+  // recalcula solo.
+  const EDAD_MAX = Math.max.apply(
+    null,
+    chapter1Data.casosPorEdad.map(function (d) {
+      return d.valor;
+    }),
+  );
 
   // tipoState / edadState: el estado de cada gráfico interactivo,
   // declarado FUERA de las funciones de render (así sobrevive a un

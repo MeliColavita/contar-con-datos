@@ -103,7 +103,7 @@
   font-family: var(--br-serif);
   font-weight: 500;
   font-size: 2rem;
-  margin: 0 0 6px;
+  margin: 0 0 var(--ui-gap-titulo); /* antes 6px fijo: mismo espacio título → pestañas que el módulo 1 (variable compartida, ver "MEDIDAS COMPARTIDAS" en style.css) */
   color: var(--br-text);
 }
 /* Bajada corta debajo del título y arriba de las pestañas. min-height
@@ -574,7 +574,7 @@
 .br-axis-note {
   margin: 0;
   text-align: left;
-  font-size: 0.75rem;
+  font-size: calc(0.75rem + 1px); /* antes 0.75rem: +1px pedido por Emi */
   font-style: italic;
   line-height: 1.2;
   color: var(--br-text-dim);
@@ -658,7 +658,7 @@
 .br-tabs {
   display: flex;
   gap: 10px;
-  margin-bottom: 24px;
+  margin-bottom: var(--ui-gap-titulo); /* antes 24px: mismo espacio que título → pestañas (variable compartida, ver style.css) */
 }
 .br-tab-btn {
   background: transparent;
@@ -691,7 +691,11 @@
   display: flex;
   align-items: center; /* misma línea que los botones */
   flex-wrap: wrap;
-  gap: 10px;
+  /* fila / columna: en "Por provincia" la instrucción rosa no entra al
+     lado de los botones y baja al renglón de abajo -- ese salto de
+     renglón usa el mismo espacio compartido que título → pestañas
+     (antes 10px). Entre botones, en el mismo renglón, sigue 10px. */
+  gap: var(--ui-gap-titulo) 10px;
 }
 .br-widget .br-tabs .em-prompt {
   display: inline-flex;
@@ -746,7 +750,9 @@
 @media (max-height: 760px) {
   .br-title {
     font-size: 1.5rem;
-    margin-bottom: 4px;
+    /* (antes margin-bottom:4px acá) el espacio título → pestañas en
+       pantallas bajas ya lo achica la variable compartida
+       --ui-gap-titulo (10px, ver style.css), igual en los 3 módulos */
   }
   .br-subhead {
     margin-bottom: 12px;
@@ -755,9 +761,9 @@
   #brPanelAnio .br-subhead {
     margin-bottom: 8px;
   }
-  .br-tabs {
-    margin-bottom: 12px;
-  }
+  /* (antes .br-tabs { margin-bottom: 12px } acá) el espacio debajo de
+     las pestañas en pantallas bajas ya lo achica la variable
+     compartida --ui-gap-titulo (14px, ver style.css) */
   .br-map-card {
     height: min(200px, 34vh);
   }
@@ -784,7 +790,7 @@
 .br-src-sub {
   margin: 0;
   max-width: 560px;
-  font-size: 0.78rem;
+  font-size: var(--ui-fs-pie); /* antes 0.78rem: mismo tamaño que el pie del módulo 1 (variable compartida, ver style.css). Sirve para "Por año" y "Por provincia": es el mismo elemento, modulo2.js solo le cambia el texto */
   line-height: 1.4;
   color: var(--br-text-dim);
 }
@@ -849,7 +855,7 @@
 
 .br-stat-lbl {
   margin-top: 0; /* antes 2px: ya no va debajo del número */
-  font-size: 0.78rem;
+  font-size: calc(0.78rem + 1px); /* antes 0.78rem: +1px pedido por Emi (solo el texto, el número rosa queda igual) */
   line-height: 1.25;
   color: var(--br-text-dim);
 }
@@ -877,4 +883,33 @@
     border-top: 1px solid var(--br-panel-border);
     padding-top: 10px;
   }
+}
+
+/* ============ ESPACIO ENTRE BLOQUES (igual en los 3 módulos) ============
+   Entre bloque y bloque va el mismo espacio que entre el título y las
+   pestañas: la variable compartida --ui-gap-titulo (ver "MEDIDAS
+   COMPARTIDAS" en style.css: 20px, 14px en pantallas bajas). Los
+   GRUPOS que van juntos a propósito NO se separan:
+     - el gráfico de "Por año" con su leyenda "El eje empieza en 24..."
+     - en "Por año": el subtítulo de la subtarjeta ("La mortalidad por
+       cáncer de mama bajó...") con la instrucción rosa
+     - en "Por provincia": nombre de la provincia + gráfico + "9,5% de
+       las muertes..."
+   (título → pestañas → instrucción/subtarjeta ya usan la variable:
+   ver .br-title, .br-tabs y .br-widget .br-tabs, más arriba.)
+   Va AL FINAL del archivo a propósito: les gana a los márgenes
+   sueltos de más arriba. */
+
+/* "Por año", adentro de la subtarjeta: (subtítulo + instrucción rosa,
+   que van JUNTOS -- pedido de Emi, el subtítulo conserva su margen de
+   2px de más arriba) → gráfico (+ leyenda) → datos de abajo */
+#brPanelAnio .br-panel .em-prompt {
+  margin-bottom: var(--ui-gap-titulo);
+}
+.br-stats {
+  margin-top: var(--ui-gap-titulo);
+}
+/* Subtarjeta / columnas → pie (descripción + "Fuente"), las 2 pestañas */
+.br-src-row {
+  margin-top: var(--ui-gap-titulo);
 }
