@@ -330,7 +330,9 @@
               <div class="br-frame" id="brFrame">
                 <div class="br-stage" id="brStage">
                   <div class="ui-panel br-widget">
-                    <h1 class="br-title">¿Está bajando la mortalidad por cáncer de mama?</h1>
+                    <h1 class="br-title" id="brTitle">
+                      ¿Está bajando la mortalidad por cáncer de mama?
+                    </h1>
 
                     <div class="br-tabs">
                       <button class="br-tab-btn active" id="brTabAnio" type="button">
@@ -362,10 +364,7 @@
                             <h2 id="brChartTitle">
                               Defunciones totales vs. cáncer de mama — Buenos Aires
                             </h2>
-                            <p class="br-sub">
-                              Muertes por cáncer, todos los tipos y cáncer de mama
-                            </p>
-                            <div style="width: 100%; height: 190px; position: relative">
+                            <div style="width: 100%; height: 210px; position: relative">
                               <canvas id="brProvinceChart"></canvas>
                             </div>
                             <p class="br-chart-pct" id="brChartPct"></p>
@@ -388,9 +387,6 @@
                                 <p class="br-t-pct" id="brTtPct">—</p>
                               </div>
                             </div>
-                            <p class="br-legend">
-                              Los puntos son cantidades, no riesgo:<br />más habitantes, más puntos.
-                            </p>
                           </div>
                         </div>
                       </div>
@@ -440,10 +436,12 @@
                             <span class="em-prompt-dot" aria-hidden="true"></span>Pasá el cursor o
                             tocá un año para ver su valor.
                           </div>
-                          <div style="width: 100%; height: 192px; position: relative">
+                          <div style="width: 100%; height: 232px; position: relative">
                             <canvas id="brAnioScatter"></canvas>
                           </div>
-                          <p class="br-axis-note">El eje empieza en 24</p>
+                          <p class="br-axis-note">
+                            El eje empieza en 24 · La línea punteada marca la tendencia 2005–2024
+                          </p>
                           <!-- Dos columnas de datos:
                                izquierda = valores que CAMBIAN con el año (población y muertes)
                                derecha   = valor FIJO (promedio de muertes por día, 2005–2024) -->
@@ -463,7 +461,6 @@
                               <div class="br-day-lbl">
                                 mujeres mueren por día por cáncer de mama
                               </div>
-                              <div class="br-day-sub">Promedio 2005–2024</div>
                             </div>
                           </div>
                         </div>

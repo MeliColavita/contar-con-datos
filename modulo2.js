@@ -13115,13 +13115,24 @@
     //   esté pegado al borde.
     function positionTooltip(e) {
       const rect = mapCard.getBoundingClientRect();
+      const widget = mapCard.closest('.br-widget'); // la tarjeta principal (la que recorta con overflow:hidden)
+      const wRect = widget.getBoundingClientRect();
       const scale = rect.width / mapCard.offsetWidth || 1;
       const half = (tooltip.offsetWidth || 180) / 2;
+      const tipH = tooltip.offsetHeight || 60;
       const margin = 6;
 
+      // Horizontal: se limita a los bordes de la tarjeta principal, no solo a los del mapa.
       let x = (e.clientX - rect.left) / scale;
+      const minX = (wRect.left - rect.left) / scale + half + margin;
+      const maxX = (wRect.right - rect.left) / scale - half - margin;
+      x = Math.max(minX, Math.min(maxX, x));
+
+      // Vertical: por defecto va arriba del cursor (translateY -115%).
+      // Si arriba no entra, pasa a ir abajo del cursor.
       const y = (e.clientY - rect.top) / scale;
-      x = Math.max(half + margin, Math.min(mapCard.offsetWidth - half - margin, x));
+      const noEntraArriba = e.clientY - tipH * 1.15 < wRect.top + margin;
+      tooltip.style.transform = noEntraArriba ? 'translate(-50%, 22px)' : 'translate(-50%, -115%)';
 
       tooltip.style.left = x + 'px';
       tooltip.style.top = y + 'px';
@@ -13296,6 +13307,10 @@
     const panelProvincia = document.getElementById('brPanelProvincia');
     const panelAnio = document.getElementById('brPanelAnio');
 
+    const brTitle = document.getElementById('brTitle');
+    const TITLE_ANIO = '¿Está bajando la mortalidad por cáncer de mama?';
+    const TITLE_PROV = '¿Qué lugar ocupa el cáncer de mama en cada provincia?';
+
     // Fuente: un solo botón, el texto cambia según la pestaña.
     const srcBox = document.getElementById('brSrc');
     const srcText = document.getElementById('brSrcText');
@@ -13415,6 +13430,7 @@
         promptProvEl.classList.remove('br-hidden'); // <-- NUEVA: la muestra
       }
       srcSub.textContent = SUB_PROV;
+      if (brTitle) brTitle.textContent = TITLE_PROV;
       setFuente(SRC_PROV);
     });
     tabAnio.addEventListener('click', () => {
@@ -13434,6 +13450,7 @@
       const promptAnioEl = document.getElementById('brAnioPrompt');
       if (promptAnioEl) promptAnioEl.classList.remove('br-prompt-gone');
       srcSub.textContent = SUB_ANIO;
+      if (brTitle) brTitle.textContent = TITLE_ANIO;
       setFuente(SRC_ANIO);
     });
 
@@ -13571,9 +13588,53 @@
         },
       };
 
+      // Línea de tendencia lineal 2005-2024: punteada y muy tenue, detrás de los puntos.
+      const tendenciaPlugin = {
+        id: 'tendencia',
+        beforeDatasetsDraw(chart) {
+          const n = YEAR_DATA.length;
+          const mx = YEAR_DATA.reduce((s, d) => s + d.year, 0) / n;
+          const my = YEAR_DATA.reduce((s, d) => s + d.tasa, 0) / n;
+          let num = 0,
+            den = 0;
+          YEAR_DATA.forEach((d) => {
+            num += (d.year - mx) * (d.tasa - my);
+            den += (d.year - mx) ** 2;
+          });
+          const b = num / den; // pendiente (tasa por año)
+          const a = my - b * mx;
+          const x0 = YEAR_DATA[0].year;
+          const x1 = YEAR_DATA[n - 1].year;
+          const { x, y } = chart.scales;
+          const c = chart.ctx;
+          c.save();
+          c.setLineDash([2, 5]);
+          c.lineCap = 'round';
+          c.strokeStyle = 'rgba(247,168,196,0.45)';
+          c.lineWidth = 1.5;
+          c.beginPath();
+          c.moveTo(x.getPixelForValue(x0), y.getPixelForValue(a + b * x0));
+          c.lineTo(x.getPixelForValue(x1), y.getPixelForValue(a + b * x1));
+          c.stroke();
+          c.restore();
+        },
+      };
+
       scatterChart = new Chart(ctx, {
         type: 'scatter',
-        plugins: [lineaVerticalPlugin],
+        plugins: [
+          lineaVerticalPlugin,
+          tendenciaPlugin,
+          {
+            id: 'brAxisX',
+            afterLayout(chart) {
+              const stats = document.querySelector('.br-stats');
+              if (stats) {
+                stats.style.setProperty('--br-axis-x', chart.scales.y.left + 'px');
+              }
+            },
+          },
+        ],
         data: {
           datasets: [
             {
@@ -13600,12 +13661,24 @@
           plugins: {
             legend: { display: false },
             tooltip: {
+              footerFont: { weight: 'normal' },
+              footerColor: '#f7a8c4',
               callbacks: {
                 title: (items) => items[0].parsed.x,
                 label: (c) =>
                   ' ' +
                   c.parsed.y.toLocaleString('es-AR', { minimumFractionDigits: 2 }) +
                   ' por 100.000',
+                footer: (items) => {
+                  const base = YEAR_DATA[0];
+                  if (items[0].parsed.x === base.year) return 'Año de referencia';
+                  const pct = ((items[0].parsed.y - base.tasa) / base.tasa) * 100;
+                  return (
+                    (pct < 0 ? '▼ ' : '▲ ') +
+                    Math.abs(pct).toLocaleString('es-AR', { maximumFractionDigits: 1 }) +
+                    '% respecto de 2005'
+                  );
+                },
               },
             },
           },
@@ -13640,17 +13713,6 @@
             else ocultarNotaAnio(); // NUEVO: el cursor ya no está sobre un año
           },
         },
-        plugins: [
-          {
-            id: 'brAxisX',
-            afterLayout(chart) {
-              const stats = document.querySelector('.br-stats');
-              if (stats) {
-                stats.style.setProperty('--br-axis-x', chart.scales.y.left + 'px');
-              }
-            },
-          },
-        ],
       });
 
       // Hover sobre las etiquetas de año del eje X: Chart.js detecta
