@@ -747,3 +747,42 @@
   align-self: center;
   margin-top: auto;
 }
+/* Ajustes pedidos: buscador angosto y centrado, y pista "¿Dónde vivís?" */
+.me-search {
+  max-width: 420px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.me-search-input {
+  text-align: center;
+  padding-left: 42px;
+}
+.me-prompt-donde {
+  margin: 6px 0 12px;
+}
+/* Ajustes pedidos: buscador angosto y centrado, y pista "¿Dónde vivís?" */
+.me-search {
+  max-width: 420px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.me-search-input {
+  text-align: center;
+  padding-left: 42px;
+}
+.me-prompt-donde {
+  margin: 6px 0 12px;
+}
+
+/* Sin "Elegí una localidad" */
+#me-finder-prompt {
+  display: none;
+}
+
+/* "Cada punto es un mamógrafo": solo aparece cuando hay mamógrafos en pantalla */
+.me-fuente {
+  visibility: hidden;
+}
+.me-body:has(#me-result:not([hidden]) .me-result-list) .me-fuente {
+  visibility: visible;
+}

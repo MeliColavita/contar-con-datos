@@ -71,7 +71,11 @@
   // ============================================================
   // "Córdoba" -> "cordoba": para comparar sin importar tildes ni mayúsculas
   function norm(s) {
-    return String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+    return String(s)
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
   }
 
   const localidades = MAMOGRAFOS.map((g) => ({
@@ -102,7 +106,10 @@
     if (document.activeElement === input && input.value && !actual) mostrarLista(input.value);
   }
   function cargarSin() {
-    if (typeof SIN_MAMOGRAFO !== 'undefined') { incorporarSin(); return; }
+    if (typeof SIN_MAMOGRAFO !== 'undefined') {
+      incorporarSin();
+      return;
+    }
     const sc = document.createElement('script');
     sc.src = 'buscador-sin-mamografo.js';
     sc.onload = incorporarSin;
@@ -123,11 +130,13 @@
       const exacta = l.claves.some((c) => c === q);
       hallados.push({ l, grupo: exacta ? 0 : Math.min(...pos) === 0 ? 1 : 2 });
     });
-    hallados.sort((a, b) =>
-      a.grupo - b.grupo ||
-      (a.l.sin ? 1 : 0) - (b.l.sin ? 1 : 0) ||
-      a.l.localidad.localeCompare(b.l.localidad, 'es') ||
-      a.l.provincia.localeCompare(b.l.provincia, 'es'));
+    hallados.sort(
+      (a, b) =>
+        a.grupo - b.grupo ||
+        (a.l.sin ? 1 : 0) - (b.l.sin ? 1 : 0) ||
+        a.l.localidad.localeCompare(b.l.localidad, 'es') ||
+        a.l.provincia.localeCompare(b.l.provincia, 'es'),
+    );
     return hallados.slice(0, MAX_SUGERENCIAS).map((h) => h.l);
   }
 
@@ -153,7 +162,10 @@
   // Escribe el nombre de la localidad resaltando lo que se tipeó
   function nombreResaltado(el, nombre, q) {
     const i = norm(nombre).indexOf(norm(q));
-    if (i < 0 || !q.trim()) { el.textContent = nombre; return; }
+    if (i < 0 || !q.trim()) {
+      el.textContent = nombre;
+      return;
+    }
     const fin = i + q.trim().length;
     el.appendChild(document.createTextNode(nombre.slice(0, i)));
     const s = document.createElement('strong');
@@ -165,7 +177,10 @@
   function mostrarLista(texto) {
     sugeridas = buscar(texto);
     lista.textContent = '';
-    if (!texto.trim()) { cerrarLista(); return; }
+    if (!texto.trim()) {
+      cerrarLista();
+      return;
+    }
     if (sugeridas.length === 0) {
       const li = document.createElement('li');
       li.className = 'me-suggest-empty';
@@ -184,7 +199,10 @@
         li.appendChild(nombre);
         li.appendChild(prov);
         // mousedown (no click): se dispara antes de que el input pierda el foco
-        li.addEventListener('mousedown', (e) => { e.preventDefault(); elegir(l); });
+        li.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          elegir(l);
+        });
         lista.appendChild(li);
       });
     }
@@ -216,17 +234,44 @@
   const TRAZOS = [
     // el óvalo de arriba (dos mitades que se cruzan en el centro)
     [
-      [[50, 62], [20, 46], [18, 6], [50, 6]],
-      [[50, 6], [82, 6], [80, 46], [50, 62]],
+      [
+        [50, 62],
+        [20, 46],
+        [18, 6],
+        [50, 6],
+      ],
+      [
+        [50, 6],
+        [82, 6],
+        [80, 46],
+        [50, 62],
+      ],
     ],
     // las dos "colitas"
-    [[[50, 62], [44, 78], [30, 92], [22, 112]]],
-    [[[50, 62], [56, 78], [70, 92], [78, 112]]],
+    [
+      [
+        [50, 62],
+        [44, 78],
+        [30, 92],
+        [22, 112],
+      ],
+    ],
+    [
+      [
+        [50, 62],
+        [56, 78],
+        [70, 92],
+        [78, 112],
+      ],
+    ],
   ];
 
   function puntoBezier(c, t) {
     const u = 1 - t;
-    const a = u * u * u, b = 3 * u * u * t, d = 3 * u * t * t, e = t * t * t;
+    const a = u * u * u,
+      b = 3 * u * u * t,
+      d = 3 * u * t * t,
+      e = t * t * t;
     return [
       a * c[0][0] + b * c[1][0] + d * c[2][0] + e * c[3][0],
       a * c[0][1] + b * c[1][1] + d * c[2][1] + e * c[3][1],
@@ -240,7 +285,9 @@
     const out = [];
     TRAZOS.forEach((curvas) => {
       const pts = [];
-      curvas.forEach((c) => { for (let i = 0; i <= 40; i++) pts.push(puntoBezier(c, i / 40)); });
+      curvas.forEach((c) => {
+        for (let i = 0; i <= 40; i++) pts.push(puntoBezier(c, i / 40));
+      });
       let largo = 0;
       const acum = [0];
       for (let i = 1; i < pts.length; i++) {
@@ -250,17 +297,22 @@
       let seg = 1;
       for (let s = 0; s <= largo; s += PASO) {
         while (seg < pts.length - 1 && acum[seg] < s) seg++;
-        const a = pts[seg - 1], b = pts[seg];
-        const f = (s - acum[seg - 1]) / ((acum[seg] - acum[seg - 1]) || 1);
+        const a = pts[seg - 1],
+          b = pts[seg];
+        const f = (s - acum[seg - 1]) / (acum[seg] - acum[seg - 1] || 1);
         const x = a[0] + (b[0] - a[0]) * f;
         const y = a[1] + (b[1] - a[1]) * f;
-        const tx = b[0] - a[0], ty = b[1] - a[1];
+        const tx = b[0] - a[0],
+          ty = b[1] - a[1];
         const m = Math.hypot(tx, ty) || 1;
-        const nx = -ty / m, ny = tx / m; // normal del trazo
+        const nx = -ty / m,
+          ny = tx / m; // normal del trazo
         FILAS.forEach((off) => {
-          const px = x + nx * off, py = y + ny * off;
+          const px = x + nx * off,
+            py = y + ny * off;
           // sin puntos pegados (donde los trazos se cruzan)
-          if (out.some((o) => Math.hypot(o.ux - (px - LAZO_CX), o.uy - (py - LAZO_CY)) < 2.8)) return;
+          if (out.some((o) => Math.hypot(o.ux - (px - LAZO_CX), o.uy - (py - LAZO_CY)) < 2.8))
+            return;
           out.push({ ux: px - LAZO_CX, uy: py - LAZO_CY });
         });
       }
@@ -275,7 +327,12 @@
   function leerColor(variable, respaldo) {
     const v = getComputedStyle(document.documentElement).getPropertyValue(variable).trim();
     let m = /^#([0-9a-f]{6})$/i.exec(v);
-    if (m) return [parseInt(m[1].slice(0, 2), 16), parseInt(m[1].slice(2, 4), 16), parseInt(m[1].slice(4, 6), 16)];
+    if (m)
+      return [
+        parseInt(m[1].slice(0, 2), 16),
+        parseInt(m[1].slice(2, 4), 16),
+        parseInt(m[1].slice(4, 6), 16),
+      ];
     m = /^rgba?\((\d+)[ ,]+(\d+)[ ,]+(\d+)/.exec(v);
     if (m) return [+m[1], +m[2], +m[3]];
     return respaldo;
@@ -284,36 +341,52 @@
   const COL_PRIVADO = leerColor('--rose', [247, 168, 196]);
 
   const parts = generarLazo().map((u) => ({
-    ux: u.ux, uy: u.uy,        // posición en el lazo (unidades)
-    x: 0, y: 0, vx: 0, vy: 0,  // posición y velocidad actuales (px)
-    rx: 0, ry: 0,              // posición en el lazo (px, se recalcula al cambiar el tamaño)
-    cx: 0, cy: 0,              // posición en la constelación (px)
-    tx: 0, ty: 0,              // destino actual
-    a: 0, ta: 0,               // opacidad actual / destino
-    r: 2, tr: 2,               // radio actual / destino
-    col: COL_PUBLICO.slice(), tcol: COL_PUBLICO.slice(),
-    ring: 0, tring: 0,         // 0 = punto lleno (público), 1 = anillo (privado)
-    k: -1,                     // índice del mamógrafo que representa (-1 = ninguno)
-    pend: null, at: 0,         // destino programado y cuándo se aplica (escalonado)
+    ux: u.ux,
+    uy: u.uy, // posición en el lazo (unidades)
+    x: 0,
+    y: 0,
+    vx: 0,
+    vy: 0, // posición y velocidad actuales (px)
+    rx: 0,
+    ry: 0, // posición en el lazo (px, se recalcula al cambiar el tamaño)
+    cx: 0,
+    cy: 0, // posición en la constelación (px)
+    tx: 0,
+    ty: 0, // destino actual
+    a: 0,
+    ta: 0, // opacidad actual / destino
+    r: 2,
+    tr: 2, // radio actual / destino
+    col: COL_PUBLICO.slice(),
+    tcol: COL_PUBLICO.slice(),
+    ring: 0,
+    tring: 0, // 0 = punto lleno (público), 1 = anillo (privado)
+    k: -1, // índice del mamógrafo que representa (-1 = ninguno)
+    pend: null,
+    at: 0, // destino programado y cuándo se aplica (escalonado)
     fase: Math.random() * 6.28, // para el titileo
   }));
   const ordenArriba = parts.map((p, i) => i).sort((a, b) => parts[a].uy - parts[b].uy);
 
-  let W = 0, H = 0;       // tamaño del canvas en px CSS
-  let escala = 1;         // unidades -> px del lazo
-  let rLazo = 2;          // radio de cada punto en el lazo
-  let modo = 'lazo';      // 'lazo' o 'const' (constelación de mamógrafos)
-  let actual = null;      // localidad elegida
-  let vivos = [];         // partículas que representan mamógrafos (en orden de la lista)
-  let hoverK = -1;        // mamógrafo resaltado
-  let mx = null, my = null; // puntero sobre el canvas
-  let plan = [];          // acciones programadas [{at, fn}]
-  let entro = false;      // ¿ya hizo la entrada inicial?
-  let cerca = null;       // modo 'cerca': {a: punto "tu localidad", b: punto "la más cercana", l}
-  let tCerca = 0;         // cuándo se armó (para que la línea aparezca después de los puntos)
+  let W = 0,
+    H = 0; // tamaño del canvas en px CSS
+  let escala = 1; // unidades -> px del lazo
+  let rLazo = 2; // radio de cada punto en el lazo
+  let modo = 'lazo'; // 'lazo' o 'const' (constelación de mamógrafos)
+  let actual = null; // localidad elegida
+  let vivos = []; // partículas que representan mamógrafos (en orden de la lista)
+  let hoverK = -1; // mamógrafo resaltado
+  let mx = null,
+    my = null; // puntero sobre el canvas
+  let plan = []; // acciones programadas [{at, fn}]
+  let entro = false; // ¿ya hizo la entrada inicial?
+  let cerca = null; // modo 'cerca': {a: punto "tu localidad", b: punto "la más cercana", l}
+  let tCerca = 0; // cuándo se armó (para que la línea aparezca después de los puntos)
   const FUENTE = getComputedStyle(stage).fontFamily || 'system-ui, sans-serif';
 
-  function despues(ms, fn) { plan.push({ at: performance.now() + ms, fn }); }
+  function despues(ms, fn) {
+    plan.push({ at: performance.now() + ms, fn });
+  }
 
   function programar(p, d, demora) {
     p.pend = d;
@@ -323,16 +396,32 @@
   function aplicar(p, snap) {
     const d = p.pend;
     if (!d) return;
-    p.tx = d.x; p.ty = d.y; p.ta = d.a; p.tr = d.r; p.tcol = d.col; p.tring = d.ring;
+    p.tx = d.x;
+    p.ty = d.y;
+    p.ta = d.a;
+    p.tr = d.r;
+    p.tcol = d.col;
+    p.tring = d.ring;
     p.pend = null;
-    if (snap) { p.x = d.x; p.y = d.y; p.a = d.a; p.r = d.r; p.col = d.col.slice(); p.ring = d.ring; p.vx = p.vy = 0; }
+    if (snap) {
+      p.x = d.x;
+      p.y = d.y;
+      p.a = d.a;
+      p.r = d.r;
+      p.col = d.col.slice();
+      p.ring = d.ring;
+      p.vx = p.vy = 0;
+    }
   }
 
   // Calcula tamaño del lazo según el canvas
   function medirLazo() {
     escala = Math.min((H * 0.9) / LAZO_ALTO, (W * 0.72) / LAZO_ANCHO);
     rLazo = Math.max(1.6, Math.min(3.4, escala * 1.25));
-    parts.forEach((p) => { p.rx = W / 2 + p.ux * escala; p.ry = H / 2 + p.uy * escala; });
+    parts.forEach((p) => {
+      p.rx = W / 2 + p.ux * escala;
+      p.ry = H / 2 + p.uy * escala;
+    });
   }
 
   // Posiciones de la constelación: girasol (espiral áurea), un poco achatado
@@ -340,9 +429,11 @@
   function medirConstelacion() {
     const n = vivos.length;
     if (!n) return;
-    const ryMax = H / 2 - 18, rxMax = W / 2 - 18;
+    const ryMax = H / 2 - 18,
+      rxMax = W / 2 - 18;
     const base = 28 * Math.sqrt(n) * 0.72; // más mamógrafos => más grande, hasta el borde
-    const ry = Math.min(base, ryMax), rx = Math.min(base * 1.25, rxMax);
+    const ry = Math.min(base, ryMax),
+      rx = Math.min(base * 1.25, rxMax);
     const sep = (1.77 * Math.min(rx, ry)) / Math.sqrt(n);
     const radio = n === 1 ? 9 : Math.max(3.2, Math.min(7.5, sep * 0.26));
     vivos.forEach((p, k) => {
@@ -357,17 +448,31 @@
   // ----- Las tres "escenas" de la animación -----
   // a) dispersar: cada punto sale volando a un lugar al azar
   function dispersar() {
-    parts.forEach((p) => programar(p, {
-      x: Math.random() * W, y: Math.random() * H, a: 0.95, r: rLazo * 1.2, col: COL_PUBLICO, ring: 0,
-    }, Math.random() * 90));
+    parts.forEach((p) =>
+      programar(
+        p,
+        {
+          x: Math.random() * W,
+          y: Math.random() * H,
+          a: 0.95,
+          r: rLazo * 1.2,
+          col: COL_PUBLICO,
+          ring: 0,
+        },
+        Math.random() * 90,
+      ),
+    );
   }
   // b) lazo: vuelven a armarse (de arriba hacia abajo, como si se dibujara)
   function armarLazo(brillo, escalonado) {
     ordenArriba.forEach((i, orden) => {
       const p = parts[i];
       p.k = -1;
-      programar(p, { x: p.rx, y: p.ry, a: brillo, r: rLazo, col: COL_PUBLICO, ring: 0 },
-        escalonado ? (orden / parts.length) * 420 + Math.random() * 100 : Math.random() * 150);
+      programar(
+        p,
+        { x: p.rx, y: p.ry, a: brillo, r: rLazo, col: COL_PUBLICO, ring: 0 },
+        escalonado ? (orden / parts.length) * 420 + Math.random() * 100 : Math.random() * 150,
+      );
     });
   }
   // c) constelación: quedan N puntos (los demás se desvanecen hacia el centro)
@@ -385,12 +490,32 @@
     parts.forEach((p, i) => {
       if (elegidos.has(i)) {
         const privado = norm(items[p.k].tipo || '') === 'privado';
-        programar(p, { x: p.cx, y: p.cy, a: 1, r: p.cr, col: privado ? COL_PRIVADO : COL_PUBLICO, ring: privado ? 1 : 0 },
-          Math.random() * 260);
+        programar(
+          p,
+          {
+            x: p.cx,
+            y: p.cy,
+            a: 1,
+            r: p.cr,
+            col: privado ? COL_PRIVADO : COL_PUBLICO,
+            ring: privado ? 1 : 0,
+          },
+          Math.random() * 260,
+        );
       } else {
         p.k = -1;
-        programar(p, { x: W / 2 + (Math.random() - 0.5) * 24, y: H / 2 + (Math.random() - 0.5) * 24, a: 0, r: 0,
-          col: COL_PUBLICO, ring: 0 }, Math.random() * 200);
+        programar(
+          p,
+          {
+            x: W / 2 + (Math.random() - 0.5) * 24,
+            y: H / 2 + (Math.random() - 0.5) * 24,
+            a: 0,
+            r: 0,
+            col: COL_PUBLICO,
+            ring: 0,
+          },
+          Math.random() * 200,
+        );
       }
     });
     modo = 'const';
@@ -400,14 +525,36 @@
   //    (anillo tenue) y "la más cercana con mamógrafo" (punto lleno). No están
   //    a escala: la distancia real va escrita sobre la línea.
   function armarCerca(l, rapido) {
-    const i1 = Math.floor(parts.length * 0.3), i2 = Math.floor(parts.length * 0.7);
+    const i1 = Math.floor(parts.length * 0.3),
+      i2 = Math.floor(parts.length * 0.7);
     const y = H * 0.44;
     parts.forEach((p, i) => {
       p.k = -1;
-      if (i === i1) programar(p, { x: W * 0.24, y, a: 0.6, r: 8, col: COL_PRIVADO, ring: 1 }, rapido ? 0 : Math.random() * 120);
-      else if (i === i2) programar(p, { x: W * 0.76, y, a: 1, r: 9, col: COL_PUBLICO, ring: 0 }, rapido ? 0 : Math.random() * 120);
-      else programar(p, { x: W / 2 + (Math.random() - 0.5) * 24, y: y + (Math.random() - 0.5) * 24, a: 0, r: 0,
-        col: COL_PUBLICO, ring: 0 }, rapido ? 0 : Math.random() * 200);
+      if (i === i1)
+        programar(
+          p,
+          { x: W * 0.24, y, a: 0.6, r: 8, col: COL_PRIVADO, ring: 1 },
+          rapido ? 0 : Math.random() * 120,
+        );
+      else if (i === i2)
+        programar(
+          p,
+          { x: W * 0.76, y, a: 1, r: 9, col: COL_PUBLICO, ring: 0 },
+          rapido ? 0 : Math.random() * 120,
+        );
+      else
+        programar(
+          p,
+          {
+            x: W / 2 + (Math.random() - 0.5) * 24,
+            y: y + (Math.random() - 0.5) * 24,
+            a: 0,
+            r: 0,
+            col: COL_PUBLICO,
+            ring: 0,
+          },
+          rapido ? 0 : Math.random() * 200,
+        );
     });
     vivos = [];
     cerca = { a: parts[i1], b: parts[i2], l };
@@ -427,7 +574,9 @@
   function irADestino(l) {
     const nombre = norm(l.destino);
     const prov = l.cercanaProv;
-    const dest = localidades.find((x) => !x.sin && x.provincia === prov && x.claves.some((c) => c === nombre));
+    const dest = localidades.find(
+      (x) => !x.sin && x.provincia === prov && x.claves.some((c) => c === nombre),
+    );
     if (dest) elegirConMamografo(dest);
   }
 
@@ -439,8 +588,15 @@
     cerca = null;
     setHover(-1);
     dibujarSin(l);
-    stage.setAttribute('aria-label', l.localidad + ' no tiene mamógrafo en la base. El más cercano está en ' + l.cercana +
-      ', a unos ' + fmtKm(l.km) + ' km.');
+    stage.setAttribute(
+      'aria-label',
+      l.localidad +
+        ' no tiene mamógrafo en la base. El más cercano está en ' +
+        l.cercana +
+        ', a unos ' +
+        fmtKm(l.km) +
+        ' km.',
+    );
     plan = [];
     modo = 'lazo';
     vivos = [];
@@ -448,7 +604,11 @@
       dispersar();
       despues(REDUCIDO ? 0 : 420, () => armarLazo(1, true));
       despues(REDUCIDO ? 0 : 1450, () => armarCerca(l, false));
-      if (REDUCIDO) { plan.forEach((a) => a.fn()); plan = []; dibujar(performance.now()); }
+      if (REDUCIDO) {
+        plan.forEach((a) => a.fn());
+        plan = [];
+        dibujar(performance.now());
+      }
     }
   }
 
@@ -460,7 +620,14 @@
     cerca = null;
     setHover(-1);
     dibujarResultado(l);
-    stage.setAttribute('aria-label', l.items.length + (l.items.length === 1 ? ' mamógrafo' : ' mamógrafos') + ' en ' + l.localidad + ': un punto por cada uno.');
+    stage.setAttribute(
+      'aria-label',
+      l.items.length +
+        (l.items.length === 1 ? ' mamógrafo' : ' mamógrafos') +
+        ' en ' +
+        l.localidad +
+        ': un punto por cada uno.',
+    );
 
     plan = [];
     modo = 'lazo';
@@ -469,7 +636,11 @@
       dispersar();
       despues(REDUCIDO ? 0 : 420, () => armarLazo(1, true));
       despues(REDUCIDO ? 0 : 1450, () => armarConstelacion(l.items));
-      if (REDUCIDO) { plan.forEach((a) => a.fn()); plan = []; dibujar(performance.now()); }
+      if (REDUCIDO) {
+        plan.forEach((a) => a.fn());
+        plan = [];
+        dibujar(performance.now());
+      }
     }
   }
 
@@ -486,8 +657,14 @@
     plan = [];
     modo = 'lazo';
     vivos = [];
-    stage.setAttribute('aria-label', 'Lazo rosa hecho de puntos. Elegí una localidad para ver sus mamógrafos.');
-    if (W > 0) { armarLazo(0.6, true); if (REDUCIDO) dibujar(performance.now()); }
+    stage.setAttribute(
+      'aria-label',
+      'Lazo rosa hecho de puntos. Elegí una localidad para ver sus mamógrafos.',
+    );
+    if (W > 0) {
+      armarLazo(0.6, true);
+      if (REDUCIDO) dibujar(performance.now());
+    }
     input.focus();
   }
 
@@ -514,7 +691,9 @@
     const b = document.createElement('b');
     b.textContent = l.cercana;
     p.appendChild(b);
-    p.appendChild(document.createTextNode(l.cercanaProv !== l.provincia ? ' (' + l.cercanaProv + ')' : ''));
+    p.appendChild(
+      document.createTextNode(l.cercanaProv !== l.provincia ? ' (' + l.cercanaProv + ')' : ''),
+    );
     p.appendChild(document.createTextNode(', a unos ' + fmtKm(l.km) + ' km en línea recta.'));
     result.appendChild(p);
 
@@ -529,7 +708,8 @@
 
     const nota = document.createElement('p');
     nota.className = 'ui-note me-sin-nota';
-    nota.textContent = 'Distancia aproximada entre los centros de las dos localidades; no refleja el tiempo de viaje.';
+    nota.textContent =
+      'Distancia aproximada entre los centros de las dos localidades; no refleja el tiempo de viaje.';
     result.appendChild(nota);
     result.hidden = false;
   }
@@ -542,7 +722,11 @@
 
     const t = document.createElement('h3');
     t.className = 'me-result-title';
-    t.appendChild(document.createTextNode(n === 1 ? 'Mamógrafo en ' + l.localidad : n + ' mamógrafos en ' + l.localidad));
+    t.appendChild(
+      document.createTextNode(
+        n === 1 ? 'Mamógrafo en ' + l.localidad : n + ' mamógrafos en ' + l.localidad,
+      ),
+    );
     const prov = document.createElement('span');
     prov.textContent = ' · ' + l.provincia;
     t.appendChild(prov);
@@ -567,7 +751,11 @@
       b.appendChild(document.createTextNode(m.establecimiento));
       li.appendChild(b);
       // una línea por dato (si falta, no se muestra): dirección / tipo y detalle / teléfono
-      [m.direccion, [m.tipo, m.detalle].filter(Boolean).join(' · '), m.telefono && 'Tel: ' + m.telefono]
+      [
+        m.direccion,
+        [m.tipo, m.detalle].filter(Boolean).join(' · '),
+        m.telefono && 'Tel: ' + m.telefono,
+      ]
         .filter(Boolean)
         .forEach((txt) => {
           const s = document.createElement('span');
@@ -585,7 +773,10 @@
 
     const leyenda = document.createElement('div');
     leyenda.className = 'ui-legend me-legend';
-    [['', 'Público'], ['me-ring', 'Privado']].forEach(([cls, txt]) => {
+    [
+      ['', 'Público'],
+      ['me-ring', 'Privado'],
+    ].forEach(([cls, txt]) => {
       const s = document.createElement('span');
       const i = document.createElement('i');
       i.className = 'me-pip ' + cls;
@@ -619,11 +810,15 @@
   // Punto más cercano al puntero (solo con la constelación armada)
   function puntoCerca(x, y) {
     if (modo !== 'const') return -1;
-    let mejor = -1, dMejor = 1e9;
+    let mejor = -1,
+      dMejor = 1e9;
     vivos.forEach((p) => {
       if (p.a < 0.5) return;
       const d = Math.hypot(p.x - x, p.y - y);
-      if (d < Math.max(p.r + 9, 14) && d < dMejor) { dMejor = d; mejor = p.k; }
+      if (d < Math.max(p.r + 9, 14) && d < dMejor) {
+        dMejor = d;
+        mejor = p.k;
+      }
     });
     return mejor;
   }
@@ -636,7 +831,8 @@
     setHover(puntoCerca(mx, my), true);
     canvas.style.cursor = hoverK >= 0 ? 'pointer' : '';
   });
-  canvas.addEventListener('pointerdown', (e) => { // táctil: tocar un punto lo resalta
+  canvas.addEventListener('pointerdown', (e) => {
+    // táctil: tocar un punto lo resalta
     [mx, my] = posPuntero(e);
     setHover(puntoCerca(mx, my), true);
   });
@@ -648,8 +844,8 @@
   // ============================================================
   // 6) ANIMACIÓN (resortes) Y DIBUJO
   // ============================================================
-  const K = 90;  // rigidez del resorte
-  const C = 14;  // amortiguación
+  const K = 90; // rigidez del resorte
+  const C = 14; // amortiguación
   let ultimo = performance.now();
 
   function visible() {
@@ -658,7 +854,10 @@
 
   function tick(t) {
     requestAnimationFrame(tick);
-    if (!visible()) { ultimo = t; return; }
+    if (!visible()) {
+      ultimo = t;
+      return;
+    }
     if (REDUCIDO) return; // sin animación: se dibuja solo cuando cambia algo (ver dibujar())
     const dt = Math.min(0.033, (t - ultimo) / 1000 || 0.016);
     ultimo = t;
@@ -667,7 +866,10 @@
     if (plan.length) {
       const ahora = performance.now();
       const listas = plan.filter((a) => a.at <= ahora);
-      if (listas.length) { plan = plan.filter((a) => a.at > ahora); listas.forEach((a) => a.fn()); }
+      if (listas.length) {
+        plan = plan.filter((a) => a.at > ahora);
+        listas.forEach((a) => a.fn());
+      }
     }
 
     const e = 1 - Math.exp(-dt * 7);
@@ -680,9 +882,11 @@
       p.vy += ((p.ty - p.y) * K - p.vy * C) * dt;
       // el puntero "empuja" los puntos del lazo (en la constelación no, para poder tocarlos)
       if (modo === 'lazo' && mx !== null) {
-        const dx = p.x - mx, dy = p.y - my, d = Math.hypot(dx, dy);
+        const dx = p.x - mx,
+          dy = p.y - my,
+          d = Math.hypot(dx, dy);
         if (d < 56 && d > 0.1) {
-          const f = (1 - d / 56);
+          const f = 1 - d / 56;
           p.vx += (dx / d) * f * f * 1100 * dt;
           p.vy += (dy / d) * f * f * 1100 * dt;
         }
@@ -711,38 +915,54 @@
     for (let i = 0; i < parts.length; i++) {
       const p = parts[i];
       if (p.a < 0.02 || p.r < 0.2) continue;
-      let a = p.a, r = p.r;
+      let a = p.a,
+        r = p.r;
       if (modo === 'lazo') a *= 0.86 + 0.14 * Math.sin(t / 650 + p.fase); // titileo suave
       const resalta = modo === 'const' && hoverK >= 0;
-      if (resalta) { if (p.k === hoverK) r *= 1.6; else if (p.k >= 0) a *= 0.45; }
+      if (resalta) {
+        if (p.k === hoverK) r *= 1.6;
+        else if (p.k >= 0) a *= 0.45;
+      }
       const c = Math.round(p.col[0]) + ',' + Math.round(p.col[1]) + ',' + Math.round(p.col[2]);
 
       ctx.fillStyle = 'rgba(' + c + ',' + (a * 0.12).toFixed(3) + ')'; // resplandor
-      ctx.beginPath(); ctx.arc(p.x, p.y, r * 1.9, 0, 6.2832); ctx.fill();
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r * 1.9, 0, 6.2832);
+      ctx.fill();
 
       ctx.fillStyle = 'rgba(' + c + ',' + (a * (1 - p.ring * 0.82)).toFixed(3) + ')'; // cuerpo
-      ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, 6.2832); ctx.fill();
-      if (p.ring > 0.02) { // anillo (privado)
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r, 0, 6.2832);
+      ctx.fill();
+      if (p.ring > 0.02) {
+        // anillo (privado)
         ctx.lineWidth = Math.max(1.4, r * 0.28);
         ctx.strokeStyle = 'rgba(' + c + ',' + (a * p.ring).toFixed(3) + ')';
         ctx.stroke();
       }
-      if (resalta && p.k === hoverK) { // aro que late alrededor del punto resaltado
+      if (resalta && p.k === hoverK) {
+        // aro que late alrededor del punto resaltado
         ctx.lineWidth = 1.5;
         ctx.strokeStyle = 'rgba(' + c + ',' + (0.55 + 0.3 * Math.sin(t / 180)).toFixed(3) + ')';
-        ctx.beginPath(); ctx.arc(p.x, p.y, r + 6, 0, 6.2832); ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, r + 6, 0, 6.2832);
+        ctx.stroke();
       }
     }
     // modo "cerca": línea punteada con la distancia y el nombre de cada punto
     if (modo === 'cerca' && cerca) {
       const lt = REDUCIDO ? 1 : Math.max(0, Math.min(1, (t - tCerca - 800) / 500));
-      const A = cerca.a, B = cerca.b;
+      const A = cerca.a,
+        B = cerca.b;
       if (lt > 0 && A.a > 0.2 && B.a > 0.2) {
         ctx.save();
         ctx.setLineDash([4, 5]);
         ctx.lineWidth = 1.4;
         ctx.strokeStyle = 'rgba(255,182,206,' + (0.55 * lt).toFixed(3) + ')';
-        ctx.beginPath(); ctx.moveTo(A.x + A.r + 7, A.y); ctx.lineTo(B.x - B.r - 7, B.y); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(A.x + A.r + 7, A.y);
+        ctx.lineTo(B.x - B.r - 7, B.y);
+        ctx.stroke();
         ctx.setLineDash([]);
         ctx.textAlign = 'center';
         ctx.fillStyle = 'rgba(242,233,238,' + (0.95 * lt).toFixed(3) + ')';
@@ -774,18 +994,23 @@
   // 7) TAMAÑO DEL CANVAS
   // ============================================================
   function ajustar() {
-    const w = stage.clientWidth, h = stage.clientHeight;
+    const w = stage.clientWidth,
+      h = stage.clientHeight;
     if (!w || !h) return; // el capítulo está oculto: se reintenta cuando se muestre
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const primera = W === 0;
-    W = w; H = h;
+    W = w;
+    H = h;
     canvas.width = Math.round(w * dpr);
     canvas.height = Math.round(h * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     medirLazo();
     if (modo === 'const') {
       medirConstelacion();
-      vivos.forEach((p) => { const d = actualDestino(p); programar(p, d, 0); });
+      vivos.forEach((p) => {
+        const d = actualDestino(p);
+        programar(p, d, 0);
+      });
     } else if (modo === 'cerca' && cerca) {
       armarCerca(cerca.l, true);
     } else if (!primera) {
@@ -801,8 +1026,13 @@
   // Entrada: la primera vez que se ve la pestaña, el lazo se arma desde puntos sueltos
   function entrada() {
     parts.forEach((p) => {
-      p.x = Math.random() * W; p.y = Math.random() * H; p.vx = p.vy = 0;
-      p.a = 0; p.r = rLazo; p.tx = p.x; p.ty = p.y;
+      p.x = Math.random() * W;
+      p.y = Math.random() * H;
+      p.vx = p.vy = 0;
+      p.a = 0;
+      p.r = rLazo;
+      p.tx = p.x;
+      p.ty = p.y;
     });
     armarLazo(0.6, true);
     entro = true;
@@ -812,9 +1042,15 @@
     if (!entro && visible()) entrada();
   }
 
-  new ResizeObserver(() => { ajustar(); revisarEntrada(); }).observe(stage);
+  new ResizeObserver(() => {
+    ajustar();
+    revisarEntrada();
+  }).observe(stage);
   // la pestaña pasa a .active por script.js: se detecta el cambio de clase
-  new MutationObserver(revisarEntrada).observe(panel, { attributes: true, attributeFilter: ['class'] });
+  new MutationObserver(revisarEntrada).observe(panel, {
+    attributes: true,
+    attributeFilter: ['class'],
+  });
   window.addEventListener('resize', ajustar);
   ajustar();
   revisarEntrada();
@@ -829,9 +1065,14 @@
     mostrarLista(input.value);
   });
   input.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowDown') { e.preventDefault(); if (lista.hidden) mostrarLista(input.value); resaltar(activo + 1); }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); resaltar(activo - 1); }
-    else if (e.key === 'Enter') {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (lista.hidden) mostrarLista(input.value);
+      resaltar(activo + 1);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      resaltar(activo - 1);
+    } else if (e.key === 'Enter') {
       e.preventDefault();
       // Enter elige la resaltada; si no hay ninguna, la primera sugerencia
       const l = sugeridas[activo >= 0 ? activo : 0];
@@ -839,6 +1080,8 @@
     } else if (e.key === 'Escape') cerrarLista();
   });
   input.addEventListener('blur', cerrarLista);
-  input.addEventListener('focus', () => { if (input.value && !actual) mostrarLista(input.value); });
+  input.addEventListener('focus', () => {
+    if (input.value && !actual) mostrarLista(input.value);
+  });
   clear.addEventListener('click', limpiar);
 })();
