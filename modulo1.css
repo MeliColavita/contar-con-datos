@@ -297,6 +297,7 @@
 .em-chart-edad{
   display:flex;
   align-items:flex-end;
+  justify-content:center; /* el grupo de barras (columnas de 100px como máximo, ver .em-col) queda centrado en el gráfico */
   gap:clamp(4px,1vw,10px); /* antes clamp(6px,1.6vw,16px), y antes de eso clamp(8px,2.5vw,24px) -- Emi pidió juntar más las barras, también en el estado inicial (antes de revelar) */
   height:220px;
   padding-top:30px; /* aire arriba para que el número más alto no se pegue al borde */
@@ -358,6 +359,17 @@
 .em-col{
   flex:1;
   min-width:0;
+  /* max-width: la columna nunca mide más que la barra (96px) + 4px.
+     Antes, en pantallas anchas las 5 columnas se estiraban para
+     llenar todo el gráfico y las barras quedaban separadas por ~44px;
+     con zoom (o en pantallas más angostas) las columnas se achicaban
+     y las barras quedaban casi pegadas (~14px). Emi pidió que se vea
+     SIEMPRE así de juntas: con este techo, la separación es de ~14px
+     (estos 4px + el gap del gráfico) en cualquier ancho, y el grupo
+     de barras queda centrado (ver justify-content:center en
+     .em-chart-tipo/.em-chart-edad). En pantallas angostas la columna
+     sigue achicándose como antes (flex:1 + min-width:0). */
+  max-width:100px;
   height:100%;
   display:flex;
   flex-direction:column;
