@@ -380,6 +380,347 @@
   filter: brightness(1.1);
 }
 
+/* ============================================================
+   BUSCADOR DE MAMÓGRAFOS (pestaña 3) — lazo de puntos animado
+   ============================================================
+   Se agregó al final de modulo3.css. Todo con prefijo me-.
+   Estructura (ver index.html, #me-tabpanel-3):
+     .me-search   -> caja de búsqueda + sugerencias
+     .me-finder   -> fila: .me-stage (canvas con los puntos) + .me-side (lista)
+   ============================================================ */
+
+.me-search {
+  position: relative;
+  width: 100%;
+  margin: 0 0 10px;
+  font-family: var(--sans);
+  color: var(--text);
+}
+.me-search-label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-bottom: 5px;
+}
+.me-search-box {
+  position: relative;
+}
+.me-search-input {
+  width: 100%;
+  font: inherit;
+  font-size: 1rem;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  padding: 9px 42px 9px 18px;
+  outline: none;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+.me-search-input::placeholder {
+  color: var(--text-dim);
+}
+.me-search-input:focus {
+  border-color: var(--rose-strong);
+  box-shadow: 0 0 0 3px rgba(255, 111, 156, 0.2);
+}
+.me-search-clear {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.me-search-clear:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.08);
+}
+.me-search-clear[hidden] {
+  display: none;
+}
+
+/* Lista de sugerencias (predicción) */
+.me-suggest {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 30;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  max-height: 240px;
+  overflow-y: auto;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 16px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+.me-suggest[hidden] {
+  display: none;
+}
+.me-suggest li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+.me-suggest li small {
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+.me-suggest li strong {
+  color: var(--rose-strong);
+  font-weight: 600;
+}
+.me-suggest li[aria-selected='true'],
+.me-suggest li:hover {
+  background: rgba(255, 111, 156, 0.14);
+}
+.me-suggest .me-suggest-empty {
+  cursor: default;
+  color: var(--text-dim);
+}
+.me-suggest .me-suggest-empty:hover {
+  background: transparent;
+}
+
+/* ---- Fila: lazo de puntos (izquierda) + resultados (derecha) ---- */
+.me-finder {
+  --me-h: clamp(200px, 38vh, 300px); /* alto compartido por el canvas y la lista */
+  display: flex;
+  gap: 18px;
+  align-items: stretch;
+}
+.me-stage {
+  position: relative;
+  flex: 1 1 55%;
+  min-width: 0;
+  height: var(--me-h);
+  border-radius: 14px;
+  background: radial-gradient(ellipse at 50% 45%, rgba(255, 111, 156, 0.1), transparent 70%);
+}
+.me-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: manipulation;
+}
+/* Etiqueta con el nombre del mamógrafo bajo el puntero */
+.me-tip {
+  position: absolute;
+  z-index: 2;
+  max-width: 80%;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+  font-size: 0.75rem;
+  line-height: 1.25;
+  text-align: center;
+  pointer-events: none;
+}
+.me-tip[hidden] {
+  display: none;
+}
+
+.me-side {
+  flex: 1 1 45%;
+  min-width: 0;
+  height: var(--me-h);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+/* la pista usa .me-prompt (ya definida arriba); acá solo se ajusta */
+.me-side .me-prompt {
+  margin-bottom: 0;
+  font-size: 0.95rem;
+}
+
+.me-result {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+.me-result[hidden] {
+  display: none;
+}
+.me-result-title {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 1.05rem;
+  margin: 0 0 8px;
+}
+.me-result-title span {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}
+.me-result-list {
+  position: relative;
+  list-style: none;
+  margin: 0;
+  padding: 0 4px 0 0;
+  display: grid;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto; /* hay localidades con 90+ mamógrafos */
+  align-content: start;
+}
+.me-result-item {
+  padding: 8px 12px;
+  border: 1px solid var(--panel-border);
+  border-left: 3px solid var(--rose-strong);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  outline: none;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+  animation: me-item-in 0.4s ease both;
+}
+.me-result-item[data-tipo='privado'] {
+  border-left-color: var(--rose);
+}
+.me-result-item b {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+.me-result-item span {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+.me-result-item.me-hl,
+.me-result-item:focus-visible {
+  background: rgba(255, 111, 156, 0.14);
+  border-color: var(--rose-strong);
+}
+@keyframes me-item-in {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Símbolo de Público/Privado: el MISMO que usan los puntos del canvas
+   (punto lleno = público, anillo = privado) */
+.me-pip {
+  flex: none;
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--rose-strong);
+  box-shadow: 0 0 6px var(--rose-glow);
+}
+.me-pip.me-ring {
+  background: transparent;
+  box-shadow: inset 0 0 0 2px var(--rose);
+}
+.me-legend {
+  margin-top: 8px;
+}
+.me-legend .me-pip {
+  margin-right: 5px;
+  vertical-align: -1px;
+}
+
+.me-card .me-fuente {
+  margin-top: 8px;
+}
+
+.me-sin-texto {
+  margin: 0 0 4px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: var(--text);
+}
+.me-sin-texto b {
+  color: var(--rose-strong);
+  font-weight: 600;
+}
+/* el botón compartido (.me-btn) es de 230px centrado: acá va a la izquierda y se ajusta al texto */
+.me-btn.me-sin-btn {
+  align-self: flex-start;
+  width: auto;
+  max-width: 100%;
+  margin: 8px 0 0;
+  padding: 7px 14px;
+  font-size: 0.82rem;
+}
+.me-sin-nota {
+  margin-top: 10px;
+}
+.me-card .me-sin-nota {
+  margin-top: 10px;
+}
+
+@media (max-width: 680px) {
+  .me-finder {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .me-stage {
+    flex: none;
+    width: 100%;
+  }
+  .me-side {
+    height: auto;
+  }
+  .me-result-list {
+    max-height: 220px;
+  }
+}
+@media (max-height: 760px) {
+  .me-finder {
+    --me-h: clamp(170px, 36vh, 250px);
+  }
+  .me-search {
+    margin-bottom: 6px;
+  }
+  .me-search-label {
+    margin-bottom: 3px;
+    font-size: 0.8rem;
+  }
+  .me-search-input {
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .me-result-item {
+    animation: none;
+  }
+}
 /* "¿Dónde vivís?" resaltado en rosa, con el mismo look de píldora
    que el resto de los acentos rosa del sitio. */
 .me-where {
@@ -405,4 +746,43 @@
 .me-final {
   align-self: center;
   margin-top: auto;
+}
+/* Ajustes pedidos: buscador angosto y centrado, y pista "¿Dónde vivís?" */
+.me-search {
+  max-width: 420px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.me-search-input {
+  text-align: center;
+  padding-left: 42px;
+}
+.me-prompt-donde {
+  margin: 6px 0 12px;
+}
+/* Ajustes pedidos: buscador angosto y centrado, y pista "¿Dónde vivís?" */
+.me-search {
+  max-width: 420px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.me-search-input {
+  text-align: center;
+  padding-left: 42px;
+}
+.me-prompt-donde {
+  margin: 6px 0 12px;
+}
+
+/* Sin "Elegí una localidad" */
+#me-finder-prompt {
+  display: none;
+}
+
+/* "Cada punto es un mamógrafo": solo aparece cuando hay mamógrafos en pantalla */
+.me-fuente {
+  visibility: hidden;
+}
+.me-body:has(#me-result:not([hidden]) .me-result-list) .me-fuente {
+  visibility: visible;
 }
