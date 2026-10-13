@@ -532,13 +532,25 @@
       // El nombre de Mama se ve siempre (igual que antes); el de las
       // otras 4 solo aparece junto con sus datos, al revelar.
       const lblText = showReal || isMama ? d.categoria : '';
+      // .em-plot: el área de dibujo de la barra (todo lo de la columna
+      // MENOS la etiqueta). El % de alto de cada barra se calcula
+      // contra ESTA caja, no contra la columna entera -- antes número +
+      // barra + etiqueta compartían el mismo flex-column, y en pantallas
+      // bajas (o con zoom/escalado de Windows, ej. la compu de Bren)
+      // flexbox recortaba las barras altas hasta dejarlas todas del
+      // mismo alto. El número (.em-val) va ADENTRO de la barra, con
+      // position:absolute encima de su punta (ver modulo1.css), así no
+      // le resta lugar a la barra y sube/baja pegado a ella.
       col.innerHTML =
-        valHTML +
+        '<div class="em-plot">' +
         '<div class="em-bar' +
         (isMama ? ' em-bar-mama' : '') +
         '" style="' +
         barStyle +
-        '"></div>' +
+        '">' +
+        valHTML +
+        '</div>' +
+        '</div>' +
         '<div class="em-lbl">' +
         lblText +
         '</div>';
@@ -561,10 +573,13 @@
     sumCol.className = 'em-col';
     sumCol.id = 'em-sum-col';
     sumCol.hidden = true;
+    // Misma estructura que las otras columnas (.em-plot + número
+    // adentro de la pila, ver arriba). El número va AL FINAL de la pila
+    // para que el primer hijo siga siendo el primer segmento; los
+    // segmentos se buscan siempre por [data-i], así el número nunca se
+    // confunde con un segmento.
     sumCol.innerHTML =
-      '<div class="em-val">' +
-      formatNumber(otherTotal) +
-      '</div>' +
+      '<div class="em-plot">' +
       '<div class="em-stack" style="height:' +
       (otherTotal / TIPO_MAX) * 100 +
       '%">' +
@@ -581,9 +596,13 @@
           );
         })
         .join('') +
+      '<div class="em-val">' +
+      formatNumber(otherTotal) +
+      '</div>' +
+      '</div>' +
       '</div>' +
       '<div class="em-lbl">Los otros 4 cánceres</div>';
-    sumCol.querySelectorAll('.em-stack > div').forEach(function (seg) {
+    sumCol.querySelectorAll('.em-stack > [data-i]').forEach(function (seg) {
       const d = data[+seg.dataset.i];
       seg.addEventListener('pointermove', function (e) {
         showTip(e, tipoTipHTML(d));
@@ -709,47 +728,42 @@
         col.querySelector('.em-lbl').textContent = d.categoria;
       });
 
+      const plot = mama.querySelector('.em-plot');
       const bar = mama.querySelector('.em-bar');
       const valEl = mama.querySelector('.em-val');
-      const lblH = mama.querySelector('.em-lbl').offsetHeight;
+      // Deja de seguir a la manija (ver placeQ/placeVal en setupDrag):
+      // vuelve a la punta de la barra real, con su tamaño de siempre.
+      valEl.style.bottom = '';
+      valEl.style.fontSize = '';
+      valEl.style.marginBottom = '';
       const guess = tipoState.guess;
       const pct = (real / TIPO_MAX) * 100;
 
-      // Dónde ubicar la línea "Tu respuesta": NO alcanza con calcular
-      // "guess/TIPO_MAX" a mano y asumirlo como % del alto de la
-      // columna -- .em-bar comparte ese flex-column con .em-val y
-      // .em-lbl, así que flexbox la encoge un poco para que los 3
-      // entren (su alto real termina siendo MENOS que un % puro del
-      // alto de la columna, y cuánto menos no es algo fácil de
-      // predecir a mano). Antes esto hacía que, con una adivinanza
-      // bastante más alta que el valor real, la línea terminara muy
-      // arriba de donde debía -- pisando el número ("20.750").
-      // Solución: en vez de recalcular la proporción, le preguntamos
-      // al navegador cuánto mide la barra YA puesta en su alto real
-      // (sin transición, por un instante) y ubicamos la línea en
-      // proporción a ESA medida real -- así, cuando la adivinanza es
-      // igual al valor real, la línea cae exactamente sobre la punta
-      // de la barra, siempre.
-      bar.style.transition = 'none';
-      bar.style.height = pct + '%';
-      const finalBarH = bar.getBoundingClientRect().height;
-      const barBottomOffset = lblH + 10; // 10 = margin-top de .em-lbl (ver modulo1.css)
-      const guessPx = finalBarH * (guess / real);
-
       // Línea punteada "Tu respuesta" (si ya había una de un render
-      // anterior, se saca).
+      // anterior, se saca). Va adentro de .em-plot, en % -- la MISMA
+      // escala que usa la barra (real/TIPO_MAX % de .em-plot), así que
+      // queda siempre en proporción a ella, aunque después cambie el
+      // alto de la pantalla o el zoom. Antes se calculaba UNA sola vez
+      // en px (midiendo la barra al revelar): si después se hacía zoom,
+      // la barra se achicaba pero la línea se quedaba donde estaba, y
+      // podía terminar ARRIBA de la barra aunque la respuesta fuera
+      // menor que el valor real (reportado con la compu de Bren).
       const oldLine = mama.querySelector('.em-guess-line');
       if (oldLine) oldLine.remove();
       const line = document.createElement('div');
       line.className = 'em-guess-line';
-      line.style.bottom = barBottomOffset + guessPx + 'px';
+      // Si la respuesta quedó cerca del valor real, la línea pasa justo
+      // por donde está el número ("20.750") -- en ese caso el texto
+      // "Tu respuesta" va DEBAJO de la línea en vez de arriba, para no
+      // taparlo.
+      if (Math.abs(guess - real) / real < 0.15) line.classList.add('em-guess-line-below');
+      line.style.bottom = (guess / TIPO_MAX) * 100 + '%';
       line.innerHTML = '<span>Tu respuesta</span>';
-      mama.appendChild(line);
+      plot.appendChild(line);
 
       if (doAnimate && !reduceMotion) {
-        // La medición de arriba ya dejó la barra en su alto final,
-        // sin transición -- la volvemos a 0 y recién ahí la animamos,
-        // para que el crecimiento se siga viendo igual que antes.
+        // Arranca en 0 sin transición y recién ahí crece animada.
+        bar.style.transition = 'none';
         bar.style.height = '0%';
         void bar.offsetWidth; // fuerza un reflow: sin esto, el navegador podría saltearse el 0% y no animar nada
         requestAnimationFrame(function () {
@@ -758,6 +772,7 @@
         });
         countUp(valEl, real);
       } else {
+        bar.style.height = pct + '%';
         valEl.textContent = formatNumber(real);
       }
 
@@ -800,19 +815,51 @@
     }
 
     // setupDrag(): arma la zona de arrastre sobre la columna de Mama
-    // (desde la etiqueta hacia arriba) + la barra punteada + la
-    // manija "↕". Pointer Events (pointerdown/move/up) cubren mouse Y
-    // touch con el mismo código, sin ramas separadas para celular.
+    // (toda su .em-plot, o sea desde la etiqueta hacia arriba) + la
+    // barra punteada + la manija "↕". Pointer Events
+    // (pointerdown/move/up) cubren mouse Y touch con el mismo código,
+    // sin ramas separadas para celular. La zona mide lo mismo que
+    // .em-plot, así que la respuesta (px / alto de la zona) usa la
+    // misma escala que la barra real.
     function setupDrag() {
       const valEl = mama.querySelector('.em-val');
-      const lblH = mama.querySelector('.em-lbl').offsetHeight;
       const zone = document.createElement('div');
       zone.className = 'em-guess-zone';
-      zone.style.bottom = lblH + 10 + 'px';
       zone.innerHTML = '<div class="em-guess-bar"><div class="em-handle">↕</div></div>';
-      mama.appendChild(zone);
+      mama.querySelector('.em-plot').appendChild(zone);
       const gb = zone.querySelector('.em-guess-bar');
 
+      // placeQ(px): ANTES de arrastrar, el "?" va ADENTRO de la barra
+      // punteada, centrado en el lugar que deja libre la manija, con un
+      // tamaño de letra calculado para que entre en la barra de ESTA
+      // pantalla (como mucho los 2.1rem de siempre, ~34px). Antes
+      // quedaba fijo al pie de la columna y, en pantallas bajas o con
+      // zoom, la manija caía justo encima y lo tapaba (en las compus de
+      // las chicas no se veía).
+      //   7 = cuánto se mete la manija DENTRO de la barra punteada
+      //       (top:-13px + height:20px en .em-handle, modulo1.css)
+      //   2 = el borde punteado de la barra (2px arriba y abajo)
+      function placeQ(px) {
+        const free = px - 7 - 2 * 2; // alto libre adentro de la barra, debajo de la manija
+        const fs = Math.max(10, Math.min(34, free * 0.8, (gb.clientWidth - 4) * 0.6));
+        valEl.style.fontSize = fs + 'px';
+        valEl.style.marginBottom = '0';
+        valEl.style.bottom = 2 + (free - fs) / 2 + 'px';
+      }
+      // placeVal(px): DESPUÉS de empezar a arrastrar, el número que se va
+      // adivinando flota ENCIMA de la manija "↕", siguiéndola (adentro
+      // de la barra no siempre entra: con una respuesta chica la barra
+      // punteada mide muy poco). 13 = cuánto sobresale la manija por
+      // arriba de la barra punteada. El tope (maxBottom) evita que,
+      // arrastrando hasta arriba de todo, el número se salga del
+      // gráfico y pise el prompt rosa.
+      function placeVal(px) {
+        valEl.style.fontSize = '';
+        valEl.style.marginBottom = '';
+        const padTop = parseFloat(getComputedStyle(chart).paddingTop) || 0;
+        const maxBottom = zone.clientHeight + padTop - valEl.offsetHeight - 6; // 6 = margin-bottom de .em-val
+        valEl.style.bottom = Math.max(0, Math.min(px + 13, maxBottom)) + 'px';
+      }
       // setFromPx(px): redondea a múltiplos de 50 (antes 100) -- con
       // 50 SÍ se puede caer justo en 20.750, el valor real de Mama
       // (pedido de Emi: "poder acertar exacto").
@@ -822,12 +869,31 @@
         tipoState.guess = Math.max(50, Math.round(((px / zone.clientHeight) * TIPO_MAX) / 50) * 50);
         valEl.classList.remove('em-val-q'); // ya hay un número real adivinado: el "?" grande deja de aplicar
         valEl.textContent = formatNumber(tipoState.guess);
+        placeVal(px);
       }
-      requestAnimationFrame(function () {
-        setFromPx(zone.clientHeight * 0.3);
-        valEl.classList.add('em-val-q'); // vuelve a mostrarse "?" (todavía no arrastró) -- re-agrega la clase que setFromPx sacó
+      // showQ(): estado inicial (todavía no arrastró). La barra punteada
+      // arranca en el 30% del gráfico, pero nunca menos de 50px (si no,
+      // en una pantalla baja el "?" quedaría diminuto) ni más del 80%.
+      function showQ() {
+        const h = zone.clientHeight;
+        const startPx = Math.min(h * 0.8, Math.max(h * 0.3, 50));
+        setFromPx(startPx);
+        valEl.classList.add('em-val-q'); // vuelve a mostrarse "?" -- re-agrega la clase que setFromPx sacó
         valEl.textContent = '?'; // el valor arranca oculto -- recién se ve al mover el dedo/mouse
-      });
+        placeQ(startPx);
+      }
+      requestAnimationFrame(showQ);
+      // Si cambia el alto del gráfico ANTES de arrastrar (zoom, ventana
+      // más chica/grande), se vuelve a acomodar la barra punteada y el
+      // "?" para el tamaño nuevo. Se desconecta apenas se empieza a
+      // arrastrar: desde ahí manda la posición elegida por el usuario.
+      let ro = null;
+      if (window.ResizeObserver) {
+        ro = new ResizeObserver(function () {
+          if (valEl.classList.contains('em-val-q')) showQ();
+        });
+        ro.observe(zone);
+      }
 
       // Solo la MANIJA ("↕", .em-handle) inicia el arrastre -- antes
       // escuchaba toda "zone" (la columna entera, de la etiqueta hacia
@@ -841,6 +907,7 @@
       let dragging = false;
       handle.addEventListener('pointerdown', function (e) {
         dragging = true;
+        if (ro) ro.disconnect();
         // setPointerCapture: asegura que sigamos recibiendo
         // pointermove/pointerup aunque el mouse/dedo se salga de la
         // manija en pleno arrastre rápido. try/catch porque algunos
@@ -925,7 +992,7 @@
           // texto puesto encima (el nombre vive aparte, en .em-lbl,
           // debajo) -- que apareciera de golpe dentro del clon quedaba
           // raro. Ahora el clon es solo el rectángulo de color viajando.
-          const segs = Array.prototype.slice.call(stackEl.querySelectorAll('div'));
+          const segs = Array.prototype.slice.call(stackEl.querySelectorAll('[data-i]'));
           const tgt = segs.map(function (seg) {
             return rel(seg, chart);
           });
@@ -966,7 +1033,7 @@
       } else {
         const x0 = mama.getBoundingClientRect().left;
         if (doAnimate && !reduceMotion) {
-          const segs = Array.prototype.slice.call(stackEl.querySelectorAll('div'));
+          const segs = Array.prototype.slice.call(stackEl.querySelectorAll('[data-i]'));
           const src = segs.map(function (seg) {
             return rel(seg, chart);
           });
@@ -1106,13 +1173,19 @@
     const cols = data.map(function (d, i) {
       const col = document.createElement('div');
       col.className = 'em-col em-col-age';
+      // Misma estructura que "Casos por tipo" (.em-plot + número adentro
+      // de la barra): así el % de cada barra es proporcional de verdad
+      // y 45-59 / 60-74 ya no quedan recortadas al mismo alto.
       col.innerHTML =
+        '<div class="em-plot">' +
+        '<div class="em-bar" style="height:' +
+        (d.valor / EDAD_MAX) * 100 +
+        '%">' +
         '<div class="em-val">' +
         formatNumber(d.valor) +
         '</div>' +
-        '<div class="em-bar" style="height:' +
-        (d.valor / EDAD_MAX) * 100 +
-        '%"></div>' +
+        '</div>' +
+        '</div>' +
         '<div class="em-lbl">' +
         d.categoria +
         '</div>';
@@ -1280,7 +1353,15 @@
     info.appendChild(headline);
     info.appendChild(hlText);
     info.appendChild(hlMeta);
-    body.appendChild(grid);
+    // .em-waffle-fit: la caja que le dice a la grilla cuánto lugar hay.
+    // En compu, la tarjeta mide siempre lo mismo (ver el final de
+    // modulo1.css) y esta caja se queda con el alto que sobra -- la
+    // grilla toma el lado más chico entre ese alto y el ancho, así
+    // siempre entra entera, cuadrada, sin barra de scroll.
+    const fit = document.createElement('div');
+    fit.className = 'em-waffle-fit';
+    fit.appendChild(grid);
+    body.appendChild(fit);
     body.appendChild(info);
     container.appendChild(body);
     // Pie de la tarjeta: igual que "Casos por tipo" y "Casos por edad",

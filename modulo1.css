@@ -207,6 +207,24 @@
   text-align:center;
   margin-bottom:12px; /* antes 10px, después 26px (daba barra de scroll) -- Emi pidió más separación entre la instrucción y la grilla, pero menos que esa primera vuelta */
 }
+/* Los 2 prompts centrados (tipo/edad y porcentaje) dejan de ser flex:
+   cuando el texto no entraba en 1 renglón (pantallas bajas o con
+   zoom), flexbox dejaba el punto solo contra el borde izquierdo y el
+   texto centrado en 2 líneas al lado, lejos del punto. Como bloque
+   de texto normal, el punto va "en línea" pegado a la primera palabra
+   y se centra junto con el texto, ocupe 1 o 2 renglones. */
+.em-prompt-tipo,
+.em-prompt-pct{
+  display:block;
+}
+.em-prompt-tipo .em-prompt-dot,
+.em-prompt-pct .em-prompt-dot{
+  display:inline-block;
+  vertical-align:middle;
+  margin-right:8px;
+  position:relative;
+  top:-1px;
+}
 /* .em-prompt-dot, NO ".dot" a secas: style.css ya tiene una clase
    ".dot" (los puntitos decorativos alrededor del título del
    capítulo) con sus propias reglas -- entre ellas, position:absolute
@@ -284,6 +302,8 @@
   padding-top:30px; /* aire arriba para que el número más alto no se pegue al borde */
   position:relative;
   touch-action:none; /* evita que el navegador interprete el arrastre como scroll en celular */
+  user-select:none; /* arrastrar la manija o tocar barras ya no deja texto seleccionado ("Mama" en azul) */
+  -webkit-user-select:none;
 }
 /* Antes "Casos por tipo" compensaba la diferencia de alto con
    "El tiempo" (módulo 2) con un margen vacío grande más abajo en la
@@ -370,7 +390,9 @@
    saca esta clase apenas hay un número real (arrastrando o ya
    revelado), así que nunca agranda un número de verdad, solo el "?". */
 .em-val-q{
-  font-size:clamp(1.6rem,4vw,2.1rem);
+  font-size:clamp(1.6rem,4vw,2.1rem); /* tamaño de respaldo: modulo1.js lo ajusta a la barra punteada de cada pantalla (ver placeQ) */
+  line-height:1; /* caja justa al signo, para poder centrarlo adentro de la barra punteada */
+  z-index:2;     /* por encima del fondo rosado de la barra punteada (.em-guess-zone), no detrás */
 }
 .em-lbl{
   margin-top:10px;
@@ -388,11 +410,42 @@
    su valor -- acá solo se anima el CAMBIO (el crecimiento al revelar
    la respuesta real, o al cambiar de rango de edad). */
 .em-bar{
+  position:relative; /* para ubicar el número (.em-val) encima de la punta, ver abajo */
   width:min(100%,96px);
   border-radius:7px 7px 3px 3px;
   background:rgba(255,182,206,0.4);
   cursor:pointer;
   transition:height .5s ease, background .25s ease;
+}
+
+/* .em-plot: el área de dibujo de cada columna (todo MENOS la
+   etiqueta). El height en % de cada barra (puesto por modulo1.js) se
+   mide contra esta caja. Antes se medía contra la columna entera, que
+   también tenía adentro el número y la etiqueta: las barras altas
+   pedían más lugar del que quedaba libre y flexbox las recortaba
+   todas al mismo alto (las 4 "cajas iguales" de "Casos por edad" en
+   la compu de Bren, o Mama más baja de lo que corresponde). */
+.em-plot{
+  flex:1 1 auto;
+  min-height:0;
+  width:100%;
+  position:relative; /* contexto de la zona de arrastre y de la línea "Tu respuesta" */
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+  align-items:center;
+}
+/* El número va ADENTRO de la barra (o de la pila), flotando justo
+   encima de su punta: no ocupa lugar en el área de dibujo y sube/baja
+   junto con la barra cuando crece. El margin-bottom de .em-val (6px)
+   es la separación con la punta. El aire de arriba para el número de
+   la barra más alta lo da el padding-top del gráfico. */
+.em-bar > .em-val,
+.em-stack > .em-val{
+  position:absolute;
+  bottom:100%;
+  left:50%;
+  transform:translateX(-50%);
 }
 .em-bar-mama,
 .em-bar-sel{
@@ -442,9 +495,7 @@
    generaba respuestas "sin querer". */
 .em-guess-zone{
   position:absolute;
-  left:0;
-  right:0;
-  top:0;
+  inset:0; /* ocupa toda la .em-plot de Mama: misma escala que la barra real */
   pointer-events:none;
 }
 /* La barra punteada que sigue al arrastre, con la manija "↕" arriba. */
@@ -496,13 +547,16 @@
 /* Línea punteada que marca dónde quedó la respuesta adivinada, una
    vez revelada la real -- queda puesta ahí de forma permanente (hasta
    "Volver a adivinar"), para poder comparar a simple vista. */
+/* left:0/right:0: el ancho de la columna de Mama nomás -- antes medía
+   130% y se salía por la izquierda del gráfico, hasta el borde de la
+   tarjeta. modulo1.js le pone "bottom" en % de .em-plot. */
 .em-guess-line{
   position:absolute;
-  left:50%;
-  transform:translateX(-50%);
-  width:min(130%,130px);
+  left:0;
+  right:0;
   border-top:2px dashed var(--text);
   pointer-events:none;
+  z-index:1;
 }
 .em-guess-line span{
   position:absolute;
@@ -514,19 +568,30 @@
   background:var(--panel);
   padding:0 4px;
 }
+/* Respuesta cerca del valor real: la línea pasa por donde está el
+   número, así que el texto va abajo de la línea para no taparlo. */
+.em-guess-line-below span{
+  top:4px;
+}
 
 /* ---- "Casos por tipo": la pila "Los otros 4 juntos" ---- */
 /* Cada segmento de la pila mide "flex:<valor>" (puesto inline por
    modulo1.js) -- así el alto de cada franja es proporcional a su
    propio valor, sin tener que calcular porcentajes a mano. */
+/* Sin overflow:hidden (antes recortaba las esquinas redondeadas): el
+   número del total ahora vive adentro de la pila, flotando encima, y
+   se cortaría. Las esquinas las redondean el primer y el último
+   segmento por su cuenta. Los segmentos se eligen por [data-i] para
+   no confundirlos con ese número. */
 .em-stack{
+  position:relative;
   width:min(100%,96px);
   display:flex;
   flex-direction:column;
-  border-radius:7px 7px 3px 3px;
-  overflow:hidden;
 }
-.em-stack > div{
+.em-stack > [data-i="1"]{ border-radius:7px 7px 0 0; }
+.em-stack > [data-i="4"]{ border-radius:0 0 3px 3px; }
+.em-stack > [data-i]{
   background:rgba(255,182,206,0.4);
   border-top:2px solid var(--panel);
   display:flex;
@@ -541,7 +606,7 @@
   padding:0 3px;
   cursor:pointer;
 }
-.em-stack > div:first-child{ border-top:0; }
+.em-stack > [data-i="1"]{ border-top:0; }
 
 /* El clon "volador" durante la fusión/separación: una copia temporal
    que modulo1.js anima de una posición a otra con el.animate() y
@@ -908,6 +973,13 @@
   max-width:292px; /* antes 290px, después 320px (daba barra de scroll) -- Emi pidió la grilla apenas más grande, pero menos que esa primera vuelta */
   margin:0 auto;
 }
+/* La caja que envuelve a la grilla (ver modulo1.js). En celular no
+   hace nada (la grilla usa su ancho/max-width de siempre); en compu
+   pasa a decidir el tamaño de la grilla -- ver "TARJETA DE ALTO
+   FIJO", al final de este archivo. */
+.em-waffle-fit{
+  width:100%;
+}
 /* El texto informativo, ahora abajo de la grilla (ver .em-waffle-body
    más arriba): centrado, para que quede alineado con la grilla
    centrada de arriba en vez de pegado contra el borde izquierdo de la
@@ -1091,4 +1163,110 @@
 @media (max-height:660px){
   .em-chart-tipo{height:min(186px,31vh);} /* bajado de 193px/32vh: el .chapter-header ahora deja más aire antes del título (ver style.css), así que el gráfico tiene que ceder esos px */
   .em-chart-edad{height:min(136px,23vh);} /* mismo motivo */
+}
+
+/* ============ TARJETA DE ALTO FIJO (solo compu, más de 900px de ancho) ============
+   Antes la tarjeta medía lo que medía su contenido: cada pestaña
+   quedaba de un alto distinto ("Por edad" la más baja) y, para que
+   no apareciera la barra de scroll en pantallas bajas, los gráficos
+   tenían altos fijos en px que los 2 escalones de arriba (760px y
+   660px) achicaban a mano. En la compu de Bren (601px de alto útil,
+   o cualquier notebook con zoom/escalado de Windows) eso dejaba
+   "Casos por edad" en apenas 136px, con barras recortadas, y la
+   tarjeta terminando bastante antes que la vela de al lado.
+
+   Ahora el capítulo mide EXACTAMENTE lo mismo que la vela
+   (.chapter-media en style.css usa la misma cuenta: alto de la
+   ventana - 44px, entre 300px y 760px) y todo hacia adentro es
+   flex-column: título y pestañas miden lo suyo, y el gráfico activo
+   se queda con TODO el alto que sobra (flex:1). Resultado:
+     - las 3 pestañas miden lo mismo y la tarjeta termina justo al
+       pie de la vela, en cualquier alto de pantalla;
+     - el gráfico crece o se achica solo según el lugar disponible,
+       sin números medidos a mano por escalón;
+     - nunca hay barra de scroll (el capítulo no puede medir más que
+       la ventana).
+   El piso de 480px (y el min-height:min-content) es para ventanas
+   absurdamente bajas: ahí sí aparece scroll, pero el contenido no se
+   aplasta ni se corta.
+
+   En celular/tablet (900px o menos) no se toca nada: el layout pasa
+   a 1 columna con scroll normal y los gráficos vuelven a sus altos
+   en px de siempre. */
+@media (min-width:901px){
+  #chapter-1.active{
+    display:flex;
+    flex-direction:column;
+    height:calc(100vh - 44px); /* respaldo para navegadores sin dvh */
+    height:clamp(480px, calc(100dvh - 44px), 760px);
+    /* Red de seguridad: si en una ventana MUY baja y angosta a la vez
+       el contenido no entra ni con los gráficos en su mínimo, el
+       capítulo crece (y aparece scroll) en vez de recortar el pie de
+       la tarjeta -- .chapter tiene overflow:hidden (style.css). */
+    min-height:min-content;
+  }
+  /* Sin min-height:0 a propósito en estos contenedores: así no pueden
+     achicarse por debajo de su contenido (con los gráficos en su
+     mínimo), y el min-content del capítulo, arriba, los cuenta bien. */
+  .em-wrap{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+  }
+  .em-card{
+    flex:1;
+    height:auto; /* pisa el height:100% de .ui-panel: con él, la tarjeta podía achicarse por debajo de su contenido */
+    margin-bottom:0; /* el pie de la tarjeta coincide justo con el de la vela */
+  }
+  .em-panel{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+  }
+  /* El gráfico de barras se queda con el alto que sobra (pisa los
+     280px/250px y los min(...) de los escalones de arriba). */
+  .em-chart-tipo,
+  .em-chart-edad{
+    flex:1 1 0;
+    height:auto;
+    min-height:100px;
+  }
+  /* Waffle: el cuerpo (grilla + texto) se queda con el alto que
+     sobra, y dentro de él .em-waffle-fit con lo que deja el texto. La
+     grilla mide el 100% del alto de esa caja y aspect-ratio:1 le da
+     el mismo ancho, así es siempre cuadrada y nunca más alta que el
+     lugar que tiene (techo de 300px, piso de 120px).
+     Antes esto se hacía con unidades de contenedor (cqw/cqh): en
+     Chrome andaba, pero en otro navegador la grilla no se achicaba y
+     se desbordaba hacia arriba, tapando el prompt rosa. height:100% +
+     aspect-ratio es más viejo y se comporta igual en todos lados.
+     Si ni con la grilla en su piso entra todo, la tarjeta crece (ver
+     min-height:min-content de #chapter-1, arriba) en vez de
+     superponer cosas. */
+  .em-waffle-body{
+    flex:1;
+  }
+  .em-waffle-fit{
+    flex:1;
+    min-height:120px;
+    display:flex;
+    align-items:center; /* si la grilla topa con sus 300px, queda centrada en el lugar que sobra */
+    justify-content:center;
+  }
+  .em-waffle-grid{
+    height:100%;
+    width:auto;
+    max-height:300px;
+    max-width:100%;
+    margin:0;
+  }
+  /* En compu el bloque de texto mide siempre 360px de ancho, y los
+     textos más largos ("corresponden a otros tipos de cáncer" y
+     "28.483 casos de un total de 69.449 (41,0%)") miden ~330px:
+     entran en 1 renglón. Reservar 2 renglones (2.6em, pensado para
+     celular) le sacaba ~45px a la grilla en pantallas bajas. */
+  .em-waffle-hltext,
+  .em-waffle-hlmeta{
+    min-height:1.25em;
+  }
 }
