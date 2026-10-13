@@ -13588,10 +13588,43 @@
         },
       };
 
+      // Línea de tendencia lineal 2005-2024: punteada y muy tenue, detrás de los puntos.
+      const tendenciaPlugin = {
+        id: 'tendencia',
+        beforeDatasetsDraw(chart) {
+          const n = YEAR_DATA.length;
+          const mx = YEAR_DATA.reduce((s, d) => s + d.year, 0) / n;
+          const my = YEAR_DATA.reduce((s, d) => s + d.tasa, 0) / n;
+          let num = 0,
+            den = 0;
+          YEAR_DATA.forEach((d) => {
+            num += (d.year - mx) * (d.tasa - my);
+            den += (d.year - mx) ** 2;
+          });
+          const b = num / den; // pendiente (tasa por año)
+          const a = my - b * mx;
+          const x0 = YEAR_DATA[0].year;
+          const x1 = YEAR_DATA[n - 1].year;
+          const { x, y } = chart.scales;
+          const c = chart.ctx;
+          c.save();
+          c.setLineDash([2, 5]);
+          c.lineCap = 'round';
+          c.strokeStyle = 'rgba(247,168,196,0.45)';
+          c.lineWidth = 1.5;
+          c.beginPath();
+          c.moveTo(x.getPixelForValue(x0), y.getPixelForValue(a + b * x0));
+          c.lineTo(x.getPixelForValue(x1), y.getPixelForValue(a + b * x1));
+          c.stroke();
+          c.restore();
+        },
+      };
+
       scatterChart = new Chart(ctx, {
         type: 'scatter',
         plugins: [
           lineaVerticalPlugin,
+          tendenciaPlugin,
           {
             id: 'brAxisX',
             afterLayout(chart) {
@@ -13628,12 +13661,24 @@
           plugins: {
             legend: { display: false },
             tooltip: {
+              footerFont: { weight: 'normal' },
+              footerColor: '#f7a8c4',
               callbacks: {
                 title: (items) => items[0].parsed.x,
                 label: (c) =>
                   ' ' +
                   c.parsed.y.toLocaleString('es-AR', { minimumFractionDigits: 2 }) +
                   ' por 100.000',
+                footer: (items) => {
+                  const base = YEAR_DATA[0];
+                  if (items[0].parsed.x === base.year) return 'Año de referencia';
+                  const pct = ((items[0].parsed.y - base.tasa) / base.tasa) * 100;
+                  return (
+                    (pct < 0 ? '▼ ' : '▲ ') +
+                    Math.abs(pct).toLocaleString('es-AR', { maximumFractionDigits: 1 }) +
+                    '% respecto de 2005'
+                  );
+                },
               },
             },
           },
