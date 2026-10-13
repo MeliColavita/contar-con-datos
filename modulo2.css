@@ -102,7 +102,7 @@
 .br-title {
   font-family: var(--br-serif);
   font-weight: 500;
-  font-size: 2.0625rem; /* 2rem +1px (33px) */
+  font-size: 2rem;
   margin: 0 0 6px;
   color: var(--br-text);
 }
@@ -111,7 +111,7 @@
    más corto -- así la tarjeta no "salta" de tamaño al pasar de una
    pestaña a otra si una bajada es más larga que la otra. */
 .br-subhead {
-  font-size: 0.9625rem; /* 0.9rem +1px (14.4px) */
+  font-size: 0.9rem;
   color: var(--br-text-dim);
   margin: 0 0 32px;
   max-width: 640px;
@@ -170,27 +170,19 @@
 .br-overlay-year {
   font-family: var(--br-serif);
   font-weight: 600;
-  font-size: clamp(1.0625rem, 15cqw, 2.8625rem); /* clamp(1rem,15cqw,2.8rem) +1px en cada extremo */
+  font-size: clamp(1rem, 15cqw, 2.8rem);
   color: #160f1b; /* bordó bien oscuro: contraste sobre el rosa fuerte del mapa debajo */
   text-shadow: 0 0 20px rgba(255, 255, 255, 0.55); /* resplandor blanco para que no se pierda contra el rosa */
 }
 .br-overlay-pct {
   font-family: var(--br-serif);
   font-weight: 600;
-  font-size: clamp(
-    0.8125rem,
-    10cqw,
-    2.0625rem
-  ); /* clamp(0.75rem,10cqw,2rem) +1px en cada extremo */
+  font-size: clamp(0.75rem, 10cqw, 2rem);
   color: #7a2c46;
   margin-top: 4px;
 }
 .br-overlay-label {
-  font-size: clamp(
-    0.5625rem,
-    4.5cqw,
-    0.8125rem
-  ); /* clamp(0.5rem,4.5cqw,0.75rem) +1px en cada extremo */
+  font-size: clamp(0.5rem, 4.5cqw, 0.75rem);
   color: #3a1c28;
   opacity: 0.75;
   margin-top: 6px;
@@ -463,7 +455,7 @@
   text-align: center;
   flex: none;
   height: var(--br-legend-h, 34px);
-  font-size: 0.7825rem; /* 0.72rem +1px (12.52px) */
+  font-size: 0.72rem;
   line-height: 1.3;
   color: var(--br-text-dim);
 }
@@ -496,12 +488,12 @@
 }
 .br-tooltip .br-t-name {
   font-family: var(--br-serif);
-  font-size: 1.0625rem; /* 1rem +1px (17px) */
+  font-size: 1rem;
   color: var(--br-rose);
   margin: 0 0 3px;
 }
 .br-tooltip .br-t-pct {
-  font-size: 0.8625rem; /* 0.8rem +1px (13.8px) */
+  font-size: 0.8rem;
   color: var(--br-text-dim);
   margin: 0;
 }
@@ -524,12 +516,12 @@
 .br-panel h2 {
   font-family: var(--br-serif);
   font-weight: 500;
-  font-size: 1.4125rem; /* 1.35rem +1px (22.6px) */
+  font-size: 1.35rem;
   margin: 0 0 4px;
   color: var(--br-text);
 }
 .br-panel .br-sub {
-  font-size: 0.9125rem; /* 0.85rem +1px (14.6px) */
+  font-size: 0.85rem;
   color: var(--br-text-dim);
   margin: 0 0 22px;
 }
@@ -582,7 +574,7 @@
 .br-axis-note {
   margin: 0;
   text-align: left;
-  font-size: 0.8125rem; /* 0.75rem +1px (13px) */
+  font-size: 0.75rem;
   font-style: italic;
   line-height: 1.2;
   color: var(--br-text-dim);
@@ -596,14 +588,14 @@
 .br-day-num {
   font-family: var(--br-serif);
   font-weight: 500;
-  font-size: 2.6625rem; /* 2.6rem +1px (42.6px) */
+  font-size: 2.6rem;
   line-height: 1;
   color: var(--br-rose);
   text-shadow: 0 0 18px var(--br-rose-glow);
 }
 .br-day-lbl {
   margin-top: 4px;
-  font-size: 0.9625rem; /* 0.9rem +1px (14.4px) */
+  font-size: 0.9rem;
   color: var(--br-text);
 }
 
@@ -611,7 +603,7 @@
 .br-stat-line {
   margin: 8px 0 0;
   text-align: center;
-  font-size: 0.8625rem; /* 0.8rem +1px (13.8px) */
+  font-size: 0.8rem;
   line-height: 1.3;
   color: var(--br-text-dim);
   white-space: nowrap; /* fuerza una sola línea */
@@ -673,7 +665,7 @@
   border: 1px solid var(--br-panel-border);
   color: var(--br-text-dim);
   font-family: var(--br-sans);
-  font-size: 0.9125rem; /* 0.85rem +1px (14.6px) */
+  font-size: 0.85rem;
   font-weight: 500;
   padding: 10px 22px;
   border-radius: 999px;
@@ -753,7 +745,7 @@
    también, el mapa puede quedarse con un poco más de margen todavía. */
 @media (max-height: 760px) {
   .br-title {
-    font-size: 1.5625rem; /* 1.5rem +1px (25px) */
+    font-size: 1.5rem;
     margin-bottom: 4px;
   }
   .br-subhead {
@@ -792,7 +784,7 @@
 .br-src-sub {
   margin: 0;
   max-width: 560px;
-  font-size: 0.8425rem; /* 0.78rem +1px (12.48px) */
+  font-size: 0.78rem;
   line-height: 1.4;
   color: var(--br-text-dim);
 }
@@ -800,7 +792,7 @@
 .br-chart-pct {
   margin: 8px 0 0;
   text-align: center;
-  font-size: 0.9125rem; /* 0.9rem +1px (14.6px) */ /* mismo tamaño que .br-day-lbl */
+  font-size: 0.85rem;
   line-height: 1.3;
   color: var(--br-text-dim); /* el texto conserva su color actual */
 }
@@ -848,7 +840,7 @@
 .br-stat-num {
   font-family: var(--br-serif);
   font-weight: 500;
-  font-size: 1.4625rem; /* 1.4rem +1px (23.4px) */
+  font-size: 1.4rem;
   line-height: 1.1;
   color: var(--br-rose);
   text-shadow: 0 0 14px var(--br-rose-glow);
@@ -857,7 +849,7 @@
 
 .br-stat-lbl {
   margin-top: 0; /* antes 2px: ya no va debajo del número */
-  font-size: 0.8425rem; /* 0.78rem +1px (12.48px) */
+  font-size: 0.78rem;
   line-height: 1.25;
   color: var(--br-text-dim);
 }
@@ -869,7 +861,7 @@
 }
 .br-day-sub {
   margin-top: 4px;
-  font-size: 0.7825rem; /* 0.72rem +1px (12.52px) */
+  font-size: 0.72rem;
   font-style: italic;
   color: var(--br-text-dim);
 }

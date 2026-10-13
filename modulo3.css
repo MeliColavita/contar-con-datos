@@ -49,7 +49,7 @@
   gap: 8px;
   color: var(--rose-strong);
   font-weight: 600;
-  font-size: 1.1125rem; /* 1.05rem +1px (17.8px) */
+  font-size: 1.05rem;
   margin-bottom: 16px;
 }
 .me-prompt[hidden] {
@@ -89,7 +89,7 @@
    acá en vez de compartirla, mismo criterio que .me-prompt arriba. */
 .me-btn {
   font-family: var(--sans);
-  font-size: 0.9125rem; /* 0.85rem +1px (14.6px) */
+  font-size: 0.85rem;
   font-weight: 600;
   background: transparent;
   color: var(--text);
@@ -156,7 +156,7 @@
    casi ilegible -- .me-answer es texto normal en negrita, no "número
    grande", así que envuelve bien en cualquier ancho. */
 .me-answer {
-  font-size: 0.9125rem; /* 0.85rem +1px (14.6px) */
+  font-size: 0.85rem;
   font-weight: 600;
   line-height: 1.3;
   margin: 2px 0 0;
@@ -365,13 +365,13 @@
   align-self: center;
   margin-top: auto;
   font-family: var(--sans);
-  font-size: 1.0125rem; /* 0.95rem +1px (15.2px) */
+  font-size: 0.8rem;
   font-weight: 600;
   background: var(--rose-strong);
   color: #1a0510;
   border: 1px solid var(--rose-strong);
   border-radius: 999px;
-  padding: 10px 32px;
+  padding: 6px 20px;
   cursor: pointer;
   box-shadow: 0 6px 18px rgba(255, 111, 156, 0.35);
   transition: filter 0.2s;
@@ -398,7 +398,7 @@
 }
 .me-search-label {
   display: block;
-  font-size: 0.9125rem; /* 0.85rem +1px (14.6px) */
+  font-size: 0.85rem;
   color: var(--text-dim);
   margin-bottom: 5px;
 }
@@ -408,7 +408,7 @@
 .me-search-input {
   width: 100%;
   font: inherit;
-  font-size: 1.0625rem; /* 1rem +1px (17px) */
+  font-size: 1rem;
   color: var(--text);
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--panel-border);
@@ -437,7 +437,7 @@
   border-radius: 50%;
   background: transparent;
   color: var(--text-dim);
-  font-size: 1.1625rem; /* 1.1rem +1px (18.6px) */
+  font-size: 1.1rem;
   line-height: 1;
   cursor: pointer;
 }
@@ -477,11 +477,11 @@
   padding: 8px 12px;
   border-radius: 10px;
   cursor: pointer;
-  font-size: 1.0125rem; /* 0.95rem +1px (15.2px) */
+  font-size: 0.95rem;
 }
 .me-suggest li small {
   color: var(--text-dim);
-  font-size: 0.8425rem; /* 0.78rem +1px (12.48px) */
+  font-size: 0.78rem;
   white-space: nowrap;
 }
 .me-suggest li strong {
@@ -533,7 +533,7 @@
   background: var(--panel);
   border: 1px solid var(--panel-border);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
-  font-size: 0.8125rem; /* 0.75rem +1px (13px) */
+  font-size: 0.75rem;
   line-height: 1.25;
   text-align: center;
   pointer-events: none;
@@ -553,7 +553,7 @@
 /* la pista usa .me-prompt (ya definida arriba); acá solo se ajusta */
 .me-side .me-prompt {
   margin-bottom: 0;
-  font-size: 1.0125rem; /* 0.95rem +1px (15.2px) */
+  font-size: 0.95rem;
 }
 
 .me-result {
@@ -568,12 +568,12 @@
 .me-result-title {
   font-family: var(--serif);
   font-weight: 500;
-  font-size: 1.1125rem; /* 1.05rem +1px (17.8px) */
+  font-size: 1.05rem;
   margin: 0 0 8px;
 }
 .me-result-title span {
   color: var(--text-dim);
-  font-size: 0.9125rem; /* 0.85rem +1px (14.6px) */
+  font-size: 0.85rem;
 }
 .me-result-list {
   position: relative;
@@ -607,11 +607,11 @@
   align-items: center;
   gap: 7px;
   font-weight: 600;
-  font-size: 0.9425rem; /* 0.88rem +1px (15.08px) */
+  font-size: 0.88rem;
 }
 .me-result-item span {
   display: block;
-  font-size: 0.8425rem; /* 0.78rem +1px (12.48px) */
+  font-size: 0.78rem;
   color: var(--text-dim);
   margin-top: 2px;
 }
@@ -660,7 +660,7 @@
 
 .me-sin-texto {
   margin: 0 0 4px;
-  font-size: 0.9625rem; /* 0.9rem +1px (14.4px) */
+  font-size: 0.9rem;
   line-height: 1.4;
   color: var(--text);
 }
@@ -675,7 +675,7 @@
   max-width: 100%;
   margin: 8px 0 0;
   padding: 7px 14px;
-  font-size: 0.8825rem; /* 0.82rem +1px (14.12px) */
+  font-size: 0.82rem;
 }
 .me-sin-nota {
   margin-top: 10px;
@@ -709,7 +709,7 @@
   }
   .me-search-label {
     margin-bottom: 3px;
-    font-size: 0.8625rem; /* 0.8rem +1px (13.8px) */
+    font-size: 0.8rem;
   }
   .me-search-input {
     padding-top: 6px;
@@ -785,4 +785,186 @@
 }
 .me-body:has(#me-result:not([hidden]) .me-result-list) .me-fuente {
   visibility: visible;
+}
+/* ===== Cierre: botón Final ===== */
+.me-card {
+  position: relative;
+}
+.me-card > .ui-card-title,
+.me-card > .ui-sub,
+.me-card > .me-prompt-donde,
+.me-card > .me-body,
+.me-card > .ui-src {
+  transition:
+    opacity 0.7s ease,
+    transform 0.7s ease,
+    filter 0.7s ease;
+}
+.me-card > .me-final {
+  transition:
+    opacity 0.7s ease,
+    transform 0.7s ease,
+    filter 0.2s;
+}
+.me-card.me-cierre-on > .ui-card-title,
+.me-card.me-cierre-on > .ui-sub,
+.me-card.me-cierre-on > .me-prompt-donde,
+.me-card.me-cierre-on > .me-body,
+.me-card.me-cierre-on > .ui-src {
+  opacity: 0;
+  transform: translateY(-10px);
+  filter: blur(4px);
+  pointer-events: none;
+}
+.me-card.me-cierre-on > .me-final {
+  opacity: 0;
+  transform: translateY(-10px);
+  pointer-events: none;
+}
+.me-cierre {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* 76px abajo: zona reservada para el botón "Volver a comenzar", así la
+     frase (centrada en el resto) nunca queda tapada por él */
+  padding: 28px 36px 76px;
+  text-align: center;
+  pointer-events: none;
+}
+.me-cierre[hidden] {
+  display: none;
+}
+.me-cierre {
+  container-type: inline-size; /* para que la frase rosa se ajuste al ancho de la tarjeta */
+}
+.me-cierre-frase {
+  --d: 0.8s; /* arranca cuando la tarjeta ya se desvaneció */
+  position: relative; /* para los puntitos (.title-dots) */
+  margin: 0;
+  max-width: 26em;
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: clamp(1rem, 4.6cqw, 2rem);
+  line-height: 1.35;
+  color: var(--text);
+  opacity: 0;
+}
+/* Misma animación que el título de la intro (introIn en style.css): sube
+   14px mientras aparece, y los puntitos rosa hacen pop alrededor. */
+.me-cierre.on .me-cierre-frase {
+  animation: introIn 0.5s ease forwards;
+  animation-delay: var(--d);
+}
+.me-cierre-acento {
+  display: block;
+  white-space: nowrap; /* la frase rosa va entera en una sola línea */
+  color: var(--rose-strong);
+  text-shadow: 0 0 22px rgba(255, 111, 156, 0.45);
+}
+.me-card .me-cierre.on .dot {
+  animation: dotPop 1.1s ease forwards;
+}
+.me-card .me-cierre.on .dot:nth-child(1) {
+  animation-delay: calc(var(--d) + 0s);
+}
+.me-card .me-cierre.on .dot:nth-child(2) {
+  animation-delay: calc(var(--d) + 0.08s);
+}
+.me-card .me-cierre.on .dot:nth-child(3) {
+  animation-delay: calc(var(--d) + 0.16s);
+}
+.me-card .me-cierre.on .dot:nth-child(4) {
+  animation-delay: calc(var(--d) + 0.24s);
+}
+.me-card .me-cierre.on .dot:nth-child(5) {
+  animation-delay: calc(var(--d) + 0.32s);
+}
+.me-card .me-cierre.on .dot:nth-child(6) {
+  animation-delay: calc(var(--d) + 0.4s);
+}
+/* ===== Pantalla final: se va el título del capítulo + botón discreto =====
+   Con la frase en pantalla (.me-cierre-on, la pone modulo3.js en el capítulo)
+   se desvanece "Capítulo 3 / El futuro". El botón "Volver a comenzar"
+   aparece abajo, tenue, a los 4 s; al tocarlo, un velo oscuro (.me-velo) tapa
+   todo antes de volver al inicio. */
+.chapter.me-cierre-on .chapter-header {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.7s ease;
+}
+.me-reinicio {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0; /* franja al pie de la tarjeta: no se superpone con la frase */
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  padding: 0 0 22px;
+  opacity: 0;
+  transition: opacity 1.6s ease;
+  pointer-events: none; /* solo el botón recibe clics */
+}
+.me-reinicio[hidden] {
+  display: none;
+}
+.me-reinicio.on {
+  opacity: 1;
+}
+.me-reinicio .me-btn {
+  pointer-events: auto;
+  width: auto;
+  margin: 0;
+  padding: 6px 18px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-dim);
+  border-color: rgba(255, 182, 206, 0.3);
+  background: transparent;
+}
+.me-reinicio .me-btn:hover,
+.me-reinicio .me-btn:focus-visible {
+  color: var(--text);
+  border-color: var(--rose-strong);
+  background: rgba(255, 111, 156, 0.12);
+}
+.me-velo {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: var(--bg);
+  opacity: 0;
+  transition: opacity 1.1s ease;
+}
+.me-velo.on {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .me-card > .ui-card-title,
+  .me-card > .ui-sub,
+  .me-card > .me-prompt-donde,
+  .me-card > .me-body,
+  .me-card > .ui-src,
+  .me-card > .me-final {
+    transition: none;
+  }
+  .me-cierre-frase,
+  .me-cierre.on .me-cierre-frase {
+    opacity: 1;
+    animation: none;
+  }
+  .me-card .me-cierre.on .dot {
+    animation: none;
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chapter.me-cierre-on .chapter-header,
+  .me-reinicio,
+  .me-velo {
+    transition: none;
+  }
 }
