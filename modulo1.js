@@ -1253,7 +1253,7 @@
     const prompt = document.createElement('div');
     prompt.className = 'em-prompt em-prompt-pct';
     prompt.innerHTML =
-      '<span class="em-prompt-dot" aria-hidden="true"></span>“Pasá el cursor o tocá un cuadrado: cada uno es 1 de cada 100 casos.”.';
+      '<span class="em-prompt-dot" aria-hidden="true"></span>Pasá el cursor o tocá un cuadrado: cada uno es 1 de cada 100 casos.';
     container.appendChild(prompt);
 
     const body = document.createElement('div');
