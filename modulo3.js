@@ -911,7 +911,10 @@
   }
 
   function dibujar(t) {
-    ctx.clearRect(0, 0, W, H);
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
     for (let i = 0; i < parts.length; i++) {
       const p = parts[i];
       if (p.a < 0.02 || p.r < 0.2) continue;
