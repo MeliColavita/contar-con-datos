@@ -13115,13 +13115,24 @@
     //   esté pegado al borde.
     function positionTooltip(e) {
       const rect = mapCard.getBoundingClientRect();
+      const widget = mapCard.closest('.br-widget'); // la tarjeta principal (la que recorta con overflow:hidden)
+      const wRect = widget.getBoundingClientRect();
       const scale = rect.width / mapCard.offsetWidth || 1;
       const half = (tooltip.offsetWidth || 180) / 2;
+      const tipH = tooltip.offsetHeight || 60;
       const margin = 6;
 
+      // Horizontal: se limita a los bordes de la tarjeta principal, no solo a los del mapa.
       let x = (e.clientX - rect.left) / scale;
+      const minX = (wRect.left - rect.left) / scale + half + margin;
+      const maxX = (wRect.right - rect.left) / scale - half - margin;
+      x = Math.max(minX, Math.min(maxX, x));
+
+      // Vertical: por defecto va arriba del cursor (translateY -115%).
+      // Si arriba no entra, pasa a ir abajo del cursor.
       const y = (e.clientY - rect.top) / scale;
-      x = Math.max(half + margin, Math.min(mapCard.offsetWidth - half - margin, x));
+      const noEntraArriba = e.clientY - tipH * 1.15 < wRect.top + margin;
+      tooltip.style.transform = noEntraArriba ? 'translate(-50%, 22px)' : 'translate(-50%, -115%)';
 
       tooltip.style.left = x + 'px';
       tooltip.style.top = y + 'px';
@@ -13296,6 +13307,10 @@
     const panelProvincia = document.getElementById('brPanelProvincia');
     const panelAnio = document.getElementById('brPanelAnio');
 
+    const brTitle = document.getElementById('brTitle');
+    const TITLE_ANIO = '¿Está bajando la mortalidad por cáncer de mama?';
+    const TITLE_PROV = '¿Qué lugar ocupa el cáncer de mama en cada provincia?';
+
     // Fuente: un solo botón, el texto cambia según la pestaña.
     const srcBox = document.getElementById('brSrc');
     const srcText = document.getElementById('brSrcText');
@@ -13415,6 +13430,7 @@
         promptProvEl.classList.remove('br-hidden'); // <-- NUEVA: la muestra
       }
       srcSub.textContent = SUB_PROV;
+      if (brTitle) brTitle.textContent = TITLE_PROV;
       setFuente(SRC_PROV);
     });
     tabAnio.addEventListener('click', () => {
@@ -13434,6 +13450,7 @@
       const promptAnioEl = document.getElementById('brAnioPrompt');
       if (promptAnioEl) promptAnioEl.classList.remove('br-prompt-gone');
       srcSub.textContent = SUB_ANIO;
+      if (brTitle) brTitle.textContent = TITLE_ANIO;
       setFuente(SRC_ANIO);
     });
 
@@ -13573,7 +13590,18 @@
 
       scatterChart = new Chart(ctx, {
         type: 'scatter',
-        plugins: [lineaVerticalPlugin],
+        plugins: [
+          lineaVerticalPlugin,
+          {
+            id: 'brAxisX',
+            afterLayout(chart) {
+              const stats = document.querySelector('.br-stats');
+              if (stats) {
+                stats.style.setProperty('--br-axis-x', chart.scales.y.left + 'px');
+              }
+            },
+          },
+        ],
         data: {
           datasets: [
             {
@@ -13640,17 +13668,6 @@
             else ocultarNotaAnio(); // NUEVO: el cursor ya no está sobre un año
           },
         },
-        plugins: [
-          {
-            id: 'brAxisX',
-            afterLayout(chart) {
-              const stats = document.querySelector('.br-stats');
-              if (stats) {
-                stats.style.setProperty('--br-axis-x', chart.scales.y.left + 'px');
-              }
-            },
-          },
-        ],
       });
 
       // Hover sobre las etiquetas de año del eje X: Chart.js detecta
