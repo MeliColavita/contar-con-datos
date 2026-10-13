@@ -441,7 +441,7 @@ body {
 #intro .skip-btn {
   position: absolute;
   right: 3vw;
-  bottom: 3vh;
+  top: 3vh;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.25);
   color: var(--text);
