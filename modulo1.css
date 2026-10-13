@@ -69,7 +69,7 @@
   flex-wrap:nowrap;     /* SIEMPRE en un solo renglón, nunca se pasan a una 2da fila */
   align-items:stretch;  /* los 3 botones quedan de la misma altura entre sí */
   gap:6px;
-  margin-bottom:14px;
+  margin-bottom:var(--ui-gap-titulo); /* antes 14px: mismo espacio que título → pestañas (variable compartida, ver style.css) */
 }
 /* Cada botón de pestaña individual.
      flex:0 1 auto      -> ocupa SOLO el ancho que su propio texto
@@ -797,6 +797,14 @@
   padding-top:10px;
   border-top:1px solid var(--panel-border);
 }
+/* Solo "Casos por edad" (.em-inline-stats no se usa en otra pestaña):
+   la oración gris debajo de los números rosas ("casos ocurren
+   entre...", "diagnósticos por día...") +1px, pedido de Emi. Los
+   datos de "Casos por tipo" tienen su propio tamaño, más abajo
+   (.em-tipo-result-stats .em-stat-label). */
+.em-inline-stats .em-stat-label{
+  font-size:calc(0.8rem + 1px); /* antes 0.8rem (el tamaño base de .em-stat-label) */
+}
 /* ============================================================
    "Casos por tipo": prompt/resultado y pie (reemplazan a
    .em-inline-stats para esta pestaña -- "Casos por edad" sigue
@@ -893,7 +901,7 @@
    Emi. Clase propia (no toca la .ui-sub compartida): "Casos por edad"
    y "Porcentaje" se quedan con el tamaño de siempre. */
 .em-foot-sub-lg{
-  font-size:0.9rem;
+  font-size:var(--ui-fs-pie); /* antes 0.9rem fijo -- ahora las 3 pestañas usan este mismo valor (ver .em-foot .ui-sub, más abajo) */
 }
 
 /* .em-foot: la bajada que antes iba arriba de todo ("Casos nuevos
@@ -915,6 +923,11 @@
 }
 .em-foot .ui-sub{
   margin:0;
+  /* Mismo tamaño en las 3 pestañas (antes "Por edad" y "% del total"
+     quedaban en 0.84rem, más chicas que "Por tipo") -- el valor sale
+     de la variable compartida de style.css ("MEDIDAS COMPARTIDAS"),
+     la misma que usa el pie del módulo 2. */
+  font-size:var(--ui-fs-pie);
 }
 .em-foot .ui-src{
   margin-top:0;
@@ -1235,7 +1248,11 @@
      sobra, y dentro de él .em-waffle-fit con lo que deja el texto. La
      grilla mide el 100% del alto de esa caja y aspect-ratio:1 le da
      el mismo ancho, así es siempre cuadrada y nunca más alta que el
-     lugar que tiene (techo de 300px, piso de 120px).
+     lugar que tiene (piso de 120px). Sin techo: antes topaba en
+     300px y quedaba centrada con aire de más arriba y abajo -- ahora
+     llena todo el alto que sobra, así los espacios grilla ↔
+     instrucción y grilla ↔ texto son exactamente el espacio parejo
+     entre bloques (ver "ESPACIO ENTRE BLOQUES", al final).
      Antes esto se hacía con unidades de contenedor (cqw/cqh): en
      Chrome andaba, pero en otro navegador la grilla no se achicaba y
      se desbordaba hacia arriba, tapando el prompt rosa. height:100% +
@@ -1250,13 +1267,12 @@
     flex:1;
     min-height:120px;
     display:flex;
-    align-items:center; /* si la grilla topa con sus 300px, queda centrada en el lugar que sobra */
+    align-items:center;
     justify-content:center;
   }
   .em-waffle-grid{
     height:100%;
     width:auto;
-    max-height:300px;
     max-width:100%;
     margin:0;
   }
@@ -1269,4 +1285,54 @@
   .em-waffle-hlmeta{
     min-height:1.25em;
   }
+}
+
+/* ============ ESPACIO ENTRE BLOQUES (igual en los 3 módulos) ============
+   Entre bloque y bloque de cada pestaña va el mismo espacio que entre
+   el título y las pestañas: la variable compartida --ui-gap-titulo
+   (ver "MEDIDAS COMPARTIDAS" en style.css: 20px, 14px en pantallas
+   bajas). Los GRUPOS que van juntos a propósito NO se separan:
+     - un gráfico con su leyenda ("Años" / "Los 5 cánceres...")
+     - "41 de cada 100" con sus 2 renglones de abajo (waffle)
+   Excepción pedida por Emi: "1° / 66,2" en "Por tipo" mantiene su
+   separación grande con los botones (.em-tipo-result, margin-top:44px).
+   Va AL FINAL del archivo a propósito: les gana a los márgenes
+   sueltos de más arriba y a los de los escalones de pantallas bajas
+   (760px / 660px). Todo con .em-card adelante: módulo 2 también usa
+   .em-prompt/.em-prompt-tipo para sus instrucciones rosas, y esto no
+   lo tiene que tocar. */
+
+/* Instrucción rosa (o respuesta variable de "Por tipo") → gráfico */
+.em-card .em-prompt-tipo,
+.em-card .em-prompt-pct,
+.em-card .em-tipo-top .em-feedback{
+  margin-bottom:var(--ui-gap-titulo);
+}
+/* Los gráficos de barras reservan arriba SOLO el alto del número de
+   la barra más alta (18px de número + 6px de separación con la
+   barra) -- antes 30px, que sumaban aire de más entre la instrucción
+   y lo que se ve. Ver también EDAD_MAX en modulo1.js. */
+.em-card .em-chart-tipo,
+.em-card .em-chart-edad{
+  padding-top:24px;
+}
+/* "Por tipo": leyenda "Los 5 cánceres..." → botones */
+.em-card .em-chart-tipo + .em-axis-note{
+  margin-bottom:var(--ui-gap-titulo);
+}
+/* "Por edad": "Años" → "3 de cada 100..." (la línea separadora de
+   arriba de los datos queda a este espacio de "Años") */
+.em-card .em-inline-stats{
+  margin-top:var(--ui-gap-titulo);
+}
+/* "% del total": grilla → "41 de cada 100..." */
+.em-card .em-waffle-body{
+  gap:var(--ui-gap-titulo);
+}
+.em-card .em-waffle-hlmeta{
+  margin-bottom:0; /* el espacio hasta el pie ya lo da .em-foot, abajo */
+}
+/* Último bloque → pie (descripción + "Fuente"), en las 3 pestañas */
+.em-card .em-foot{
+  margin-top:var(--ui-gap-titulo);
 }

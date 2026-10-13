@@ -179,6 +179,15 @@
 .me-card {
   margin-bottom: 8px;
 }
+/* La descripción debajo del título ("El futuro también se construye
+   con prevención...") -- +1px respecto del tamaño de .ui-sub
+   compartida (0.84rem, style.css), pedido de Emi. El espacio entre el
+   título y esta descripción lo da .ui-card-title con la variable
+   compartida --ui-gap-titulo (style.css), igual que en los módulos 1
+   y 2. */
+.me-card > .ui-sub {
+  font-size: calc(0.84rem + 1px);
+}
 
 /* Las 2 pestañas (.ui-tabpanel, "1.000 mujeres en control" / "Las
      que se escapaban") YA NO tienen su propia tarjeta adentro: antes
@@ -966,5 +975,43 @@
   .me-reinicio,
   .me-velo {
     transition: none;
+  }
+}
+
+/* ============ ESPACIO VERTICAL PAREJO (igual que módulos 1 y 2) ============
+   Descripción → "¿Dónde vivís?" → buscador ("Escribí tu localidad")
+   → gráfico: los 3 saltos usan el mismo espacio que título →
+   descripción (variable compartida --ui-gap-titulo, ver "MEDIDAS
+   COMPARTIDAS" en style.css: 20px, 14px en pantallas bajas).
+   Antes eran 12px / 12px / 10px, repartidos entre márgenes de
+   arriba y de abajo de varias reglas (algunas repetidas más arriba en
+   este archivo, otras pisadas en el @media de pantallas bajas). Este
+   bloque va AL FINAL a propósito: así les gana a todas esas reglas
+   sin tener que ir a tocarlas una por una. */
+.me-card > .ui-sub {
+  margin-bottom: var(--ui-gap-titulo);
+}
+.me-card > .me-prompt-donde {
+  margin-top: 0;
+  margin-bottom: var(--ui-gap-titulo);
+}
+.me-card .me-search {
+  margin-bottom: var(--ui-gap-titulo);
+}
+/* Gráfico (+ "Cada punto es un mamógrafo", que va junto al gráfico) →
+   botón "... una última cosa" → "Fuente" */
+.me-card > .me-final {
+  margin-top: var(--ui-gap-titulo); /* el cuerpo (.me-body, flex:1) ya empuja el botón al fondo de la tarjeta */
+}
+.me-card > .ui-src {
+  margin-top: var(--ui-gap-titulo);
+}
+/* Con los espacios parejos de arriba, en pantallas bajas (601px, la
+   compu de Bren) la tarjeta se pasaba 5px y volvía la barra de
+   scroll: el gráfico de puntos cede esos px (antes 36vh en este
+   escalón, ver el @media max-height:760px de más arriba). */
+@media (max-height: 760px) {
+  .me-finder {
+    --me-h: clamp(160px, 34vh, 250px);
   }
 }
