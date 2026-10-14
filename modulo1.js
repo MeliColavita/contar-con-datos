@@ -706,7 +706,7 @@
     prompt.className =
       'em-prompt em-prompt-tipo em-reveal-fade' + (tipoState.revealed ? '' : ' em-shown');
     prompt.innerHTML =
-      '<span class="em-prompt-dot" aria-hidden="true"></span>Arrastrá la barra para adivinar<br>cuántos casos de cáncer de mama hay por año.'; // en 2 renglones (pedido de Emi): en uno solo quedaba muy larga
+      '<span class="em-prompt-dot" aria-hidden="true"></span>Arrastrá la barra para adivinar.'; // en 2 renglones (pedido de Emi): en uno solo quedaba muy larga
     top.appendChild(prompt);
 
     const feedback = document.createElement('div');
