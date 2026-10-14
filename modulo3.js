@@ -29,8 +29,7 @@
   // (recarga la página: vuelve a la intro sin tocar script.js).
   const BOTON_MS = 3000; // 0,8 s de espera de la frase + 4 s con la frase en pantalla
   const REDUCIDO = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const reinicio = document.getElementById('me-reinicio');
-  const bReiniciar = document.getElementById('me-reiniciar');
+  const navBack = document.getElementById('navBack'); // botón fijo "Volver a la presentación"
   const capitulo = card ? card.closest('.chapter') : null;
   let tBoton = null;
 
@@ -45,15 +44,7 @@
     cierre.hidden = false;
     void cierre.offsetWidth; // para que la transición arranque
     cierre.classList.add('on');
-    tBoton = setTimeout(
-      () => {
-        if (!reinicio) return;
-        reinicio.hidden = false;
-        void reinicio.offsetWidth; // para que la transición arranque
-        reinicio.classList.add('on');
-      },
-      REDUCIDO ? 0 : BOTON_MS,
-    );
+    if (navBack) navBack.classList.add('nav-back--glow'); // enciende "Volver a la presentación" junto con la frase
   }
 
   function ocultarCierre() {
@@ -63,10 +54,7 @@
     cierre.hidden = true;
     card.classList.remove('me-cierre-on');
     if (capitulo) capitulo.classList.remove('me-cierre-on');
-    if (reinicio) {
-      reinicio.classList.remove('on');
-      reinicio.hidden = true;
-    }
+    if (navBack) navBack.classList.remove('nav-back--glow');
     partes.forEach((el) => {
       el.inert = false;
     });
@@ -80,19 +68,6 @@
     video4.play().catch((err) => console.warn('No se pudo reproducir 04_FINAL:', err));
     mostrarCierre();
   };
-
-  // "Volver a comenzar": un velo oscuro tapa todo y recién ahí se recarga la página
-  if (bReiniciar)
-    bReiniciar.addEventListener('click', () => {
-      bReiniciar.disabled = true;
-      const velo = document.createElement('div');
-      velo.className = 'me-velo';
-      document.body.appendChild(velo);
-      void velo.offsetWidth; // para que la transición arranque
-      velo.classList.add('on');
-      setTimeout(() => location.reload(), REDUCIDO ? 0 : 1300);
-    });
-
   // Al cambiar de capítulo, script.js oculta el video 4: se restaura la tarjeta
   new MutationObserver(() => {
     if (!video4.classList.contains('active')) ocultarCierre();
