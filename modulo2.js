@@ -533,26 +533,26 @@
     const srcBox = document.getElementById('brSrc');
     const FUENTE_DEIS = {
       // Lo que muestra "Fuente" en cada pestaña (lo arma uiFuente, en script.js).
-      autor: 'DEIS (2026)',
+      autor: 'DEIS (s.f.)',
       etiqueta: 'Muertes por cáncer, año a año',
       url: 'https://www.argentina.gob.ar/salud/deis/datos/defunciones',
     };
     const SRC_ANIO = [
       FUENTE_DEIS,
       {
-        autor: 'DEIS (2022)',
-        etiqueta: 'Estadísticas vitales 2020',
-        url: 'https://www.argentina.gob.ar/sites/default/files/serie5numero64_web.pdf',
-      },
-      {
         autor: 'INDEC (2004)',
-        etiqueta: 'Población femenina 2005-2009',
+        etiqueta: 'Estimación de población femenina 2005-2009',
         url: 'https://biblioteca.indec.gob.ar/bases/minde/4si20_30.pdf',
       },
       {
         autor: 'INDEC (2013)',
-        etiqueta: 'Población femenina 2010-2024',
+        etiqueta: 'Estimación de población femenina 2010-2024',
         url: 'https://www.indec.gob.ar/ftp/cuadros/publicaciones/proyeccionesyestimaciones_nac_2010_2040.pdf',
+      },
+      {
+        autor: 'DEIS (2022)',
+        etiqueta: 'Estadísticas vitales 2020',
+        url: 'https://www.argentina.gob.ar/sites/default/files/serie5numero64_web.pdf',
       },
     ];
     const SRC_PROV = [FUENTE_DEIS];
@@ -861,8 +861,36 @@
       anioRaf = requestAnimationFrame(paso);
     }
 
+    // ---------- Botón "i" (leyenda del gráfico "Por año") ----------
+    const infoBtn = document.getElementById('brInfoBtn');
+    const infoPop = document.getElementById('brInfoPop');
+    function cerrarInfo() {
+      if (!infoBtn || !infoPop) return;
+      infoPop.hidden = true;
+      infoBtn.setAttribute('aria-expanded', 'false');
+    }
+    if (infoBtn && infoPop) {
+      infoBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // si no, el listener de document lo cerraría al instante
+        const abrir = infoPop.hidden;
+        infoPop.hidden = !abrir;
+        infoBtn.setAttribute('aria-expanded', String(abrir));
+      });
+      // click afuera o Escape: cierra
+      document.addEventListener('click', (e) => {
+        if (!infoPop.hidden && !infoPop.contains(e.target)) cerrarInfo();
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !infoPop.hidden) {
+          cerrarInfo();
+          infoBtn.focus();
+        }
+      });
+    }
+
     // resetAnio(): vuelve al estado inicial (gráfico vacío + pista rosa visible).
     function resetAnio() {
+      cerrarInfo();
       if (anioRaf) cancelAnimationFrame(anioRaf);
       anioRaf = null;
       anioRevealed = false;
@@ -1125,6 +1153,59 @@
         },
       };
 
+      // Tooltip propio (HTML): reutiliza la clase .em-tip del módulo 1 para
+      // verse igual que los demás tooltips del sitio.
+      let tipEl = null;
+      function tooltipExterno(context) {
+        const { chart, tooltip } = context;
+        if (!tipEl) {
+          tipEl = document.createElement('div');
+          tipEl.className = 'em-tip';
+          tipEl.hidden = true;
+          chart.canvas.parentElement.appendChild(tipEl);
+        }
+        if (!anioRevealed || tooltip.opacity === 0 || !tooltip.dataPoints?.length) {
+          tipEl.hidden = true;
+          return;
+        }
+
+        const num = (v, dec) =>
+          Math.abs(v).toLocaleString('es-AR', {
+            minimumFractionDigits: dec,
+            maximumFractionDigits: dec,
+          });
+        const conSig = (v, dec) => {
+          const r = Math.round(Math.abs(v) * 10 ** dec) / 10 ** dec;
+          return (r === 0 ? '' : v > 0 ? '+' : '−') + num(v, dec);
+        };
+        const fila = (a, b) => '<div><span>' + a + '</span><span>' + b + '</span></div>';
+        const tasaDe = (d) => (d.mama / d.poblacion) * 100000; // sin redondear
+
+        const act = YEAR_DATA[tooltip.dataPoints[0].dataIndex];
+        const ant = YEAR_DATA.find((d) => d.year === act.year - 1);
+
+        let html =
+          '<strong>' + act.year + '</strong>' + fila('Por 100.000 mujeres', num(tasaDe(act), 2));
+        if (ant) {
+          const dif = tasaDe(act) - tasaDe(ant);
+          const pct = (dif / tasaDe(ant)) * 100;
+          html +=
+            fila('Vs. ' + ant.year, conSig(dif, 2)) + fila('Variación', conSig(pct, 1) + ' %');
+        }
+        tipEl.innerHTML = html;
+        tipEl.hidden = false;
+
+        // posición: centrado sobre el punto, arriba; si no entra, abajo
+        const wrap = chart.canvas.parentElement;
+        const w = tipEl.offsetWidth;
+        const h = tipEl.offsetHeight;
+        const x = Math.max(0, Math.min(wrap.clientWidth - w, tooltip.caretX - w / 2));
+        let y = tooltip.caretY - h - 14;
+        if (y < 0) y = tooltip.caretY + 18;
+        tipEl.style.left = x + 'px';
+        tipEl.style.top = y + 'px';
+      }
+
       scatterChart = new Chart(ctx, {
         type: 'scatter',
         plugins: [
@@ -1169,43 +1250,7 @@
           interaction: { mode: 'nearest', axis: 'x', intersect: false },
           plugins: {
             legend: { display: false },
-            tooltip: {
-              filter: () => anioRevealed, // sin datos, sin tooltip
-              footerFont: { weight: 'normal' },
-              footerColor: '#f7a8c4',
-              callbacks: {
-                title: (items) => 'Año ' + items[0].parsed.x,
-                label: (c) => {
-                  const tasaDe = (d) => (d.mama / d.poblacion) * 100000;
-                  const f2 = (v) =>
-                    Math.abs(v).toLocaleString('es-AR', {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    });
-                  const signo = (v, suf) => {
-                    const r = Math.round(Math.abs(v) * 100) / 100;
-                    return (r === 0 ? '' : v > 0 ? '+' : '−') + f2(v) + (suf || '');
-                  };
-
-                  const act = YEAR_DATA[c.dataIndex];
-                  const ant = YEAR_DATA.find((d) => d.year === act.year - 1);
-                  const t = tasaDe(act);
-                  const lineas = [' Tasa: ' + f2(t) + ' por 100.000 mujeres'];
-
-                  if (!ant) {
-                    lineas.push(' Sin comparación interanual');
-                    return lineas;
-                  }
-                  const ta = tasaDe(ant);
-                  const dif = t - ta;
-                  lineas.push(' Año anterior (' + ant.year + '): ' + f2(ta));
-                  lineas.push(' Diferencia interanual: ' + signo(dif) + ' por 100.000 mujeres');
-                  lineas.push(' Variación interanual: ' + signo((dif / ta) * 100, ' %'));
-                  return lineas;
-                },
-                footer: () => 'Calculado con valores sin redondear',
-              },
-            },
+            tooltip: { enabled: false, external: tooltipExterno },
           },
           scales: {
             x: {
@@ -1349,18 +1394,12 @@
           f.year +
           ' y ' +
           l.year;
-      const nota = document.getElementById('brAxisNote');
+      const nota = document.getElementById('brAxisNoteText');
       if (nota)
         nota.textContent =
           'Tasa bruta. El eje empieza en 24. La línea punteada es la tendencia lineal (mínimos cuadrados): ' +
           conSigno(REG.b) +
-          ' por 100.000 por año; baja estimada ' +
-          pc1(pctTen) +
-          ' % entre ' +
-          f.year +
-          ' y ' +
-          l.year +
-          '.';
+          ' por 100.000 mujeres por año.';
       resetAnio(); // arranca vacío hasta que el cursor entre al gráfico
       window.addEventListener('resize', () => {
         if (!anioRevealed) fijarDesplazamientoAnio();

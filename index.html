@@ -445,9 +445,21 @@
                           <div style="width: 100%; height: 232px; position: relative">
                             <canvas id="brAnioScatter"></canvas>
                           </div>
-                          <p class="br-axis-note" id="brAxisNote">
-                            El eje empieza en 24 · La línea punteada marca la tendencia 2005–2024
-                          </p>
+                          <div class="br-axis-note" id="brAxisNote">
+                            <button
+                              class="br-info-btn"
+                              id="brInfoBtn"
+                              type="button"
+                              aria-label="Cómo leer este gráfico"
+                              aria-expanded="false"
+                              aria-controls="brInfoPop"
+                            >
+                              i
+                            </button>
+                            <div class="br-info-pop" id="brInfoPop" role="note" hidden>
+                              <p id="brAxisNoteText"></p>
+                            </div>
+                          </div>
                           <!-- Dos columnas de datos:
                                izquierda = valores que CAMBIAN con el año (población y muertes)
                                derecha   = valor FIJO (promedio de muertes por día, 2005–2024) -->
@@ -560,7 +572,8 @@
                   tiempo, y saber dónde hacerla puede marcar la diferencia.
                 </p>
                 <p class="me-prompt me-prompt-donde">
-                  <span class="me-prompt-dot"></span>¿Dónde vivís?
+                  <span class="me-prompt-dot"></span>Ingresá tu localidad para ver dónde hay un
+                  mamógrafo cerca tuyo.
                 </p>
 
                 <div class="me-body active" id="me-tabpanel-3">
@@ -571,7 +584,7 @@
                         aria-label="¿Dónde hay un mamógrafo cerca tuyo?"
                         class="me-search-input"
                         type="text"
-                        placeholder="Escribí tu localidad"
+                        placeholder="Escribí aquí"
                         autocomplete="off"
                         role="combobox"
                         aria-autocomplete="list"

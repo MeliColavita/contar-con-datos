@@ -569,15 +569,56 @@
     visibility 0.4s;
 }
 
-/* Nota "El eje empieza en 24": debajo del gráfico de "Por año",
-   alineada a la izquierda, con el mismo gris que los textos secundarios. */
+/* Fila debajo del gráfico de "Por año": solo el botón "i", alineado a la
+   derecha (debajo de "2025"). El texto vive en el popover. */
 .br-axis-note {
-  margin: 0;
-  text-align: left;
-  font-size: calc(0.75rem + 1px); /* antes 0.75rem: +1px pedido por Emi */
-  font-style: italic;
-  line-height: 1.2;
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+  margin: 2px 0 0;
+}
+.br-info-btn {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--br-panel-border);
+  background: rgba(255, 255, 255, 0.04);
   color: var(--br-text-dim);
+  font-family: var(--br-serif);
+  font-style: italic;
+  font-weight: 600;
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.br-info-btn:hover,
+.br-info-btn[aria-expanded='true'] {
+  color: #1a0510;
+  background: var(--br-rose-strong);
+  border-color: var(--br-rose-strong);
+}
+.br-info-pop {
+  position: absolute;
+  right: 0;
+  bottom: calc(
+    100% + 8px
+  ); /* se abre hacia arriba, sobre el gráfico: no cambia el alto de la tarjeta */
+  z-index: 30;
+  width: min(340px, 72vw);
+  padding: 10px 14px;
+  background: var(--br-bg);
+  border: 1px solid var(--br-panel-border);
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+  text-align: left;
+}
+.br-info-pop p {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--br-text);
 }
 /* Dato principal de "Por año": mujeres que mueren por día.
    Mismo estilo que tenían los números grandes (serif, rosa, con brillo). */
