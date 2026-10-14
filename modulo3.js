@@ -1132,14 +1132,14 @@
   if (!src) return;
   const FUENTES_ME = [
     {
-      autor: 'Surcos y Fundación Instituto Natura (2026)',
-      etiqueta: 'Mapa mamográfico',
-      url: 'https://surcos.org/web/mira/',
-    },
-    {
       autor: 'INDEC (2022)',
       etiqueta: 'Localidades censales',
       url: 'https://datos.gob.ar/dataset/codigos-geograficos-del-indec-2022',
+    },
+    {
+      autor: 'Surcos y Fundación Instituto Natura (2026)',
+      etiqueta: 'Mapa mamográfico',
+      url: 'https://surcos.org/web/mira/',
     },
   ];
   uiFuente(src, FUENTES_ME);
