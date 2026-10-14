@@ -13035,11 +13035,19 @@
       CABA: ['Buenos Aires', 'CABA'],
     };
 
-    // Crea un <path> de SVG por cada provincia (usando su "d", el
-    // contorno ya calculado en DATA), y le conecta los eventos de
-    // mouse: entrar/clickear la resalta (y a su "grupo" -- ver
-    // GROUPED_PROVINCES) y actualiza el tooltip + el gráfico de
-    // barras; moverse adentro reposiciona el tooltip; salir lo oculta.
+    // Provincia seleccionada con click (null = ninguna)
+    let selectedKey = null;
+
+    // CABA se trata como Buenos Aires (sus datos ya están sumados ahí)
+    const keyOf = (p) => (p.name === 'CABA' ? 'Buenos Aires' : p.name);
+    const dataFor = (p) => DATA.provinces.find((pr) => pr.name === keyOf(p));
+
+    // resalta la provincia p (y su grupo, ej. Buenos Aires + CABA)
+    function highlight(p) {
+      const group = GROUPED_PROVINCES[p.name] || [p.name];
+      pathEls.forEach((o) => o.el.classList.toggle('active', group.includes(o.data.name)));
+    }
+
     DATA.provinces.forEach((p) => {
       const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       path.setAttribute('d', p.d);
@@ -13048,30 +13056,35 @@
       svg.appendChild(path);
       pathEls.push({ el: path, data: p });
 
-      // activate(e): resalta esta provincia (y las de su grupo, ej.
-      // Buenos Aires+CABA juntas) y actualiza el tooltip/gráfico con
-      // SUS datos -- si el grupo incluye Buenos Aires, siempre
-      // muestra los datos de Buenos Aires (no los de CABA por
-      // separado), porque CABA ya está sumada ahí (ver
-      // GROUPED_PROVINCES, arriba).
-      const activate = (e) => {
+      // Pasar el cursor
+      path.addEventListener('pointerenter', (e) => {
         if (promptProv) promptProv.classList.add('br-prompt-gone');
-        pathEls.forEach((o) => o.el.classList.remove('active'));
-        const group = GROUPED_PROVINCES[p.name] || [p.name];
-        pathEls.forEach((o) => {
-          if (group.includes(o.data.name)) o.el.classList.add('active');
-        });
-        const dataToShow = group.includes('Buenos Aires')
-          ? DATA.provinces.find((pr) => pr.name === 'Buenos Aires')
-          : p;
-        showTooltip(dataToShow, e);
-        updateProvinceChart(dataToShow);
-      };
 
-      path.addEventListener('pointerenter', activate);
+        // Hay OTRA provincia seleccionada: solo el nombre, sin datos y sin tocar el gráfico
+        if (selectedKey !== null && keyOf(p) !== selectedKey) {
+          showTooltip(p, e, true);
+          return;
+        }
+
+        // Sin selección (o sobre la seleccionada): todo como siempre
+        const d = dataFor(p);
+        highlight(p);
+        showTooltip(d, e);
+        updateProvinceChart(d);
+      });
       path.addEventListener('pointermove', positionTooltip);
-      path.addEventListener('click', activate);
       path.addEventListener('pointerleave', () => tooltip.classList.remove('visible'));
+
+      // Click: selecciona; si ya era la seleccionada, la deselecciona
+      path.addEventListener('click', (e) => {
+        if (promptProv) promptProv.classList.add('br-prompt-gone');
+        selectedKey = selectedKey === keyOf(p) ? null : keyOf(p);
+        svg.classList.toggle('has-selection', selectedKey !== null); // lo usa el CSS (cambio 3)
+        const d = dataFor(p);
+        highlight(p);
+        showTooltip(d, e);
+        updateProvinceChart(d);
+      });
     });
 
     // puntos de densidad: 1 punto cada 100 muertes por cáncer de mama.
@@ -13140,9 +13153,12 @@
     // showTooltip(p, e): pone el texto del tooltip (nombre de
     // provincia + porcentaje) y lo hace visible, posicionándolo con
     // positionTooltip().
-    function showTooltip(p, e) {
+    function showTooltip(p, e, soloNombre) {
       ttName.textContent = p.name;
-      ttPct.innerHTML = `<b>${p.cancer.toLocaleString('es-AR')}</b> muertes por cáncer de mama`;
+      ttPct.style.display = soloNombre ? 'none' : ''; // oculta la línea de datos
+      if (!soloNombre) {
+        ttPct.innerHTML = `<b>${p.cancer.toLocaleString('es-AR')}</b> muertes por cáncer de mama`;
+      }
       tooltip.classList.add('visible');
       positionTooltip(e);
     }
@@ -13212,6 +13228,7 @@
       },
       plugins: [valueLabelsPlugin],
       options: {
+        events: [],
         responsive: true,
         maintainAspectRatio: false,
         layout: { padding: { top: 24 } },
@@ -13326,7 +13343,8 @@
 
     const SUB_ANIO = 'Muertes por cáncer de mama cada 100.000 mujeres. Argentina, 2005–2024.';
     const SUB_PROV =
-      'Muertes por cáncer de mama por provincia, 2018–2022. Cada punto equivale a 100 muertes.';
+      'Muertes por cáncer de mama por provincia, 2018–2022. Cada punto equivale a 100 muertes. ' +
+      'Las provincias más pobladas tienen más puntos: no indica mayor riesgo.';
     const srcSub = document.getElementById('brSrcSub');
 
     // ---------- Notas que se abren al pasar el cursor por ciertos años ----------
@@ -13337,8 +13355,7 @@
       2017: 'Variación interanual sin causa oficial identificada. Tasa bruta, sin ajuste por edad.',
       2020:
         'Año de pandemia. Hubo demoras en el procesamiento de las estadísticas vitales y ' +
-        'cambios en la clasificación de causas por la covid-19.<br><br>' +
-        'Fuente: DEIS, Estadísticas Vitales 2020, Serie 5, N.º 64.',
+        'cambios en la clasificación de causas por la covid-19.',
     };
     // Año cuya nota está abierta en este momento (null = ninguna). Sirve para
     // 1) no reescribir el texto en cada movimiento del mouse, y
@@ -13352,26 +13369,22 @@
       srcBox.removeAttribute('open'); // al cambiar de pestaña se cierra el desplegable
     }
 
-    // Si el año tiene nota, la muestra y abre el desplegable; si no, restaura todo.
+    // Si el año tiene nota, la guarda y pide redibujar el gráfico (la dibuja el
+    // plugin "notaEnGrafico", en buildScatter); si no, la borra.
     function mostrarNotaAnio(year) {
-      const nota = NOTAS_ANIO[year];
-      if (!nota) {
+      if (!NOTAS_ANIO[year]) {
         ocultarNotaAnio();
         return;
       }
-      if (notaAnioActual === year) return; // ya está abierta esa nota
+      if (notaAnioActual === year) return; // ya está mostrada esa nota
       notaAnioActual = year;
-      srcText.innerHTML = nota;
-      srcBox.setAttribute('open', '');
+      if (scatterChart) scatterChart.draw();
     }
 
-    // Devuelve el botón "Fuente" a su estado normal (texto de "Por año", cerrado).
-    // Solo actúa si había una nota abierta.
     function ocultarNotaAnio() {
       if (notaAnioActual === null) return;
       notaAnioActual = null;
-      srcText.textContent = SRC_ANIO;
-      srcBox.removeAttribute('open');
+      if (scatterChart) scatterChart.draw();
     }
 
     // animarEntrada(panel)
@@ -13619,12 +13632,77 @@
           c.restore();
         },
       };
+      // Zona de cada nota, dentro de la franja de abajo (izquierda del gráfico).
+      //   xMax = hasta qué año llega el texto por la derecha
+      //   yTop = hasta qué valor llega por arriba (el piso es siempre 24)
+      // Si un año no está acá, usa la zona por defecto: hasta su propio año, hasta 25.
+      const ZONA_NOTA = {
+        2020: { xMax: 2013, yTop: 25.5 },
+      };
+
+      const notaEnGraficoPlugin = {
+        id: 'notaEnGrafico',
+        afterDraw(chart) {
+          if (notaAnioActual === null) return;
+          const texto = NOTAS_ANIO[notaAnioActual];
+          if (!texto) return;
+          const { chartArea, scales, ctx: c } = chart;
+
+          const zona = ZONA_NOTA[notaAnioActual] || {
+            xMax: Math.min(notaAnioActual, 2019),
+            yTop: 25,
+          };
+          const margen = 8;
+          const izq = chartArea.left + margen;
+          const der = scales.x.getPixelForValue(zona.xMax) - margen;
+          const arriba = scales.y.getPixelForValue(zona.yTop) + 6;
+          const abajo = chartArea.bottom - 6;
+          const maxW = der - izq;
+          const maxH = abajo - arriba;
+          if (maxW < 60) return;
+
+          c.save();
+
+          // parte el texto en renglones que entren en el ancho disponible
+          const envolver = (txt) => {
+            const lineas = [];
+            let actual = '';
+            txt.split(' ').forEach((p) => {
+              const prueba = actual ? actual + ' ' + p : p;
+              if (c.measureText(prueba).width > maxW && actual) {
+                lineas.push(actual);
+                actual = p;
+              } else actual = prueba;
+            });
+            if (actual) lineas.push(actual);
+            return lineas;
+          };
+
+          // arranca en 11px y achica hasta 8px si no entra en el alto disponible
+          let size = 11,
+            lineas = [],
+            lineH = 0;
+          for (; size >= 8; size--) {
+            c.font = `italic ${size}px Inter, system-ui, sans-serif`;
+            lineas = envolver(texto);
+            lineH = size * 1.25;
+            if (lineas.length * lineH <= maxH) break;
+          }
+          c.fillStyle = 'rgba(242,233,238,0.85)';
+          c.textAlign = 'left';
+          c.textBaseline = 'top';
+          const y0 = arriba + (maxH - lineas.length * lineH) / 2; // centrado en la zona
+          lineas.forEach((l, i) => c.fillText(l, izq, y0 + i * lineH));
+          c.restore();
+        },
+      };
 
       scatterChart = new Chart(ctx, {
         type: 'scatter',
         plugins: [
           lineaVerticalPlugin,
           tendenciaPlugin,
+          notaEnGraficoPlugin,
           {
             id: 'brAxisX',
             afterLayout(chart) {
@@ -13691,9 +13769,9 @@
                 color: '#a99aa6',
                 stepSize: 1,
                 autoSkip: false,
-                maxRotation: 60,
-                minRotation: 60,
-                callback: (v) => (YEAR_DATA.some((d) => d.year === v) ? v : ''),
+                maxRotation: 0, // horizontales
+                minRotation: 0,
+                callback: (v) => ([2005, 2010, 2015, 2020, 2025].includes(v) ? v : ''),
               },
               grid: { color: 'rgba(255,255,255,0.06)' },
             },

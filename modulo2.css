@@ -63,8 +63,8 @@
      como variable compartida en :root porque no los usa ningún otro
      módulo del sitio. */
   --br-bg: #0e0a13;
-  --br-land: #1c1220;
-  --br-land-border: #3a2438;
+  --br-land: #281a2e;
+  --br-land-border: #4a2e48;
 
   /* Fondo, borde, border-radius y padding de la tarjeta ya NO se
      definen acá: en index.html esta misma tarjeta ahora lleva
@@ -431,6 +431,11 @@
 .br-widget path.br-province.active {
   fill: var(--br-rose-strong);
 }
+/* con una provincia seleccionada, las demás NO se pintan al pasar el cursor */
+.br-widget svg.has-selection path.br-province:hover:not(.active) {
+  fill: var(--br-land);
+}
+
 /* Los puntitos de densidad (1 cada 100 muertes, ver modulo2.js) que
    se dibujan encima de cada provincia. pointer-events:none para que
    no interfieran con el hover/click de las provincias que están
@@ -658,7 +663,9 @@
 .br-tabs {
   display: flex;
   gap: 10px;
-  margin-bottom: var(--ui-gap-titulo); /* antes 24px: mismo espacio que título → pestañas (variable compartida, ver style.css) */
+  margin-bottom: var(
+    --ui-gap-titulo
+  ); /* antes 24px: mismo espacio que título → pestañas (variable compartida, ver style.css) */
 }
 .br-tab-btn {
   background: transparent;
@@ -790,7 +797,9 @@
 .br-src-sub {
   margin: 0;
   max-width: 560px;
-  font-size: var(--ui-fs-pie); /* antes 0.78rem: mismo tamaño que el pie del módulo 1 (variable compartida, ver style.css). Sirve para "Por año" y "Por provincia": es el mismo elemento, modulo2.js solo le cambia el texto */
+  font-size: var(
+    --ui-fs-pie
+  ); /* antes 0.78rem: mismo tamaño que el pie del módulo 1 (variable compartida, ver style.css). Sirve para "Por año" y "Por provincia": es el mismo elemento, modulo2.js solo le cambia el texto */
   line-height: 1.4;
   color: var(--br-text-dim);
 }
@@ -855,7 +864,9 @@
 
 .br-stat-lbl {
   margin-top: 0; /* antes 2px: ya no va debajo del número */
-  font-size: calc(0.78rem + 1px); /* antes 0.78rem: +1px pedido por Emi (solo el texto, el número rosa queda igual) */
+  font-size: calc(
+    0.78rem + 1px
+  ); /* antes 0.78rem: +1px pedido por Emi (solo el texto, el número rosa queda igual) */
   line-height: 1.25;
   color: var(--br-text-dim);
 }
