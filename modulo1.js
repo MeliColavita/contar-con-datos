@@ -170,7 +170,7 @@
   // de mama sobre TODOS los casos de cáncer del país (pedido de Emi).
   // El % se calcula acá, no se escribe a mano.
   const chapter1Stats = [
-    { valor: '1°', label: 'Cáncer más frecuente en mujeres' },
+    { valor: '1°', label: 'Cáncer más frecuente en mujeres', clase: 'em-stat-primero' },
     {
       valor: pctLabel(MAMA_MUJERES / CASOS_TOTALES_MUJERES) + '%',
       label: 'de todos los cánceres en mujeres',
@@ -178,7 +178,7 @@
     },
     {
       valor: pctLabel(MAMA_MUJERES / CASOS_TOTALES_AMBOS_SEXOS) + '%',
-      label: 'de todos los casos de cáncer (hombres y mujeres)',
+      label: 'de todos los casos de cáncer en mujeres y hombres',
     },
   ];
 
@@ -599,10 +599,16 @@
     // <span>, así .em-feedback (modulo1.css) puede bajarlo al fondo de su
     // caja como UN bloque de texto -- si el texto y los <b> fueran hijos
     // directos de un flex, cada pedazo quedaría en su propio renglón.
-    function setFeedback(html) {
+    function setFeedback(html, animar) {
       feedback.innerHTML = '<span>' + html + '</span>';
+      const span = feedback.firstChild;
+      if (animar && !reduceMotion) {
+        span.style.display = 'inline-block';
+        span.style.animationDelay = '0.9s';
+        span.style.animationFillMode = 'backwards';
+        span.classList.add('em-fade-in');
+      }
     }
-
     container.appendChild(top);
 
     const chart = document.createElement('div');
@@ -808,6 +814,10 @@
     const statsCol = document.createElement('div');
     statsCol.className =
       'em-tipo-result-stats em-reveal-fade' + (tipoState.revealed ? ' em-shown' : '');
+    const statsLead = document.createElement('div');
+    statsLead.className = 'em-stats-lead';
+    statsLead.textContent = 'El cáncer de mama es:';
+    statsCol.appendChild(statsLead);
     chapter1Stats.forEach(function (s) {
       const item = document.createElement('div');
       item.className = 'em-stat' + (s.clase ? ' ' + s.clase : '');
@@ -995,7 +1005,7 @@
       }
       // Ya no agrega "Eso es N diagnósticos por día" al final (pedido
       // de Emi: sacarlo de la respuesta variable).
-      setFeedback(msg);
+      setFeedback(msg, doAnimate);
     }
 
     // setupDrag(): arma la zona de arrastre sobre la columna de Mama
@@ -1435,7 +1445,7 @@
     const prompt = document.createElement('div');
     prompt.className = 'em-prompt em-prompt-tipo';
     prompt.innerHTML =
-      '<span class="em-prompt-dot" aria-hidden="true"></span>Tocá una barra para ver los casos de un rango de edad.';
+      '<span class="em-prompt-dot" aria-hidden="true"></span>Tocá una barra para ver la cantidad en un rango de edad.';
     container.appendChild(prompt);
 
     const chart = document.createElement('div');
@@ -1453,10 +1463,7 @@
         '</span></div>' +
         '<div><span>Del total</span><span>' +
         pctLabel(d.valor / total) +
-        '%</span></div>' +
-        '<div><span>Por día</span><span>' +
-        (d.valor / 365).toLocaleString('es-AR', { maximumFractionDigits: 1 }) +
-        '</span></div>'
+        '%</span></div>'
       );
     }
 
@@ -1577,7 +1584,7 @@
     ],
     casosPorEdad: [
       {
-        autor: 'GLOBOCAN (2026b)',
+        autor: 'GLOBOCAN (2026)',
         etiqueta: 'Casos por edad',
         url: 'https://gco.iarc.who.int/today/en/dataviz/pie?mode=cancer&cancers=20&types=0&sexes=2&populations=32&age_start=3&age_end=5&group_populations=1&multiple_populations=0',
       },
