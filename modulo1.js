@@ -706,7 +706,7 @@
     prompt.className =
       'em-prompt em-prompt-tipo em-reveal-fade' + (tipoState.revealed ? '' : ' em-shown');
     prompt.innerHTML =
-      '<span class="em-prompt-dot" aria-hidden="true"></span>¿Cuántos casos de cáncer de mama creés que hay?<br>Arrastrá la barra para adivinar.'; // en 2 renglones (pedido de Emi): en uno solo quedaba muy larga
+      '<span class="em-prompt-dot" aria-hidden="true"></span>Arrastrá la barra para adivinar<br>cuántos casos de cáncer de mama hay por año.'; // en 2 renglones (pedido de Emi): en uno solo quedaba muy larga
     top.appendChild(prompt);
 
     const feedback = document.createElement('div');
@@ -767,7 +767,13 @@
       // de Mama dice "Cáncer de mama" (sola en el gráfico, el nombre
       // completo se entiende mejor); al revelar pasa a "Mama", como el
       // resto de las barras (pedido de Emi -- ver reveal()).
-      const lblText = isMama ? (showReal ? d.categoria : 'Cáncer de mama') : showReal ? d.categoria : '';
+      const lblText = isMama
+        ? showReal
+          ? d.categoria
+          : 'Cáncer de mama'
+        : showReal
+          ? d.categoria
+          : '';
       // .em-plot: el área de dibujo de la barra (todo lo de la columna
       // MENOS la etiqueta). El % de alto de cada barra se calcula
       // contra ESTA caja, no contra la columna entera -- antes número +
@@ -1575,7 +1581,7 @@
     const prompt = document.createElement('div');
     prompt.className = 'em-prompt em-prompt-tipo';
     prompt.innerHTML =
-      '<span class="em-prompt-dot" aria-hidden="true"></span>Tocá una barra para ver los casos de un rango de edades.';
+      '<span class="em-prompt-dot" aria-hidden="true"></span>Tocá una barra para ver los casos de un rango de edad.';
     container.appendChild(prompt);
 
     const chart = document.createElement('div');
@@ -1724,7 +1730,7 @@
     const prompt = document.createElement('div');
     prompt.className = 'em-prompt em-prompt-pct';
     prompt.innerHTML =
-      '<span class="em-prompt-dot" aria-hidden="true"></span>Tocá un cuadrado: cada uno es 1 de cada 100 casos.';
+      '<span class="em-prompt-dot" aria-hidden="true"></span>Tocá un cuadrado para ver qué tipo de cáncer es: cada uno es 1 de cada 100 casos.';
     container.appendChild(prompt);
 
     const body = document.createElement('div');
