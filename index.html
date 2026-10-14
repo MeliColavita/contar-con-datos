@@ -234,7 +234,7 @@
             </div>
 
             <!-- ============================================================
-             Módulo "Argentina hoy": tarjeta con 3 gráficos (pestañas
+             Módulo "Argentina hoy": tarjeta con 2 gráficos (pestañas
              propias .em-tab, look píldora) sobre la dimensión del
              cáncer de mama en el país.
 
@@ -244,10 +244,9 @@
                                      semitransparente + blur, igual
                                      criterio que .ui-panel)
                    .ui-card-title -> pregunta fija arriba (clase compartida)
-                   .em-tabs       -> 3 botones para elegir qué gráfico ver
+                   .em-tabs       -> 2 botones para elegir qué gráfico ver
                    #em-chart-panel -> contenedor vacío donde modulo1.js
-                                     dibuja el gráfico activo (barras
-                                     SVG o waffle)
+                                     dibuja el gráfico activo (barras)
                    .ui-src        -> "Fuente" (componente compartido,
                                      mismo que usa el módulo 3)
 
@@ -259,7 +258,7 @@
                 <!-- Título pedido tal cual, con tilde y "¿...?" agregados
                      para que mantenga el mismo estilo de pregunta que
                      usan .ui-card-title de módulo 2 y 3. Pestañas
-                     acortadas a "Por tipo"/"Por edad"/"% del total":
+                     acortadas a "Por tipo"/"Por edad":
                      el data-chart (lo que usa modulo1.js para saber qué
                      gráfico dibujar) no cambió, solo el texto visible. -->
                 <h3 class="ui-card-title">¿Cuántos casos de cáncer de mama hay por año?</h3>
@@ -281,15 +280,6 @@
                     aria-selected="false"
                   >
                     Por edad
-                  </button>
-                  <button
-                    class="em-tab"
-                    data-chart="porcentaje"
-                    type="button"
-                    role="tab"
-                    aria-selected="false"
-                  >
-                    % del total
                   </button>
                 </div>
                 <div class="em-panel" id="em-chart-panel"></div>

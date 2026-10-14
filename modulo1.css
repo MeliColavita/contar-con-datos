@@ -2,7 +2,7 @@
    MODULO1.CSS — Capítulo 1 "Argentina hoy" — Emi — prefijo: em-
    ============================================================
    QUÉ HACE ESTE ARCHIVO: los estilos de la tarjeta del Capítulo 1 y
-   de sus 3 gráficos (barras, barras horizontales, waffle). Todo lo
+   de sus 2 gráficos de barras. Todo lo
    que tiene prefijo "em-" es PROPIO de este módulo; todo lo que
    empieza con "ui-" es un componente COMPARTIDO (definido en
    style.css) que se reutiliza tal cual, para no duplicar código ni
@@ -10,7 +10,7 @@
 
    Convención de nombres de este archivo:
      .em-card         -> la tarjeta completa
-     .em-tabs/.em-tab -> las 3 pestañas de arriba
+     .em-tabs/.em-tab -> las 2 pestañas de arriba
      .em-panel        -> el contenedor donde se dibuja el gráfico activo
      .em-chart-tipo/
      .em-chart-edad   -> la fila de columnas de cada gráfico interactivo
@@ -30,7 +30,6 @@
                          tarjeta no cambia de alto al revelar
      .em-tip           -> el tooltip compartido, hover sobre cualquier barra
      .em-stat*        -> los "datos sueltos" (número grande + etiqueta)
-     .em-waffle-*     -> todo lo del gráfico de 100 cuadrados (Porcentaje)
      .em-caption      -> texto chico al pie (hoy sin uso en ningún
                          gráfico puntual, queda por si hace falta)
    ============================================================ */
@@ -196,29 +195,16 @@
   text-align:center;
   margin-bottom:6px;
 }
-/* .em-prompt-pct: mismo criterio que .em-prompt-tipo de arriba (más
-   grande, centrada, pegada al gráfico), para la pestaña "Porcentaje".
-   Antes esta pista vivía como una frase más dentro del subtítulo gris
-   -- separada en su propio prompt, se lee mejor y de paso avisa que
-   se puede interactuar (antes no había ninguna señal visual propia). */
-.em-prompt-pct{
-  font-size:1.05rem;
-  justify-content:center;
-  text-align:center;
-  margin-bottom:12px; /* antes 10px, después 26px (daba barra de scroll) -- Emi pidió más separación entre la instrucción y la grilla, pero menos que esa primera vuelta */
-}
-/* Los 2 prompts centrados (tipo/edad y porcentaje) dejan de ser flex:
+/* El prompt centrado (tipo/edad) deja de ser flex:
    cuando el texto no entraba en 1 renglón (pantallas bajas o con
    zoom), flexbox dejaba el punto solo contra el borde izquierdo y el
    texto centrado en 2 líneas al lado, lejos del punto. Como bloque
    de texto normal, el punto va "en línea" pegado a la primera palabra
    y se centra junto con el texto, ocupe 1 o 2 renglones. */
-.em-prompt-tipo,
-.em-prompt-pct{
+.em-prompt-tipo{
   display:block;
 }
-.em-prompt-tipo .em-prompt-dot,
-.em-prompt-pct .em-prompt-dot{
+.em-prompt-tipo .em-prompt-dot{
   display:inline-block;
   vertical-align:middle;
   margin-right:8px;
@@ -865,13 +851,6 @@
   box-shadow:0 10px 30px rgba(0,0,0,0.5);
   font-variant-numeric:tabular-nums;
 }
-/* El globo del cálculo del 14,9%, fijo en la esquina inferior derecha
-   de la tarjeta (ver showTipCorner en modulo1.js): esa esquina lleva
-   el mismo redondeo que la tarjeta (16px, .ui-panel en style.css),
-   así el borde del globo calza justo sobre el de la tarjeta. */
-.em-tip.em-tip-corner{
-  border-radius:12px 12px 16px 12px;
-}
 .em-tip strong{
   font-family:var(--serif);
   color:var(--rose-strong);
@@ -890,28 +869,6 @@
   font-weight:600;
   white-space:nowrap; /* el número nunca se parte en 2 renglones */
 }
-/* Aclaración chica al pie del globo (ej. "El total incluye el cáncer
-   de piel no melanoma", en el cálculo del 14,9%). */
-.em-tip .em-tip-note{
-  margin:6px 0 0;
-  max-width:260px;
-  font-size:0.75rem;
-  font-style:italic;
-  color:var(--text-dim);
-}
-
-/* Dato con cálculo para mostrar (el 14,9% de "Casos por tipo", ver
-   chapter1Stats en modulo1.js): el dato entero abre el globo al pasar
-   el cursor, tocarlo o enfocarlo con Tab. (Antes tenía al lado un
-   ícono ⓘ, .em-info -- se sacó, pedido de Emi.) Sin contorno de foco
-   del navegador: el globo que aparece ya muestra que está enfocado. */
-.em-stat-tip{
-  cursor:help;
-}
-.em-stat-tip:focus{
-  outline:none;
-}
-
 /* Respeta "reducir movimiento": apaga las transiciones CSS de los
    elementos nuevos (el.animate(), en modulo1.js, ya se salta solo con
    duration:0 cuando corresponde -- ver reduceMotion ahí). */
@@ -1078,6 +1035,9 @@
   align-items:baseline;
   gap:6px;
 }
+.em-tipo-result-stats .em-stat-pct-mujeres + .em-stat{
+  grid-column:2;
+}
 /* El tamaño de letra de estos 2 datos se agranda un poco (pedido de
    Emi) -- SCOPEADO acá, a propósito: .em-stat-value/.em-stat-label son
    clases compartidas que también usa "Casos por edad" (ver
@@ -1092,9 +1052,9 @@
 /* La bajada del pie ("Casos nuevos estimados...") iguala su tamaño al
    nuevo tamaño (agrandado) de los datos fijos de arriba -- pedido de
    Emi. Clase propia (no toca la .ui-sub compartida): "Casos por edad"
-   y "Porcentaje" se quedan con el tamaño de siempre. */
+   se queda con el tamaño de siempre. */
 .em-foot-sub-lg{
-  font-size:var(--ui-fs-pie); /* antes 0.9rem fijo -- ahora las 3 pestañas usan este mismo valor (ver .em-foot .ui-sub, más abajo) */
+  font-size:var(--ui-fs-pie); /* antes 0.9rem fijo -- ahora las 2 pestañas usan este mismo valor (ver .em-foot .ui-sub, más abajo) */
 }
 
 /* .em-foot: la bajada que antes iba arriba de todo ("Casos nuevos
@@ -1116,8 +1076,8 @@
 }
 .em-foot .ui-sub{
   margin:0;
-  /* Mismo tamaño en las 3 pestañas (antes "Por edad" y "% del total"
-     quedaban en 0.84rem, más chicas que "Por tipo") -- el valor sale
+  /* Mismo tamaño en las 2 pestañas (antes "Por edad" quedaba en
+     0.84rem, más chicas que "Por tipo") -- el valor sale
      de la variable compartida de style.css ("MEDIDAS COMPARTIDAS"),
      la misma que usa el pie del módulo 2. */
   font-size:var(--ui-fs-pie);
@@ -1127,180 +1087,6 @@
   flex:0 0 auto;
 }
 
-/* ============================================================
-   GRÁFICO DE "WAFFLE" (pestaña Porcentaje)
-   100 cuadraditos = 100% de los casos. Cada uno es un <div>, NO un
-   elemento SVG (a diferencia de los gráficos de barras) -- la misma
-   técnica de "grilla de puntos/cuadrados con CSS Grid" que usa
-   también el módulo 3 para sus propios puntos.
-   ============================================================ */
-
-/* .em-waffle-body envuelve la grilla de cuadrados + el texto
-   informativo de abajo (headline + detalle).
-   Antes, desde 680px de ancho, la grilla y el texto pasaban a ir LADO
-   A LADO (como .ui-visual del módulo 3) para que la tarjeta no
-   quedara más alta que las otras dos pestañas de este módulo -- pero
-   quedaba chica y con la grilla relegada a un costado. Ahora se pide
-   lo contrario a propósito: SIEMPRE apilados (grilla arriba,
-   centrada, bien grande; texto abajo) para que la tarjeta llegue a la
-   misma altura que "Casos por tipo"/"Casos por edad" en vez de
-   quedar mucho más baja -- el tamaño de la grilla (ver
-   .em-waffle-grid más abajo) es lo que ahora se encarga de ganar esa
-   altura. */
-.em-waffle-body{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:10px; /* antes 20px, después 14px -- se achica un poco más para hacerle lugar a la grilla más grande/más abajo (ver .em-prompt-pct y .em-waffle-grid) sin agrandar la tarjeta entera */
-}
-
-/* La grilla en sí: 10 columnas iguales (con 10 filas automáticas se
-   completan los 100 cuadrados -- no hace falta fijar las filas, CSS
-   Grid las va agregando solas a medida que entran los <div>).
-     aspect-ratio:1 -> fuerza que la grilla sea siempre un cuadrado
-                       perfecto, sin importar cuánto espacio tenga
-                       disponible
-     max-width:290px  -> techo de tamaño en pantallas de alto
-                       "normal": ese valor es el que deja la tarjeta a
-                       la misma altura que las otras 2 pestañas,
-                       medido a mano. En pantallas BAJAS de alto, este
-                       techo se pisa con uno más chico (ver
-                       @media max-height:760px, al final del archivo)
-                       -- mismo criterio que .br-map-card de módulo 2
-                       (modulo2.css), para no romper la adaptabilidad
-                       resuelta en style.css.
-     margin:0 auto    -> la centra horizontalmente. */
-.em-waffle-grid{
-  display:grid;
-  grid-template-columns:repeat(10,1fr);
-  gap:6px;
-  aspect-ratio:1;
-  width:100%;
-  max-width:292px; /* antes 290px, después 320px (daba barra de scroll) -- Emi pidió la grilla apenas más grande, pero menos que esa primera vuelta */
-  margin:0 auto;
-}
-/* La caja que envuelve a la grilla (ver modulo1.js). En celular no
-   hace nada (la grilla usa su ancho/max-width de siempre); en compu
-   pasa a decidir el tamaño de la grilla -- ver "TARJETA DE ALTO
-   FIJO", al final de este archivo. */
-.em-waffle-fit{
-  width:100%;
-}
-/* El texto informativo, ahora abajo de la grilla (ver .em-waffle-body
-   más arriba): centrado, para que quede alineado con la grilla
-   centrada de arriba en vez de pegado contra el borde izquierdo de la
-   tarjeta. max-width lo acota a un bloque de lectura cómodo, no a
-   todo el ancho de la tarjeta. */
-.em-waffle-info{
-  width:100%;
-  max-width:360px;
-  text-align:center;
-}
-/* Cada cuadrado individual arranca INVISIBLE y achicado (opacity:0,
-   scale .4) -- es el estado INICIAL de la animación de entrada: el JS
-   (modulo1.js) los va revelando de a uno, agregándoles la clase
-   .is-in con un pequeño retraso entre uno y el siguiente (efecto
-   "ola"). border-radius:4px les da las esquinas levemente redondeadas
-   (no son círculos, son cuadrados redondeados). */
-.em-waffle-sq{
-  border-radius:4px;
-  opacity:0;
-  transform:scale(.4);
-  cursor:pointer;
-  transition:opacity .25s ease, transform .25s ease;
-}
-/* Cuando el JS agrega .is-in (ya terminó de "entrar" en la animación):
-   se vuelve visible y crece a su tamaño normal -- gracias a la
-   transition de arriba, ese cambio se ve animado y no instantáneo. */
-.em-waffle-sq.is-in{
-  opacity:1;
-  transform:scale(1);
-}
-/* Cuando hay una categoría "enfocada" (mouse encima o clickeada), el
-   JS le agrega la clase .is-focused a la GRILLA ENTERA: con esa
-   clase puesta, TODOS los cuadrados (que ya hayan terminado de
-   entrar, .is-in) bajan su opacidad al 18% -- quedan bien apagados,
-   como "de fondo". */
-.em-waffle-grid.is-focused .em-waffle-sq.is-in{
-  opacity:.18;
-}
-/* ...EXCEPTO los que además tienen la clase .is-active (los cuadrados
-   que pertenecen justo a la categoría enfocada): esos vuelven al
-   100% de opacidad y se agrandan un 8% (scale 1.08) para destacarse
-   claramente por encima del resto, que quedó apagado. */
-.em-waffle-grid.is-focused .em-waffle-sq.is-in.is-active{
-  opacity:1;
-  transform:scale(1.08);
-}
-
-/* El titular grande que cambia según la categoría enfocada (ej. "3 de
-   cada 10"). transition:color está puesta porque el JS cambia este
-   color según la categoría (rosa fuerte si es "Mama", blanco/--text
-   para cualquier otra) -- con la transición, ese cambio de color se
-   ve suave en vez de un salto brusco. */
-.em-waffle-headline{
-  font-family:var(--serif);
-  font-weight:600;
-  font-size:clamp(1.8rem,5vw,2.4rem); /* responsivo: nunca menos de 1.8rem ni más de 2.4rem */
-  line-height:1;
-  color:var(--rose-strong);
-  margin:0;
-  transition:color .2s;
-  /* min-height:1em (con line-height:1, es exactamente 1 línea, SIEMPRE,
-     tenga texto o no): antes, en blanco (nada explorado), este <p>
-     vacío ocupaba 0px -- hlText/hlMeta ya reservaban su línea con
-     min-height propio, pero a ESTE le faltaba, así que la tarjeta
-     entera cambiaba de alto (medido: ~38px más) apenas se exploraba
-     un cuadrado. Pedido de Emi: que el tamaño de la tarjeta sea
-     siempre el mismo, el de cuando se explora. */
-  min-height:1em;
-}
-/* Texto explicativo debajo del titular (ej. "cánceres diagnosticados
-   en mujeres son de mama") y el texto con los números exactos (ej.
-   "20.750 casos (29,9%) de un total de 69.449").
-   min-height reserva el espacio de 1 línea SIEMPRE, aunque el
-   contenido cambie de largo al pasar de una categoría a otra -- así
-   el layout no "salta" (no empuja al resto de la tarjeta hacia abajo
-   o arriba) cada vez que cambia el texto.
-   text-wrap:balance reparte el texto entre líneas de forma pareja en
-   vez de dejar "huérfana" una sola palabra sola en la última línea
-   (ej. "...son de / mama" en vez de "...son de\nmama" con "mama"
-   solísima) -- soportado en los navegadores modernos; donde no lo
-   esté, el texto simplemente se envuelve normal (sin romper nada). */
-.em-waffle-hltext{
-  font-size:1.15rem; /* antes 0.95rem, y antes de eso 0.68rem fue el piso de .em-waffle-hlmeta de abajo -- Emi pidió agrandar bastante los dos: "casi que ni se lee" */
-  color:var(--text);
-  margin:2px 0 0; /* antes 8px 0 2px, después 4px 0 0 -- se achica un poco más, mismo motivo */
-  /* min-height a 2 líneas (antes 1.3em, una sola): "corresponden a
-     otros tipos de cáncer" (la categoría "Otros") se envuelve a 2
-     líneas en pantallas angostas, mientras el resto entra en 1 -- con
-     el piso de 1 línea nomás, la tarjeta cambiaba de alto según cuál
-     categoría se explorara. Medido en el navegador a 375px de ancho
-     para confirmar el caso real. */
-  min-height:2.6em;
-  /* display:flex + align-items:center: cuando el texto real mide 1
-     línea nomás (la mayoría de las categorías) pero el min-height de
-     arriba reserva 2, por defecto el texto queda pegado arriba y el
-     aire de sobra se nota abajo, pegado contra .em-waffle-hlmeta --
-     esto lo centra en el alto reservado, a mitad de camino entre el
-     titular de arriba y el dato de abajo (pedido de Emi). */
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  text-wrap:balance;
-}
-.em-waffle-hlmeta{
-  font-size:1rem; /* antes 0.68rem (bajado en una vuelta anterior; ahora Emi pidió agrandarlo mucho, al punto de casi igualar a .em-waffle-hltext) */
-  color:var(--text-dim);
-  margin:0 0 4px; /* antes 16px, después 8px -- se achica un poco más, mismo motivo que .em-waffle-hltext */
-  /* mismo motivo que .em-waffle-hltext, arriba: a este tamaño de
-     letra más grande, la oración completa ("20.750 casos de un total
-     de 69.449 (29,9%)") ya se envuelve a 2 líneas en pantallas
-     angostas para CUALQUIER categoría -- medido: con 1.3em (1 línea)
-     el blanco medía menos que el explorado. */
-  min-height:2.6em;
-}
-
 /* ============ "FUENTE" ============
    No existe una clase ".em-src" propia: el acordeón de "Fuente" (el
    <details>/<summary> al pie de la tarjeta) reutiliza DIRECTAMENTE la
@@ -1308,8 +1094,7 @@
    ícono que rota, el popover flotante y el triangulito que apunta
    hacia la etiqueta. Acá solo se ajusta el margen superior, para
    separarla del bloque que tenga justo arriba (los datos sueltos
-   .em-inline-stats, o la grilla del waffle, según qué pestaña esté
-   activa). */
+   .em-inline-stats, según qué pestaña esté activa). */
 .em-card .ui-src{
   margin-top:12px;
 }
@@ -1317,31 +1102,18 @@
 /* ============ PANTALLAS BAJAS (alto chico) ============
    Complemento del @media (max-height:760px) de style.css (ver ahí la
    explicación general y modulo2.css para el mismo criterio aplicado
-   al mapa de módulo 2). Acá se achica específicamente la grilla de
-   "Porcentaje", que al agrandarse (ver .em-waffle-grid más arriba,
-   290px de techo) podía volver a empujar la tarjeta por encima de
-   pantallas bajas -- 30vh deja la grilla chica pero cuadrada en
-   cualquier alto de pantalla, en vez de quedarse fija en un tamaño
-   pensado para pantallas normales.
+   al mapa de módulo 2).
 
-   .em-chart-tipo/.em-chart-edad (la fila de barras de las otras 2
+   .em-chart-tipo/.em-chart-edad (la fila de barras de las 2
    pestañas) NUNCA habían recibido este tratamiento -- a diferencia
-   del waffle de acá arriba o del mapa de módulo 2, tenían una altura
+   del mapa de módulo 2, tenían una altura
    fija en px (220px/250px, ver más arriba en este archivo) sin ningún
    techo por vh. Por eso esas 2 pestañas seguían con barra de scroll
    en pantallas bajas aunque el resto del sitio ya no la tuviera.
    min(242px,38vh)/min(210px,34vh): valores medidos a mano para que,
    sumados al resto de la tarjeta, entren justo por debajo de 760px de
-   alto (mismo método que ya usamos en .br-map-card y acá arriba en
-   .em-waffle-grid). */
+   alto (mismo método que ya usamos en .br-map-card). */
 @media (max-height:760px){
-  .em-waffle-body{gap:12px;}
-  .em-waffle-grid{max-width:min(195px,29vh);} /* bajado de 210px/30vh: el subtítulo con la pista de "pasá el cursor" agregó una línea más de alto */
-  .em-prompt-pct{margin-bottom:4px;} /* el prompt propio (antes era parte del subtítulo) suma una línea más -- se compensa achicando este margen */
-  /* .em-waffle-hltext/.em-waffle-hlmeta ya NO tienen override acá: sus
-     márgenes base (ver más arriba) se achicaron tanto que ya quedaron
-     iguales a los de este escalón -- los 2 overrides de acá eran
-     redundantes, se sacaron. */
   .em-chart-tipo{height:min(193px,30vh);} /* bajado de 203px/31vh: el .chapter-header ahora deja más aire antes del título (ver style.css), así que el gráfico tiene que ceder esos px */
   .em-chart-edad{height:min(140px,21vh);} /* mismo motivo */
   /* "Casos por tipo" ahora reserva SIEMPRE el alto de la versión
@@ -1386,7 +1158,7 @@
    ventana - 44px, entre 300px y 760px) y todo hacia adentro es
    flex-column: título y pestañas miden lo suyo, y el gráfico activo
    se queda con TODO el alto que sobra (flex:1). Resultado:
-     - las 3 pestañas miden lo mismo y la tarjeta termina justo al
+     - las 2 pestañas miden lo mismo y la tarjeta termina justo al
        pie de la vela, en cualquier alto de pantalla;
      - el gráfico crece o se achica solo según el lugar disponible,
        sin números medidos a mano por escalón;
@@ -1437,47 +1209,6 @@
     height:auto;
     min-height:100px;
   }
-  /* Waffle: el cuerpo (grilla + texto) se queda con el alto que
-     sobra, y dentro de él .em-waffle-fit con lo que deja el texto. La
-     grilla mide el 100% del alto de esa caja y aspect-ratio:1 le da
-     el mismo ancho, así es siempre cuadrada y nunca más alta que el
-     lugar que tiene (piso de 120px). Sin techo: antes topaba en
-     300px y quedaba centrada con aire de más arriba y abajo -- ahora
-     llena todo el alto que sobra, así los espacios grilla ↔
-     instrucción y grilla ↔ texto son exactamente el espacio parejo
-     entre bloques (ver "ESPACIO ENTRE BLOQUES", al final).
-     Antes esto se hacía con unidades de contenedor (cqw/cqh): en
-     Chrome andaba, pero en otro navegador la grilla no se achicaba y
-     se desbordaba hacia arriba, tapando el prompt rosa. height:100% +
-     aspect-ratio es más viejo y se comporta igual en todos lados.
-     Si ni con la grilla en su piso entra todo, la tarjeta crece (ver
-     min-height:min-content de #chapter-1, arriba) en vez de
-     superponer cosas. */
-  .em-waffle-body{
-    flex:1;
-  }
-  .em-waffle-fit{
-    flex:1;
-    min-height:120px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-  }
-  .em-waffle-grid{
-    height:100%;
-    width:auto;
-    max-width:100%;
-    margin:0;
-  }
-  /* En compu el bloque de texto mide siempre 360px de ancho, y los
-     textos más largos ("corresponden a otros tipos de cáncer" y
-     "28.483 casos de un total de 69.449 (41,0%)") miden ~330px:
-     entran en 1 renglón. Reservar 2 renglones (2.6em, pensado para
-     celular) le sacaba ~45px a la grilla en pantallas bajas. */
-  .em-waffle-hltext,
-  .em-waffle-hlmeta{
-    min-height:1.25em;
-  }
 }
 
 /* ============ ESPACIO ENTRE BLOQUES (igual en los 3 módulos) ============
@@ -1486,7 +1217,6 @@
    (ver "MEDIDAS COMPARTIDAS" en style.css: 20px, 14px en pantallas
    bajas). Los GRUPOS que van juntos a propósito NO se separan:
      - un gráfico con su leyenda ("Años" / "Los 5 cánceres...")
-     - "41 de cada 100" con sus 2 renglones de abajo (waffle)
    Excepción pedida por Emi: "1° / 66,2" en "Por tipo" mantiene su
    separación grande con los botones (.em-tipo-result, margin-top:44px).
    Va AL FINAL del archivo a propósito: les gana a los márgenes
@@ -1497,7 +1227,6 @@
 
 /* Instrucción rosa (o respuesta variable de "Por tipo") → gráfico */
 .em-card .em-prompt-tipo,
-.em-card .em-prompt-pct,
 .em-card .em-tipo-top .em-feedback{
   margin-bottom:var(--ui-gap-titulo);
 }
@@ -1518,14 +1247,7 @@
 .em-card .em-inline-stats{
   margin-top:var(--ui-gap-titulo);
 }
-/* "% del total": grilla → "41 de cada 100..." */
-.em-card .em-waffle-body{
-  gap:var(--ui-gap-titulo);
-}
-.em-card .em-waffle-hlmeta{
-  margin-bottom:0; /* el espacio hasta el pie ya lo da .em-foot, abajo */
-}
-/* Último bloque → pie (descripción + "Fuente"), en las 3 pestañas */
+/* Último bloque → pie (descripción + "Fuente"), en las 2 pestañas */
 .em-card .em-foot{
   margin-top:var(--ui-gap-titulo);
 }
