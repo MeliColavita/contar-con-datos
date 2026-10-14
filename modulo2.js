@@ -13316,7 +13316,8 @@
     const srcText = document.getElementById('brSrcText');
     const SRC_ANIO =
       'Muertes: microdatos DEIS 2005–2024. Población femenina: proyecciones INDEC ' +
-      '(2005–2009: INDEC-CELADE 1950–2015; 2010–2024: INDEC 2010–2040).';
+      '(2005–2009: INDEC-CELADE 1950–2015; 2010–2024: INDEC 2010–2040).' +
+      ' Tasa bruta (no ajustada por edad). Las proyecciones de población cambian de fuente en 2010, lo que puede afectar levemente la comparación entre 2009 y 2010.';
     const SRC_PROV =
       'Microdatos DEIS, defunciones acumuladas 2018–2022. Límites provinciales: IGN 2019 ' +
       '(vía Trase Atlas), proyección transversal de Mercator. Cada punto representa 100 ' +
@@ -13474,7 +13475,7 @@
       { year: 2011, mama: 5422, total: 27318, tasa: 25.72, poblacion: 21080699 },
       { year: 2012, mama: 5530, total: 28192, tasa: 25.95, poblacion: 21312880 },
       { year: 2013, mama: 5660, total: 28719, tasa: 26.27, poblacion: 21543898 },
-      { year: 2014, mama: 5653, total: 29168, tasa: 25.97, poblacion: 21773297 },
+      { year: 2014, mama: 5653, total: 29168, tasa: 25.96, poblacion: 21773297 },
       { year: 2015, mama: 5970, total: 29950, tasa: 27.14, poblacion: 22000620 },
       { year: 2016, mama: 5889, total: 30102, tasa: 26.5, poblacion: 22225898 },
       { year: 2017, mama: 6049, total: 30241, tasa: 26.95, poblacion: 22449188 },
@@ -13661,24 +13662,39 @@
           plugins: {
             legend: { display: false },
             tooltip: {
-              footerFont: { weight: 'normal' },
-              footerColor: '#f7a8c4',
+              footerFont: { weight: 'normal', size: 10 },
+              footerColor: '#a99aa6',
               callbacks: {
-                title: (items) => items[0].parsed.x,
-                label: (c) =>
-                  ' ' +
-                  c.parsed.y.toLocaleString('es-AR', { minimumFractionDigits: 2 }) +
-                  ' por 100.000',
-                footer: (items) => {
-                  const base = YEAR_DATA[0];
-                  if (items[0].parsed.x === base.year) return 'Año de referencia';
-                  const pct = ((items[0].parsed.y - base.tasa) / base.tasa) * 100;
-                  return (
-                    (pct < 0 ? '▼ ' : '▲ ') +
-                    Math.abs(pct).toLocaleString('es-AR', { maximumFractionDigits: 1 }) +
-                    '% respecto de 2005'
-                  );
+                title: (items) => 'Año ' + items[0].parsed.x,
+                label: (c) => {
+                  const tasaDe = (d) => (d.mama / d.poblacion) * 100000;
+                  const f2 = (v) =>
+                    Math.abs(v).toLocaleString('es-AR', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    });
+                  const signo = (v, suf) => {
+                    const r = Math.round(Math.abs(v) * 100) / 100;
+                    return (r === 0 ? '' : v > 0 ? '+' : '−') + f2(v) + (suf || '');
+                  };
+
+                  const act = YEAR_DATA[c.dataIndex];
+                  const ant = YEAR_DATA.find((d) => d.year === act.year - 1);
+                  const t = tasaDe(act);
+                  const lineas = [' Tasa: ' + f2(t) + ' por 100.000 mujeres'];
+
+                  if (!ant) {
+                    lineas.push(' Sin comparación interanual');
+                    return lineas;
+                  }
+                  const ta = tasaDe(ant);
+                  const dif = t - ta;
+                  lineas.push(' Año anterior (' + ant.year + '): ' + f2(ta));
+                  lineas.push(' Diferencia interanual: ' + signo(dif) + ' por 100.000 mujeres');
+                  lineas.push(' Variación interanual: ' + signo((dif / ta) * 100, ' %'));
+                  return lineas;
                 },
+                footer: () => 'Calculado con valores sin redondear',
               },
             },
           },
@@ -13765,6 +13781,25 @@
         if (promptAnio) promptAnio.classList.add('br-prompt-gone');
       };
 
+      canvasAnio.setAttribute('tabindex', '0');
+      canvasAnio.setAttribute('role', 'img');
+      canvasAnio.setAttribute(
+        'aria-label',
+        'Gráfico de la tasa de mortalidad por cáncer de mama por año, 2005 a 2024. Con las flechas izquierda y derecha recorrés los años.',
+      );
+      canvasAnio.addEventListener('keydown', (e) => {
+        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+        e.preventDefault();
+        let i =
+          YEAR_DATA.findIndex((d) => d.year === currentYear) + (e.key === 'ArrowRight' ? 1 : -1);
+        i = Math.max(0, Math.min(YEAR_DATA.length - 1, i));
+        selectYear(YEAR_DATA[i].year);
+        const act = [{ datasetIndex: 0, index: i }];
+        scatterChart.setActiveElements(act);
+        scatterChart.tooltip.setActiveElements(act, { x: 0, y: 0 });
+        scatterChart.update();
+      });
+
       // NUEVO: al sacar el cursor (o el dedo) del gráfico, la nota desaparece
       canvasAnio.addEventListener('pointerleave', ocultarNotaAnio);
     }
@@ -13782,6 +13817,35 @@
       buildYearMap();
       buildScatter();
       selectYear(currentYear);
+
+      // Título y nota calculados con los datos (no escritos a mano).
+      const f = YEAR_DATA[0],
+        l = YEAR_DATA[YEAR_DATA.length - 1];
+      const pctObs = ((l.tasa - f.tasa) / f.tasa) * 100;
+      const pctTen = ((REG.pred(l.year) - REG.pred(f.year)) / REG.pred(f.year)) * 100;
+      const pc1 = (v) =>
+        Math.abs(v).toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+      const tit = document.getElementById('brAnioTitulo');
+      if (tit)
+        tit.textContent =
+          'La tasa de mortalidad por cáncer de mama bajó un ' +
+          pc1(pctObs) +
+          ' % entre ' +
+          f.year +
+          ' y ' +
+          l.year;
+      const nota = document.getElementById('brAxisNote');
+      if (nota)
+        nota.textContent =
+          'Tasa bruta. El eje empieza en 24. La línea punteada es la tendencia lineal (mínimos cuadrados): ' +
+          conSigno(REG.b) +
+          ' por 100.000 por año; baja estimada ' +
+          pc1(pctTen) +
+          ' % entre ' +
+          f.year +
+          ' y ' +
+          l.year +
+          '.';
     }
 
     // "Por año" es la pestaña que se ve al entrar al módulo: armamos su
