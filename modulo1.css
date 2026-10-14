@@ -406,6 +406,23 @@
   line-height:1; /* caja justa al signo, para poder centrarlo adentro de la barra punteada */
   z-index:2;     /* por encima del fondo rosado de la barra punteada (.em-guess-zone), no detrás */
 }
+/* .em-val-live: el número que se va eligiendo al arrastrar (Mama,
+   antes de confirmar) -- más grande que los números de las barras,
+   porque con Mama sola en el gráfico es la única referencia de cuánto
+   se está estimando. modulo1.js la saca al revelar. */
+.em-val-live{
+  font-size:clamp(1.05rem,2.4vw,1.3rem);
+  color:var(--rose-strong);
+  z-index:2;
+}
+
+/* "Casos por tipo", antes de confirmar la estimación: las otras 4
+   columnas no se muestran (Mama queda sola y centrada -- el gráfico ya
+   centra sus columnas, ver justify-content:center). modulo1.js saca
+   esta clase al revelar y las hace aparecer una por una. */
+.em-col.em-col-pending{
+  display:none;
+}
 .em-lbl{
   margin-top:10px;
   font-size:clamp(0.7rem,1.8vw,0.85rem);
@@ -464,6 +481,23 @@
   background:var(--rose-strong);
 }
 .em-col-age{ cursor:pointer; } /* toda la columna (no solo la barra) responde al clic en "Casos por edad" */
+
+/* "Casos por edad": las barras arrancan parejas, grises y sin número
+   (.em-bar-pending, la pone modulo1.js) hasta que se las toca. Gris
+   neutro, sin el rosado de las barras con dato, para que se lean como
+   "todavía sin revelar". */
+.em-bar.em-bar-pending{
+  background:rgba(169,154,166,0.28);
+}
+.em-bar.em-bar-pending > .em-val{
+  opacity:0; /* el número ya está escrito, pero no se ve hasta tocar la barra */
+}
+/* Al tocarla, la barra sube o baja hasta su valor real más despacio que
+   un cambio de color común (0,9s, con frenado al final): que se vea
+   bien cuánto sube 45-59 o 60-74 frente a la altura pareja de antes. */
+.em-chart-edad .em-bar{
+  transition:height .9s cubic-bezier(.2,.8,.2,1), background .25s ease;
+}
 
 .em-axis-note{
   text-align:center;
@@ -529,6 +563,13 @@
   background:rgba(255,111,156,0.18);
   animation:em-guess-pulse 1.6s ease-in-out infinite;
 }
+/* Después del primer movimiento (arrastrando o quieta antes de
+   confirmar) la barra punteada deja de brillar: lo único que titila es
+   "Confirmar resultado" (pedido de Emi). La clase la pone modulo1.js
+   (markMoved, en setupDrag). */
+.em-guess-quiet .em-guess-bar{
+  animation:none;
+}
 @keyframes em-guess-pulse{
   0%,100%{ box-shadow:0 0 0 0 rgba(255,111,156,0); }
   50%{ box-shadow:0 0 16px 3px var(--rose-glow); }
@@ -539,22 +580,51 @@
    sacó. cursor:ns-resize (antes en .em-guess-zone) se mueve para acá,
    así el ícono del mouse avisa "esto se arrastra" justo donde
    corresponde. */
+/* Ahora dice "↕ Arrastrá" (antes solo "↕", 38px de ancho fijo): el
+   ancho sale del texto (width:max-content + padding). Se centra con
+   left/right:0 + margin:auto en vez de left:50% + transform, para que
+   "transform" quede libre para la animación de abajo. El alto (20px)
+   y top:-13px NO se tocan: modulo1.js los usa para ubicar el "?" y el
+   número (ver placeQ/placeVal en setupDrag). */
 .em-handle{
   position:absolute;
-  left:50%;
+  left:0;
+  right:0;
+  margin:0 auto;
   top:-13px;
-  transform:translateX(-50%);
-  width:38px;
+  width:max-content;
   height:20px;
+  padding:0 10px;
   border-radius:999px;
   background:var(--rose-strong);
   color:#1a0510;
-  font-size:0.75rem;
+  font-size:0.72rem;
   font-weight:700;
+  white-space:nowrap;
   display:grid;
   place-items:center;
   pointer-events:auto;
   cursor:ns-resize;
+  touch-action:none;
+  /* Sube y baja apenas, en loop, hasta el primer movimiento: dice
+     "agarrame y movéme" sin tener que leer nada (pedido de Emi: la
+     gente no se daba cuenta de que era un juego). */
+  animation:em-handle-bob 1.4s ease-in-out infinite;
+}
+@keyframes em-handle-bob{
+  0%,100%{ transform:translateY(0); }
+  50%{ transform:translateY(-4px); }
+}
+/* Después del primer movimiento ya se entendió: deja de moverse sola
+   (la agrega modulo1.js, ver markMoved en setupDrag). */
+.em-handle.em-handle-used{
+  animation:none;
+}
+/* Foco con teclado (Tab): un anillo visible, para saber que las
+   flechas la mueven. */
+.em-handle:focus-visible{
+  outline:2px solid var(--text);
+  outline-offset:2px;
 }
 /* Línea punteada que marca dónde quedó la respuesta adivinada, una
    vez revelada la real -- queda puesta ahí de forma permanente (hasta
@@ -651,6 +721,9 @@
   margin-bottom:16px; /* antes 0, pegado contra los botones de abajo -- mismo motivo que el margin-bottom de .em-axis-note */
 }
 .em-feedback b{ color:var(--rose-strong); }
+/* Un número del mensaje que NO es de mama (ej. el total de "los otros
+   4") va en blanco: el rosa queda reservado para mama (pedido de Emi). */
+.em-feedback b.em-fb-neutral{ color:var(--text); }
 
 /* Botones "Probar de nuevo" / "Ver los otros 4 juntos" / "Ver por
    separado". Mismo look de píldora que .em-tab, pero CONTORNEADOS
@@ -664,6 +737,40 @@
   justify-content:center;
   gap:10px;
   margin-bottom:16px; /* antes 0, pegados contra lo de abajo */
+}
+/* "Confirmar resultado" ("Casos por tipo", antes de revelar): al
+   costado DERECHO de la barra de Mama, a la altura de su base (pedido de Emi)
+   -- modulo1.js lo agrega adentro del área de la barra de Mama (.em-plot), que ya es
+   position:relative. Arranca oculto (.em-reveal-fade) y aparece
+   recién cuando la persona movió la barra por primera vez, titilando
+   (un brillo rosa que se prende y se apaga) para invitar a tocarlo
+   después de arrastrar. Relleno rosa suave en vez de solo el borde,
+   para que se distinga de "Probar de nuevo"/"Ver los otros 4 juntos". */
+.em-btn-confirm{
+  position:absolute;
+  left:calc(100% + 16px);
+  bottom:0; /* alineado con la BASE de la barra de Mama (pedido de Emi; antes a media altura) */
+  width:max-content;
+  max-width:180px;
+  color:var(--text);
+  background:rgba(255,111,156,0.18);
+  z-index:3;
+}
+.em-btn-confirm.em-shown{
+  animation:em-confirm-blink 1.2s ease-in-out infinite;
+}
+@keyframes em-confirm-blink{
+  0%,100%{ background:rgba(255,111,156,0.14); box-shadow:0 0 0 0 rgba(255,111,156,0); }
+  50%{ background:rgba(255,111,156,0.42); box-shadow:0 0 18px 4px var(--rose-glow); }
+}
+/* Celular: al costado de la barra queda poco lugar -- el texto pasa a
+   2 renglones en vez de salirse de la tarjeta. */
+@media (max-width:600px){
+  .em-btn-confirm{
+    max-width:100px;
+    white-space:normal;
+    left:calc(100% + 10px);
+  }
 }
 .em-btn{
   font-family:var(--sans);
@@ -679,20 +786,38 @@
 }
 .em-btn:hover{ background:rgba(255,111,156,0.12); }
 .em-btn:disabled{ opacity:0.5; cursor:default; }
-.em-btn-ghost{
-  border-color:var(--panel-border);
-  color:var(--text-dim);
-}
-/* .em-btn-sum: ancho fijo (lo bastante para "Ver los otros 4 juntos",
-   el más largo de sus 2 textos) -- como .em-tipo-actions centra el
-   grupo entero, si este botón cambiaba de ancho según su texto
-   ("Ver los otros 4 juntos" / "Ver por separado") también corría de
-   lugar a "Probar de nuevo", al lado. Con ancho fijo el grupo entero
-   mide siempre lo mismo, así que nada se mueve (pedido de Emi). */
+/* (Acá vivía .em-btn-ghost, el formato más apagado -- borde gris --
+   de "Probar de nuevo". Se sacó: Emi pidió que los 2 botones tengan
+   el mismo formato.) */
+/* .em-btn-sum: ancho fijo (lo bastante para "¿Y si sumamos los otros
+   4?", el más largo de sus 2 textos) -- como .em-tipo-actions centra
+   el grupo entero, si este botón cambiaba de ancho según su texto
+   ("¿Y si sumamos los otros 4?" / "Ver por separado") también corría
+   de lugar a "Probar de nuevo", al lado. Con ancho fijo el grupo
+   entero mide siempre lo mismo, así que nada se mueve (pedido de Emi). */
 .em-btn-sum{
-  width:216px;
+  width:236px;
   max-width:100%;
   text-align:center;
+}
+/* "Probar de nuevo" mide LO MISMO que el otro botón (pedido de Emi):
+   con anchos distintos (142px y 236px) el grupo quedaba centrado,
+   pero el hueco entre los 2 caía ~47px a la izquierda del centro de
+   la tarjeta, y "Probar de nuevo" parecía corrido. Con los 2 iguales,
+   el hueco queda justo en el centro. max-width: en pantallas angostas
+   los 2 siguen entrando lado a lado (el texto pasa a 2 renglones). */
+.em-tipo-actions .em-btn{
+  width:236px;
+  max-width:calc(50% - 5px); /* 5px = la mitad del gap entre botones */
+  text-align:center;
+}
+/* Guía después de revelar (pedido de Emi): "¿Y si sumamos los otros
+   4?" -- y después "Ver por separado" -- titilan con el mismo brillo
+   rosa que "Confirmar resultado" (@keyframes em-confirm-blink), para
+   invitar al paso siguiente. modulo1.js saca esta clase al volver al
+   gráfico de 5 barras: desde ahí los 2 botones quedan iguales. */
+.em-btn.em-btn-blink{
+  animation:em-confirm-blink 1.2s ease-in-out infinite;
 }
 
 /* La nota chica al pie de "Casos por edad" (antes ".em-note", definida
@@ -719,6 +844,13 @@
   box-shadow:0 10px 30px rgba(0,0,0,0.5);
   font-variant-numeric:tabular-nums;
 }
+/* El globo del cálculo del 14,9%, fijo en la esquina inferior derecha
+   de la tarjeta (ver showTipCorner en modulo1.js): esa esquina lleva
+   el mismo redondeo que la tarjeta (16px, .ui-panel en style.css),
+   así el borde del globo calza justo sobre el de la tarjeta. */
+.em-tip.em-tip-corner{
+  border-radius:12px 12px 16px 12px;
+}
 .em-tip strong{
   font-family:var(--serif);
   color:var(--rose-strong);
@@ -735,13 +867,35 @@
 .em-tip div span:last-child{
   color:var(--text);
   font-weight:600;
+  white-space:nowrap; /* el número nunca se parte en 2 renglones */
+}
+/* Aclaración chica al pie del globo (ej. "El total incluye el cáncer
+   de piel no melanoma", en el cálculo del 14,9%). */
+.em-tip .em-tip-note{
+  margin:6px 0 0;
+  max-width:260px;
+  font-size:0.75rem;
+  font-style:italic;
+  color:var(--text-dim);
+}
+
+/* Dato con cálculo para mostrar (el 14,9% de "Casos por tipo", ver
+   chapter1Stats en modulo1.js): el dato entero abre el globo al pasar
+   el cursor, tocarlo o enfocarlo con Tab. (Antes tenía al lado un
+   ícono ⓘ, .em-info -- se sacó, pedido de Emi.) Sin contorno de foco
+   del navegador: el globo que aparece ya muestra que está enfocado. */
+.em-stat-tip{
+  cursor:help;
+}
+.em-stat-tip:focus{
+  outline:none;
 }
 
 /* Respeta "reducir movimiento": apaga las transiciones CSS de los
    elementos nuevos (el.animate(), en modulo1.js, ya se salta solo con
    duration:0 cuando corresponde -- ver reduceMotion ahí). */
 @media (prefers-reduced-motion:reduce){
-  .em-bar, .em-val, .em-lbl, .em-col, .em-prompt-dot, .em-reveal-fade, .em-guess-bar, .em-fade-in{
+  .em-bar, .em-val, .em-lbl, .em-col, .em-prompt-dot, .em-reveal-fade, .em-guess-bar, .em-handle, .em-btn-confirm, .em-btn-blink, .em-fade-in{
     transition:none !important;
     animation:none !important;
   }
@@ -816,6 +970,12 @@
    (.em-tipo-result-stats .em-stat-label). */
 .em-inline-stats .em-stat-label{
   font-size:calc(0.8rem + 1px); /* antes 0.8rem (el tamaño base de .em-stat-label) */
+}
+/* "Casos por edad" antes del primer toque: los 2 datos quedan vacíos
+   (pedido de Emi), pero ocupando su lugar -- así la tarjeta no salta de
+   alto con el primer toque. La línea separadora de arriba sigue. */
+.em-inline-stats.em-stats-empty .em-stat{
+  visibility:hidden;
 }
 /* ============================================================
    "Casos por tipo": prompt/resultado y pie (reemplazan a
@@ -1347,4 +1507,20 @@
 /* Último bloque → pie (descripción + "Fuente"), en las 3 pestañas */
 .em-card .em-foot{
   margin-top:var(--ui-gap-titulo);
+}
+
+/* ============ "POR TIPO": BARRAS MÁS ALTAS ============
+   Pedido de Emi, para que las barras se diferencien mejor: en
+   pantallas de alto normal, "1° / 66,2" pasa del margen grande de
+   44px al espacio parejo entre bloques (--ui-gap-titulo). Esos px los
+   toma el gráfico, que crece solo (es el que se queda con el alto que
+   sobra de la tarjeta). En pantallas bajas (760px o menos) ese margen
+   ya era chico (10px, ver el escalón de 760px), así que ahí no cambia.
+   (Que el número que se va eligiendo no pise la manija cerca del
+   máximo lo resuelve modulo1.js -- ver placeVal en setupDrag -- sin
+   quitarle alto al gráfico.) */
+@media (min-height:761px){
+  .em-card .em-tipo-result{
+    margin-top:var(--ui-gap-titulo);
+  }
 }
