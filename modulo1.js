@@ -210,7 +210,7 @@
   // segundo antes era "66,2 casos cada 100.000 mujeres" (la tasa sigue
   // estando en la etiqueta de cada barra); ahora es el peso del cáncer
   // de mama sobre TODOS los casos de cáncer del país (pedido de Emi),
-  // con un ícono ⓘ que muestra el cálculo ("tip", ver
+  // con un globo que muestra el cálculo ("tip", ver
   // renderCasosPorTipo). El % se calcula acá, no se escribe a mano.
   const chapter1Stats = [
     { valor: '1°', label: 'Cáncer más frecuente en mujeres' },
@@ -709,37 +709,33 @@
         '<div class="em-stat-label">' +
         s.label +
         '</div>';
-      // Dato con "tip" (el 14,9%): un ícono ⓘ al lado de la etiqueta
-      // que muestra el cálculo, con el mismo globo que usan las barras.
-      // Se abre al pasar el cursor por el dato, al enfocarlo con el
-      // teclado (Tab) o al tocarlo (celular, donde no hay "pasar el
-      // cursor"). Es un <button> para que se pueda enfocar y lo lean
-      // los lectores de pantalla.
+      // Dato con "tip" (el 14,9%): muestra el cálculo en el mismo globo
+      // que usan las barras, FIJO en la esquina inferior derecha de la
+      // tarjeta (showTipCorner, pedido de Emi). Se abre al pasar el
+      // cursor por el dato, al enfocarlo con el teclado (Tab) o al
+      // tocarlo (celular, donde no hay "pasar el cursor"). Antes tenía
+      // al lado un ícono ⓘ: se sacó (pedido de Emi), así que ahora el
+      // dato entero es el que se toca/enfoca.
       if (s.tip) {
-        const info = document.createElement('button');
-        info.type = 'button';
-        info.className = 'em-info';
-        info.setAttribute('aria-label', 'Ver cómo se calcula el ' + s.valor);
-        info.textContent = 'i';
-        item.querySelector('.em-stat-label').appendChild(info);
-        // El globo aparece FIJO en la esquina inferior derecha de la
-        // tarjeta (showTipCorner), no siguiendo al cursor -- pedido de
-        // Emi. "card" = .em-card, el padre de #em-chart-panel.
-        const card = panel1.parentElement;
+        const card = panel1.parentElement; // .em-card, el padre de #em-chart-panel
         const open = function () {
           showTipCorner(s.tip, card);
         };
+        item.classList.add('em-stat-tip');
+        item.tabIndex = 0;
+        item.setAttribute('role', 'button');
+        item.setAttribute('aria-label', s.valor + ' ' + s.label + '. Ver cómo se calcula');
         item.addEventListener('pointerenter', function (e) {
           if (e.pointerType === 'mouse') open();
         });
         item.addEventListener('pointerleave', function (e) {
           if (e.pointerType === 'mouse') hideTip();
         });
-        info.addEventListener('focus', open);
-        // Al tocar fuera del ícono, el botón pierde el foco (blur) y el
+        item.addEventListener('focus', open);
+        // Tocar en cualquier otro lado saca el foco del dato (blur) y el
         // globo se cierra.
-        info.addEventListener('blur', hideTip);
-        info.addEventListener('click', open);
+        item.addEventListener('blur', hideTip);
+        item.addEventListener('click', open);
       }
       statsCol.appendChild(item);
     });
@@ -784,9 +780,8 @@
       feedback.classList.add('em-shown');
       // Guía (pedido de Emi): apenas se revela el resultado, "¿Y si
       // sumamos los otros 4?" titila para invitar al paso siguiente; al
-      // juntarlos sigue titilando como "Ver por separado", y recién al
-      // volver al gráfico de 5 barras deja de titilar (ver el click de
-      // btnSum, más abajo) y los 2 botones quedan iguales.
+      // tocarlo deja de titilar (ver el click de btnSum, más abajo):
+      // "Ver por separado" no titila y los 2 botones quedan iguales.
       if (doAnimate) btnSum.classList.add('em-btn-blink');
       actions.classList.add('em-shown');
       axisNote.classList.add('em-shown');
@@ -1007,7 +1002,6 @@
       }
       // setFromPx(px): redondea a múltiplos de 50 (antes 100) -- con
       // 50 SÍ se puede caer justo en 20.750, el valor real de Mama
-      // (pedido de Emi: "poder acertar exacto").
       let curPx = 0; // alto actual de la barra punteada (lo usa el arrastre relativo, ver pointerdown)
       function setFromPx(px) {
         px = Math.max(6, Math.min(zone.clientHeight, px));
@@ -1298,9 +1292,10 @@
 
     btnSum.addEventListener('click', function () {
       if (btnSum.disabled) return;
-      // Volver de "los otros 4 juntos" al gráfico de 5 barras cierra la
-      // guía: el botón deja de titilar (ver reveal()).
-      if (tipoState.merged) btnSum.classList.remove('em-btn-blink');
+      // Tocar "¿Y si sumamos los otros 4?" cierra la guía: el botón deja
+      // de titilar (ver reveal()) -- "Ver por separado" ya NO titila
+      // (pedido de Emi).
+      btnSum.classList.remove('em-btn-blink');
       tipoState.merged = !tipoState.merged;
       applyMergeState(true);
     });
@@ -1571,7 +1566,9 @@
     }
 
     function setActive(key, pin) {
-      if (pin) key = pinned = pinned === key ? null : key;
+      // Un clic SIEMPRE deja elegida esa categoría: queda fija hasta que
+      // se hace clic en otra (pedido de Emi).
+      if (pin) key = pinned = key;
       if (key === null && pinned) key = pinned; // si hay algo clavado, no lo pierde al sacar el mouse
       const d = data.filter(function (x) {
         return x.key === key;
@@ -1590,12 +1587,8 @@
         sq.className = 'em-waffle-sq';
         sq.style.background = color;
         sq.dataset.k = d.key;
-        sq.addEventListener('mouseenter', function () {
-          if (pinned && pinned !== d.key) {
-            pinned = null;
-            setActive(null);
-          }
-        });
+        // Pasar el cursor no hace nada (ni por la grilla ni por fuera):
+        // solo el clic elige o cambia la categoría (pedido de Emi).
         sq.addEventListener('click', function () {
           setActive(d.key, true);
         });
