@@ -13462,6 +13462,7 @@
       if (promptProvOff) promptProvOff.classList.add('br-hidden'); // <-- NUEVA: la oculta
       const promptAnioEl = document.getElementById('brAnioPrompt');
       if (promptAnioEl) promptAnioEl.classList.remove('br-prompt-gone');
+      resetAnio();
       srcSub.textContent = SUB_ANIO;
       if (brTitle) brTitle.textContent = TITLE_ANIO;
       setFuente(SRC_ANIO);
@@ -13521,6 +13522,14 @@
       currentYear = 2024,
       svgAnio;
 
+    // ---------- Revelado del gráfico "Por año" ----------
+    // El gráfico arranca SIN datos. Cuando el cursor (o el dedo) entra al
+    // gráfico, los puntos, la línea y la tendencia se dibujan de izquierda a
+    // derecha. anioProgress va de 0 a 1 durante esa animación.
+    let anioRevealed = false,
+      anioProgress = 0,
+      anioRaf = null;
+
     // buildYearMap(): dibuja el segundo mapa (el "plano", todo del
     // mismo color -- ver .br-province-plain en modulo2.css) que sirve
     // de fondo decorativo detrás del texto grande (.br-map-overlay).
@@ -13572,6 +13581,48 @@
       mostrarNotaAnio(year);
     }
 
+    // revealAnio(): primera interacción con el gráfico. Oculta la pista rosa,
+    // muestra los números de abajo y dibuja la serie de izquierda a derecha.
+    function revealAnio() {
+      if (anioRevealed || !scatterChart) return;
+      anioRevealed = true;
+      const pista = document.getElementById('brAnioPrompt');
+      if (pista) pista.classList.add('br-prompt-gone');
+      document.getElementById('brStatDia').textContent = PROMEDIO_DIA.toLocaleString('es-AR', {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1,
+      });
+      selectYear(currentYear);
+
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        anioProgress = 1;
+        scatterChart.draw();
+        return;
+      }
+      const DURACION = 1600; // ms
+      const t0 = performance.now();
+      const paso = (ahora) => {
+        const t = Math.min(1, (ahora - t0) / DURACION);
+        anioProgress = 1 - Math.pow(1 - t, 3); // easeOutCubic
+        scatterChart.draw();
+        anioRaf = t < 1 ? requestAnimationFrame(paso) : null;
+      };
+      anioRaf = requestAnimationFrame(paso);
+    }
+
+    // resetAnio(): vuelve al estado inicial (gráfico vacío + pista rosa visible).
+    function resetAnio() {
+      if (anioRaf) cancelAnimationFrame(anioRaf);
+      anioRaf = null;
+      anioRevealed = false;
+      anioProgress = 0;
+      ['brStatPob', 'brStatMama', 'brStatDia'].forEach((id) => {
+        document.getElementById(id).textContent = '—';
+      });
+      ocultarNotaAnio();
+      if (scatterChart) scatterChart.draw();
+    }
+
     // buildScatter()
     // Arma el gráfico de dispersión (un punto por año, 2005-2024,
     // conectados por una línea) con la tasa de mortalidad. Se llama
@@ -13586,6 +13637,7 @@
       const lineaVerticalPlugin = {
         id: 'lineaVertical',
         afterDatasetsDraw(chart) {
+          if (anioProgress < 1) return;
           const x = chart.scales.x.getPixelForValue(currentYear);
           const { top, bottom } = chart.chartArea;
           const c = chart.ctx;
@@ -13697,9 +13749,31 @@
         },
       };
 
+      // Recorta el dibujo de la serie según anioProgress: 0 = nada, 1 = todo.
+      // Va PRIMERO en la lista de plugins para que también recorte la tendencia.
+      const revelarPlugin = {
+        id: 'revelar',
+        beforeDatasetsDraw(chart) {
+          if (anioProgress >= 1) return;
+          const { left, right } = chart.chartArea;
+          const c = chart.ctx;
+          c.save();
+          c.beginPath();
+          c.rect(0, 0, left - 12 + (right - left + 24) * anioProgress, chart.height);
+          c.clip();
+          chart._revelarActivo = true;
+        },
+        afterDatasetsDraw(chart) {
+          if (!chart._revelarActivo) return;
+          chart.ctx.restore();
+          chart._revelarActivo = false;
+        },
+      };
+
       scatterChart = new Chart(ctx, {
         type: 'scatter',
         plugins: [
+          revelarPlugin,
           lineaVerticalPlugin,
           tendenciaPlugin,
           notaEnGraficoPlugin,
@@ -13734,11 +13808,13 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          animation: false, // la entrada la maneja revelarPlugin
           layout: { padding: { left: 10, right: 10 } },
           interaction: { mode: 'nearest', axis: 'x', intersect: false },
           plugins: {
             legend: { display: false },
             tooltip: {
+              filter: () => anioRevealed, // sin datos, sin tooltip
               footerFont: { weight: 'normal' },
               footerColor: '#f7a8c4',
               callbacks: {
@@ -13787,6 +13863,7 @@
             },
           },
           onHover: (evt, els) => {
+            if (!anioRevealed) return;
             if (els.length) selectYear(YEAR_DATA[els[0].index].year);
             else ocultarNotaAnio(); // NUEVO: el cursor ya no está sobre un año
           },
@@ -13804,6 +13881,7 @@
       // "2010" también resalta ese año, no solo tocar el puntito.
       const canvasAnio = document.getElementById('brAnioScatter');
       canvasAnio.addEventListener('mousemove', (evt) => {
+        if (!anioRevealed) return;
         const rect = canvasAnio.getBoundingClientRect();
         const mouseX = evt.clientX - rect.left,
           mouseY = evt.clientY - rect.top;
@@ -13845,6 +13923,10 @@
 
       // NUEVO: al sacar el cursor (o el dedo) del gráfico, la nota desaparece
       canvasAnio.addEventListener('pointerleave', ocultarNotaAnio);
+
+      // Al entrar al gráfico (mouse) o tocarlo (celular) aparecen los datos.
+      canvasAnio.addEventListener('pointerenter', revealAnio);
+      canvasAnio.addEventListener('pointerdown', revealAnio);
     }
 
     // initYearTab()
@@ -13860,6 +13942,7 @@
       buildYearMap();
       buildScatter();
       selectYear(currentYear);
+      resetAnio(); // arranca vacío hasta que el cursor entre al gráfico
     }
 
     // "Por año" es la pestaña que se ve al entrar al módulo: armamos su
@@ -13878,10 +13961,17 @@
     const chapter2 = document.getElementById('chapter-2');
     const promptAnio = document.getElementById('brAnioPrompt');
     const promptProv = document.getElementById('brProvPrompt');
+    let capituloEstabaActivo = chapter2.classList.contains('active');
     new MutationObserver(() => {
-      if (!chapter2.classList.contains('active')) return;
+      const activo = chapter2.classList.contains('active');
+      if (!activo) {
+        capituloEstabaActivo = false;
+        return;
+      }
       if (promptAnio) promptAnio.classList.remove('br-prompt-gone');
       if (promptProv) promptProv.classList.remove('br-prompt-gone');
+      if (!capituloEstabaActivo) resetAnio(); // recién entró al capítulo
+      capituloEstabaActivo = true;
     }).observe(chapter2, { attributes: true, attributeFilter: ['class'] });
   })();
 
