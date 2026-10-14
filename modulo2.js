@@ -13035,11 +13035,19 @@
       CABA: ['Buenos Aires', 'CABA'],
     };
 
-    // Crea un <path> de SVG por cada provincia (usando su "d", el
-    // contorno ya calculado en DATA), y le conecta los eventos de
-    // mouse: entrar/clickear la resalta (y a su "grupo" -- ver
-    // GROUPED_PROVINCES) y actualiza el tooltip + el gráfico de
-    // barras; moverse adentro reposiciona el tooltip; salir lo oculta.
+    // Provincia seleccionada con click (null = ninguna)
+    let selectedKey = null;
+
+    // CABA se trata como Buenos Aires (sus datos ya están sumados ahí)
+    const keyOf = (p) => (p.name === 'CABA' ? 'Buenos Aires' : p.name);
+    const dataFor = (p) => DATA.provinces.find((pr) => pr.name === keyOf(p));
+
+    // resalta la provincia p (y su grupo, ej. Buenos Aires + CABA)
+    function highlight(p) {
+      const group = GROUPED_PROVINCES[p.name] || [p.name];
+      pathEls.forEach((o) => o.el.classList.toggle('active', group.includes(o.data.name)));
+    }
+
     DATA.provinces.forEach((p) => {
       const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       path.setAttribute('d', p.d);
@@ -13048,30 +13056,35 @@
       svg.appendChild(path);
       pathEls.push({ el: path, data: p });
 
-      // activate(e): resalta esta provincia (y las de su grupo, ej.
-      // Buenos Aires+CABA juntas) y actualiza el tooltip/gráfico con
-      // SUS datos -- si el grupo incluye Buenos Aires, siempre
-      // muestra los datos de Buenos Aires (no los de CABA por
-      // separado), porque CABA ya está sumada ahí (ver
-      // GROUPED_PROVINCES, arriba).
-      const activate = (e) => {
+      // Pasar el cursor
+      path.addEventListener('pointerenter', (e) => {
         if (promptProv) promptProv.classList.add('br-prompt-gone');
-        pathEls.forEach((o) => o.el.classList.remove('active'));
-        const group = GROUPED_PROVINCES[p.name] || [p.name];
-        pathEls.forEach((o) => {
-          if (group.includes(o.data.name)) o.el.classList.add('active');
-        });
-        const dataToShow = group.includes('Buenos Aires')
-          ? DATA.provinces.find((pr) => pr.name === 'Buenos Aires')
-          : p;
-        showTooltip(dataToShow, e);
-        updateProvinceChart(dataToShow);
-      };
 
-      path.addEventListener('pointerenter', activate);
+        // Hay OTRA provincia seleccionada: solo el nombre, sin datos y sin tocar el gráfico
+        if (selectedKey !== null && keyOf(p) !== selectedKey) {
+          showTooltip(p, e, true);
+          return;
+        }
+
+        // Sin selección (o sobre la seleccionada): todo como siempre
+        const d = dataFor(p);
+        highlight(p);
+        showTooltip(d, e);
+        updateProvinceChart(d);
+      });
       path.addEventListener('pointermove', positionTooltip);
-      path.addEventListener('click', activate);
       path.addEventListener('pointerleave', () => tooltip.classList.remove('visible'));
+
+      // Click: selecciona; si ya era la seleccionada, la deselecciona
+      path.addEventListener('click', (e) => {
+        if (promptProv) promptProv.classList.add('br-prompt-gone');
+        selectedKey = selectedKey === keyOf(p) ? null : keyOf(p);
+        svg.classList.toggle('has-selection', selectedKey !== null); // lo usa el CSS (cambio 3)
+        const d = dataFor(p);
+        highlight(p);
+        showTooltip(d, e);
+        updateProvinceChart(d);
+      });
     });
 
     // puntos de densidad: 1 punto cada 100 muertes por cáncer de mama.
@@ -13140,9 +13153,12 @@
     // showTooltip(p, e): pone el texto del tooltip (nombre de
     // provincia + porcentaje) y lo hace visible, posicionándolo con
     // positionTooltip().
-    function showTooltip(p, e) {
+    function showTooltip(p, e, soloNombre) {
       ttName.textContent = p.name;
-      ttPct.innerHTML = `<b>${p.cancer.toLocaleString('es-AR')}</b> muertes por cáncer de mama`;
+      ttPct.style.display = soloNombre ? 'none' : ''; // oculta la línea de datos
+      if (!soloNombre) {
+        ttPct.innerHTML = `<b>${p.cancer.toLocaleString('es-AR')}</b> muertes por cáncer de mama`;
+      }
       tooltip.classList.add('visible');
       positionTooltip(e);
     }
@@ -13212,6 +13228,7 @@
       },
       plugins: [valueLabelsPlugin],
       options: {
+        events: [],
         responsive: true,
         maintainAspectRatio: false,
         layout: { padding: { top: 24 } },
@@ -13327,7 +13344,8 @@
 
     const SUB_ANIO = 'Muertes por cáncer de mama cada 100.000 mujeres. Argentina, 2005–2024.';
     const SUB_PROV =
-      'Muertes por cáncer de mama por provincia, 2018–2022. Cada punto equivale a 100 muertes.';
+      'Muertes por cáncer de mama por provincia, 2018–2022. Cada punto equivale a 100 muertes. ' +
+      'Las provincias más pobladas tienen más puntos: no indica mayor riesgo.';
     const srcSub = document.getElementById('brSrcSub');
 
     // ---------- Notas que se abren al pasar el cursor por ciertos años ----------
@@ -13338,8 +13356,7 @@
       2017: 'Variación interanual sin causa oficial identificada. Tasa bruta, sin ajuste por edad.',
       2020:
         'Año de pandemia. Hubo demoras en el procesamiento de las estadísticas vitales y ' +
-        'cambios en la clasificación de causas por la covid-19.<br><br>' +
-        'Fuente: DEIS, Estadísticas Vitales 2020, Serie 5, N.º 64.',
+        'cambios en la clasificación de causas por la covid-19.',
     };
     // Año cuya nota está abierta en este momento (null = ninguna). Sirve para
     // 1) no reescribir el texto en cada movimiento del mouse, y
@@ -13353,26 +13370,22 @@
       srcBox.removeAttribute('open'); // al cambiar de pestaña se cierra el desplegable
     }
 
-    // Si el año tiene nota, la muestra y abre el desplegable; si no, restaura todo.
+    // Si el año tiene nota, la guarda y pide redibujar el gráfico (la dibuja el
+    // plugin "notaEnGrafico", en buildScatter); si no, la borra.
     function mostrarNotaAnio(year) {
-      const nota = NOTAS_ANIO[year];
-      if (!nota) {
+      if (!NOTAS_ANIO[year]) {
         ocultarNotaAnio();
         return;
       }
-      if (notaAnioActual === year) return; // ya está abierta esa nota
+      if (notaAnioActual === year) return; // ya está mostrada esa nota
       notaAnioActual = year;
-      srcText.innerHTML = nota;
-      srcBox.setAttribute('open', '');
+      if (scatterChart) scatterChart.draw();
     }
 
-    // Devuelve el botón "Fuente" a su estado normal (texto de "Por año", cerrado).
-    // Solo actúa si había una nota abierta.
     function ocultarNotaAnio() {
       if (notaAnioActual === null) return;
       notaAnioActual = null;
-      srcText.textContent = SRC_ANIO;
-      srcBox.removeAttribute('open');
+      if (scatterChart) scatterChart.draw();
     }
 
     // animarEntrada(panel)
@@ -13450,6 +13463,7 @@
       if (promptProvOff) promptProvOff.classList.add('br-hidden'); // <-- NUEVA: la oculta
       const promptAnioEl = document.getElementById('brAnioPrompt');
       if (promptAnioEl) promptAnioEl.classList.remove('br-prompt-gone');
+      resetAnio();
       srcSub.textContent = SUB_ANIO;
       if (brTitle) brTitle.textContent = TITLE_ANIO;
       setFuente(SRC_ANIO);
@@ -13509,6 +13523,20 @@
       currentYear = 2024,
       svgAnio;
 
+    // ---------- Revelado del gráfico "Por año" ----------
+    // El gráfico arranca SIN datos. Cuando el cursor (o el dedo) entra al
+    // gráfico, los puntos, la línea y la tendencia se dibujan de izquierda a
+    // derecha. anioProgress va de 0 a 1 durante esa animación.
+    let anioRevealed = false,
+      anioProgress = 0,
+      anioRaf = null;
+
+    // Animación de la cuadrícula (0 = nada, 1 = completa). Se arma cada vez
+    // que se entra al capítulo o a la pestaña "Por año", ANTES de los datos.
+    let anioGrid = 0,
+      anioGridRaf = null,
+      anioGridTimer = null;
+
     // buildYearMap(): dibuja el segundo mapa (el "plano", todo del
     // mismo color -- ver .br-province-plain en modulo2.css) que sirve
     // de fondo decorativo detrás del texto grande (.br-map-overlay).
@@ -13560,6 +13588,124 @@
       mostrarNotaAnio(year);
     }
 
+    // revealAnio(): primera interacción con el gráfico. Oculta la pista rosa,
+    // muestra los números de abajo y dibuja la serie de izquierda a derecha.
+    function revealAnio() {
+      if (anioRevealed || !scatterChart) return;
+      anioRevealed = true;
+      document
+        .querySelectorAll(
+          '#brPanelAnio .br-stats, #brPanelAnio .br-axis-note, #brPanelAnio .br-panel h2',
+        )
+        .forEach((el) => el.classList.remove('br-vacio'));
+      const cont = document.getElementById('brAnioScatter').parentElement;
+      cont.classList.remove('br-chart-bajo'); // el gráfico sube a su lugar (con transición en el CSS)
+      const pista = document.getElementById('brAnioPrompt');
+      if (pista) pista.classList.add('br-prompt-gone');
+      document.getElementById('brStatDia').textContent = PROMEDIO_DIA.toLocaleString('es-AR', {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1,
+      });
+      selectYear(currentYear);
+
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        anioProgress = 1;
+        scatterChart.draw();
+        return;
+      }
+      const DURACION = 1200; // ms
+      const t0 = performance.now();
+      const paso = (ahora) => {
+        const t = Math.min(1, (ahora - t0) / DURACION);
+        anioProgress = 1 - Math.pow(1 - t, 3); // easeOutCubic
+        scatterChart.draw();
+        anioRaf = t < 1 ? requestAnimationFrame(paso) : null;
+      };
+      anioRaf = requestAnimationFrame(paso);
+    }
+
+    // resetAnio(): vuelve al estado inicial (gráfico vacío + pista rosa visible).
+    function resetAnio() {
+      if (anioRaf) cancelAnimationFrame(anioRaf);
+      anioRaf = null;
+      anioRevealed = false;
+      anioProgress = 0;
+      ['brStatPob', 'brStatMama', 'brStatDia'].forEach((id) => {
+        document.getElementById(id).textContent = '—';
+      });
+      // nota del eje y bloque de datos: ocultos hasta el reveal
+      document
+        .querySelectorAll(
+          '#brPanelAnio .br-stats, #brPanelAnio .br-axis-note, #brPanelAnio .br-panel h2',
+        )
+        .forEach((el) => el.classList.add('br-vacio'));
+      fijarDesplazamientoAnio();
+      ocultarNotaAnio();
+      iniciarGridAnio();
+    }
+
+    // fijarDesplazamientoAnio(): acomoda el estado VACÍO de "Por año".
+    //  1) La pista rosa sube y ocupa el lugar del título "La mortalidad ... bajó casi un
+    //     10%" (que está oculto hasta el reveal), así no queda un hueco arriba.
+    //  2) El gráfico baja hasta quedar centrado entre la pista y el final de la tarjeta.
+    // Al hacer el reveal el gráfico pierde "br-chart-bajo" y sube a su lugar solo
+    // (transición en el CSS). Todo se aplica SIN transición, para que no se vea el
+    // viaje cada vez que se vuelve a la pestaña. Las medidas usan offsetTop/offsetHeight
+    // (ignoran transform), así que se pueden recalcular aunque ya esté desplazado.
+    function fijarDesplazamientoAnio() {
+      const cont = document.getElementById('brAnioScatter').parentElement;
+      const titulo = document.querySelector('#brPanelAnio .br-panel h2');
+      const pista = document.getElementById('brAnioPrompt');
+      const nota = document.querySelector('#brPanelAnio .br-axis-note');
+      const datos = document.querySelector('#brPanelAnio .br-stats');
+      if (!cont || !titulo || !pista || !nota || !datos) return;
+
+      const sube = Math.max(0, pista.offsetTop - titulo.offsetTop);
+      const arriba = pista.offsetTop + pista.offsetHeight - sube; // borde inferior de la pista ya subida
+      const abajo = Math.max(
+        nota.offsetTop + nota.offsetHeight,
+        datos.offsetTop + datos.offsetHeight,
+      );
+      const centrado = arriba + (abajo - arriba - cont.offsetHeight) / 2;
+      const baja = Math.max(0, Math.round(centrado - cont.offsetTop));
+
+      cont.classList.add('br-chart-wrap');
+      cont.style.transition = 'none';
+      cont.style.setProperty('--br-bajar', baja + 'px');
+      cont.classList.add('br-chart-bajo');
+      pista.style.setProperty('--br-sube', sube + 'px');
+      pista.classList.add('br-prompt-sube');
+      void cont.offsetWidth; // aplica el cambio sin transición
+      cont.style.transition = '';
+    }
+
+    // iniciarGridAnio(): arma la cuadrícula desde cero con animación.
+    // Espera un instante para que el capítulo ya esté visible y medido.
+    function iniciarGridAnio() {
+      clearTimeout(anioGridTimer);
+      if (anioGridRaf) cancelAnimationFrame(anioGridRaf);
+      anioGridRaf = null;
+      anioGrid = 0;
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        anioGrid = 1;
+        if (scatterChart) scatterChart.draw();
+        return;
+      }
+      if (scatterChart) scatterChart.draw();
+      anioGridTimer = setTimeout(() => {
+        if (!anioRevealed) fijarDesplazamientoAnio();
+        const DURACION = 1000; // ms
+        const t0 = performance.now();
+        const paso = (ahora) => {
+          const t = Math.min(1, (ahora - t0) / DURACION);
+          anioGrid = t;
+          if (scatterChart) scatterChart.draw();
+          anioGridRaf = t < 1 ? requestAnimationFrame(paso) : null;
+        };
+        anioGridRaf = requestAnimationFrame(paso);
+      }, 150);
+    }
+
     // buildScatter()
     // Arma el gráfico de dispersión (un punto por año, 2005-2024,
     // conectados por una línea) con la tasa de mortalidad. Se llama
@@ -13574,6 +13720,7 @@
       const lineaVerticalPlugin = {
         id: 'lineaVertical',
         afterDatasetsDraw(chart) {
+          if (anioProgress < 1) return;
           const x = chart.scales.x.getPixelForValue(currentYear);
           const { top, bottom } = chart.chartArea;
           const c = chart.ctx;
@@ -13620,12 +13767,135 @@
           c.restore();
         },
       };
+      // Zona de cada nota, dentro de la franja de abajo (izquierda del gráfico).
+      //   xMax = hasta qué año llega el texto por la derecha
+      //   yTop = hasta qué valor llega por arriba (el piso es siempre 24)
+      // Si un año no está acá, usa la zona por defecto: hasta su propio año, hasta 25.
+      const ZONA_NOTA = {
+        2020: { xMax: 2013, yTop: 25.5 },
+      };
+
+      const notaEnGraficoPlugin = {
+        id: 'notaEnGrafico',
+        afterDraw(chart) {
+          if (notaAnioActual === null) return;
+          const texto = NOTAS_ANIO[notaAnioActual];
+          if (!texto) return;
+          const { chartArea, scales, ctx: c } = chart;
+
+          const zona = ZONA_NOTA[notaAnioActual] || {
+            xMax: Math.min(notaAnioActual, 2019),
+            yTop: 25,
+          };
+          const margen = 8;
+          const izq = chartArea.left + margen;
+          const der = scales.x.getPixelForValue(zona.xMax) - margen;
+          const arriba = scales.y.getPixelForValue(zona.yTop) + 6;
+          const abajo = chartArea.bottom - 6;
+          const maxW = der - izq;
+          const maxH = abajo - arriba;
+          if (maxW < 60) return;
+
+          c.save();
+
+          // parte el texto en renglones que entren en el ancho disponible
+          const envolver = (txt) => {
+            const lineas = [];
+            let actual = '';
+            txt.split(' ').forEach((p) => {
+              const prueba = actual ? actual + ' ' + p : p;
+              if (c.measureText(prueba).width > maxW && actual) {
+                lineas.push(actual);
+                actual = p;
+              } else actual = prueba;
+            });
+            if (actual) lineas.push(actual);
+            return lineas;
+          };
+
+          // arranca en 11px y achica hasta 8px si no entra en el alto disponible
+          let size = 11,
+            lineas = [],
+            lineH = 0;
+          for (; size >= 8; size--) {
+            c.font = `italic ${size}px Inter, system-ui, sans-serif`;
+            lineas = envolver(texto);
+            lineH = size * 1.25;
+            if (lineas.length * lineH <= maxH) break;
+          }
+          c.fillStyle = 'rgba(242,233,238,0.85)';
+          c.textAlign = 'left';
+          c.textBaseline = 'top';
+          const y0 = arriba + (maxH - lineas.length * lineH) / 2; // centrado en la zona
+          lineas.forEach((l, i) => c.fillText(l, izq, y0 + i * lineH));
+          c.restore();
+        },
+      };
+
+      // Dibuja la cuadrícula a mano para poder animarla: las líneas horizontales
+      // crecen de izquierda a derecha y las verticales de abajo hacia arriba,
+      // una detrás de otra. (Chart.js la tiene desactivada: grid.display = false.)
+      const cuadriculaPlugin = {
+        id: 'cuadricula',
+        beforeDraw(chart) {
+          if (anioGrid <= 0) return;
+          const { left, right, top, bottom } = chart.chartArea;
+          const { x, y } = chart.scales;
+          const c = chart.ctx;
+          const SOLAPE = 0.55; // cuánto del tiempo se reparte escalonando las líneas
+          const ease = (t) => 1 - Math.pow(1 - Math.min(1, Math.max(0, t)), 3);
+          const local = (i, n) =>
+            ease((anioGrid - (i / Math.max(1, n - 1)) * SOLAPE) / (1 - SOLAPE));
+          const hs = y.ticks.map((t) => Math.round(y.getPixelForValue(t.value)) + 0.5);
+          const vs = x.ticks.map((t) => Math.round(x.getPixelForValue(t.value)) + 0.5);
+          c.save();
+          c.strokeStyle = 'rgba(255,255,255,0.06)';
+          c.lineWidth = 1;
+          hs.forEach((py, i) => {
+            c.beginPath();
+            c.moveTo(left, py);
+            c.lineTo(left + (right - left) * local(i, hs.length), py);
+            c.stroke();
+          });
+          vs.forEach((px, i) => {
+            c.beginPath();
+            c.moveTo(px, bottom);
+            c.lineTo(px, bottom - (bottom - top) * local(i, vs.length));
+            c.stroke();
+          });
+          c.restore();
+        },
+      };
+
+      // Recorta el dibujo de la serie según anioProgress: 0 = nada, 1 = todo.
+      // Va PRIMERO en la lista de plugins para que también recorte la tendencia.
+      const revelarPlugin = {
+        id: 'revelar',
+        beforeDatasetsDraw(chart) {
+          if (anioProgress >= 1) return;
+          const { left, right } = chart.chartArea;
+          const c = chart.ctx;
+          c.save();
+          c.beginPath();
+          c.rect(0, 0, left - 12 + (right - left + 24) * anioProgress, chart.height);
+          c.clip();
+          chart._revelarActivo = true;
+        },
+        afterDatasetsDraw(chart) {
+          if (!chart._revelarActivo) return;
+          chart.ctx.restore();
+          chart._revelarActivo = false;
+        },
+      };
 
       scatterChart = new Chart(ctx, {
         type: 'scatter',
         plugins: [
+          cuadriculaPlugin,
+          revelarPlugin,
           lineaVerticalPlugin,
           tendenciaPlugin,
+          notaEnGraficoPlugin,
           {
             id: 'brAxisX',
             afterLayout(chart) {
@@ -13657,13 +13927,15 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          animation: false, // la entrada la maneja revelarPlugin
           layout: { padding: { left: 10, right: 10 } },
           interaction: { mode: 'nearest', axis: 'x', intersect: false },
           plugins: {
             legend: { display: false },
             tooltip: {
-              footerFont: { weight: 'normal', size: 10 },
-              footerColor: '#a99aa6',
+              filter: () => anioRevealed, // sin datos, sin tooltip
+              footerFont: { weight: 'normal' },
+              footerColor: '#f7a8c4',
               callbacks: {
                 title: (items) => 'Año ' + items[0].parsed.x,
                 label: (c) => {
@@ -13704,27 +13976,28 @@
               min: 2004,
               max: 2025,
               ticks: {
-                color: '#a99aa6',
+                color: () => `rgba(169,154,166,${Math.max(0, (anioGrid - 0.3) / 0.7)})`, // los números de los ejes aparecen con la cuadrícula
                 stepSize: 1,
                 autoSkip: false,
-                maxRotation: 60,
-                minRotation: 60,
-                callback: (v) => (YEAR_DATA.some((d) => d.year === v) ? v : ''),
+                maxRotation: 0, // horizontales
+                minRotation: 0,
+                callback: (v) => ([2005, 2010, 2015, 2020, 2025].includes(v) ? v : ''),
               },
-              grid: { color: 'rgba(255,255,255,0.06)' },
+              grid: { display: false }, // la dibuja cuadriculaPlugin
             },
             y: {
               min: 24,
               max: 27.5,
               ticks: {
-                color: '#a99aa6',
+                color: () => `rgba(169,154,166,${Math.max(0, (anioGrid - 0.3) / 0.7)})`, // los números de los ejes aparecen con la cuadrícula
                 stepSize: 0.5,
                 callback: (v) => v.toLocaleString('es-AR', { minimumFractionDigits: 1 }),
               },
-              grid: { color: 'rgba(255,255,255,0.06)' },
+              grid: { display: false }, // la dibuja cuadriculaPlugin
             },
           },
           onHover: (evt, els) => {
+            if (!anioRevealed) return;
             if (els.length) selectYear(YEAR_DATA[els[0].index].year);
             else ocultarNotaAnio(); // NUEVO: el cursor ya no está sobre un año
           },
@@ -13742,6 +14015,7 @@
       // "2010" también resalta ese año, no solo tocar el puntito.
       const canvasAnio = document.getElementById('brAnioScatter');
       canvasAnio.addEventListener('mousemove', (evt) => {
+        if (!anioRevealed) return;
         const rect = canvasAnio.getBoundingClientRect();
         const mouseX = evt.clientX - rect.left,
           mouseY = evt.clientY - rect.top;
@@ -13802,6 +14076,10 @@
 
       // NUEVO: al sacar el cursor (o el dedo) del gráfico, la nota desaparece
       canvasAnio.addEventListener('pointerleave', ocultarNotaAnio);
+
+      // Al entrar al gráfico (mouse) o tocarlo (celular) aparecen los datos.
+      canvasAnio.addEventListener('pointerenter', revealAnio);
+      canvasAnio.addEventListener('pointerdown', revealAnio);
     }
 
     // initYearTab()
@@ -13846,6 +14124,10 @@
           ' y ' +
           l.year +
           '.';
+      resetAnio(); // arranca vacío hasta que el cursor entre al gráfico
+      window.addEventListener('resize', () => {
+        if (!anioRevealed) fijarDesplazamientoAnio();
+      });
     }
 
     // "Por año" es la pestaña que se ve al entrar al módulo: armamos su
@@ -13864,10 +14146,17 @@
     const chapter2 = document.getElementById('chapter-2');
     const promptAnio = document.getElementById('brAnioPrompt');
     const promptProv = document.getElementById('brProvPrompt');
+    let capituloEstabaActivo = chapter2.classList.contains('active');
     new MutationObserver(() => {
-      if (!chapter2.classList.contains('active')) return;
+      const activo = chapter2.classList.contains('active');
+      if (!activo) {
+        capituloEstabaActivo = false;
+        return;
+      }
       if (promptAnio) promptAnio.classList.remove('br-prompt-gone');
       if (promptProv) promptProv.classList.remove('br-prompt-gone');
+      if (!capituloEstabaActivo) resetAnio(); // recién entró al capítulo
+      capituloEstabaActivo = true;
     }).observe(chapter2, { attributes: true, attributeFilter: ['class'] });
   })();
 

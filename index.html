@@ -330,9 +330,9 @@
               <div class="br-frame" id="brFrame">
                 <div class="br-stage" id="brStage">
                   <div class="ui-panel br-widget">
-                    <h1 class="br-title" id="brTitle">
+                    <h3 class="ui-card-title" id="brTitle">
                       ¿Está bajando la mortalidad por cáncer de mama?
-                    </h1>
+                    </h3>
 
                     <div class="br-tabs">
                       <button class="br-tab-btn active" id="brTabAnio" type="button">
@@ -343,7 +343,7 @@
                       </button>
 
                       <div class="em-prompt em-prompt-tipo br-hidden" id="brProvPrompt">
-                        <span class="em-prompt-dot" aria-hidden="true"></span>Pasá el cursor sobre
+                        <span class="em-prompt-dot" aria-hidden="true"></span>Pasá el cursor o tocá
                         una provincia para ver sus datos.
                       </div>
                     </div>
@@ -437,7 +437,7 @@
                               modulo2.js le agrega la clase "br-prompt-gone" cuando el usuario interactúa. -->
                           <div class="em-prompt em-prompt-tipo" id="brAnioPrompt">
                             <span class="em-prompt-dot" aria-hidden="true"></span>Pasá el cursor o
-                            tocá un año para ver su valor.
+                            tocá el gráfico para ver qué pasó en 20 años.
                           </div>
                           <div style="width: 100%; height: 232px; position: relative">
                             <canvas id="brAnioScatter"></canvas>
@@ -474,7 +474,8 @@
                     <div class="br-src-row">
                       <p class="br-src-sub" id="brSrcSub">
                         Muertes por cáncer de mama por provincia, 2018–2022. Cada punto equivale a
-                        100 muertes.
+                        100 muertes. Las provincias más pobladas tienen más puntos: no indica mayor
+                        riesgo.
                       </p>
                       <details class="ui-src" id="brSrc">
                         <summary>Fuente</summary>
@@ -550,9 +551,7 @@
              ============================================================ -->
             <div class="ui-wrap">
               <div class="ui-panel me-card">
-                <h3 class="ui-card-title">
-                  ¿Qué podemos hacer para que la mortalidad siga disminuyendo?
-                </h3>
+                <h3 class="ui-card-title">¿Cómo podemos seguir salvando vidas?</h3>
                 <p class="ui-sub">
                   El futuro también se construye con prevención. La mamografía permite detectar a
                   tiempo, y saber dónde hacerla puede marcar la diferencia.
@@ -605,6 +604,10 @@
                       </p>
                       <div id="me-result" class="me-result" aria-live="polite" hidden></div>
                     </div>
+                  </div>
+                  <div class="ui-legend me-legend">
+                    <span><i class="me-pip" aria-hidden="true"></i>Público</span>
+                    <span><i class="me-pip me-ring" aria-hidden="true"></i>Privado</span>
                   </div>
                   <p class="ui-note me-fuente">Cada punto es un mamógrafo.</p>
                 </div>

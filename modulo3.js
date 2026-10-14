@@ -390,8 +390,7 @@
     return respaldo;
   }
   const COL_PUBLICO = leerColor('--rose-strong', [255, 111, 156]);
-  const COL_PRIVADO = leerColor('--rose', [247, 168, 196]);
-
+  const COL_PRIVADO = leerColor('--text-dim', [169, 154, 166]);
   const parts = generarLazo().map((u) => ({
     ux: u.ux,
     uy: u.uy, // posición en el lazo (unidades)
@@ -550,7 +549,7 @@
             a: 1,
             r: p.cr,
             col: privado ? COL_PRIVADO : COL_PUBLICO,
-            ring: privado ? 1 : 0,
+            ring: 0,
           },
           Math.random() * 260,
         );
@@ -585,7 +584,7 @@
       if (i === i1)
         programar(
           p,
-          { x: W * 0.24, y, a: 0.6, r: 8, col: COL_PRIVADO, ring: 1 },
+          { x: W * 0.24, y, a: 0.6, r: 8, col: COL_PRIVADO, ring: 0 },
           rapido ? 0 : Math.random() * 120,
         );
       else if (i === i2)
@@ -796,7 +795,7 @@
       li.style.animationDelay = Math.min(k, 14) * 45 + 'ms'; // entran en cascada
 
       const b = document.createElement('b');
-      const pip = document.createElement('i'); // mismo símbolo que el punto: lleno = público, anillo = privado
+      const pip = document.createElement('i'); // mismo símbolo que el punto: lleno = público, punto gris = privado
       pip.className = 'me-pip' + (privado ? ' me-ring' : '');
       pip.setAttribute('aria-hidden', 'true');
       b.appendChild(pip);
@@ -823,21 +822,6 @@
     });
     result.appendChild(ul);
 
-    const leyenda = document.createElement('div');
-    leyenda.className = 'ui-legend me-legend';
-    [
-      ['', 'Público'],
-      ['me-ring', 'Privado'],
-    ].forEach(([cls, txt]) => {
-      const s = document.createElement('span');
-      const i = document.createElement('i');
-      i.className = 'me-pip ' + cls;
-      i.setAttribute('aria-hidden', 'true');
-      s.appendChild(i);
-      s.appendChild(document.createTextNode(txt));
-      leyenda.appendChild(s);
-    });
-    result.appendChild(leyenda);
     result.hidden = false;
   }
 
