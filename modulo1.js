@@ -2,7 +2,7 @@
 // MODULO1.JS — Capítulo 1 "Argentina hoy" — Emi — prefijo: em-
 // ============================================================
 // QUÉ HACE ESTE ARCHIVO: dibuja los 3 gráficos de la tarjeta del
-// Capítulo 1 y maneja las 3 pestañas que eligen cuál se ve:
+// Capítulo 1 y maneja las 2 pestañas que eligen cuál se ve:
 //   - "Casos por tipo de cáncer": INTERACTIVO. El usuario arrastra
 //     una barra para ADIVINAR cuánto cree que vale "Mama" antes de
 //     ver el valor real (que crece animado + cuenta desde 0), y
@@ -11,11 +11,10 @@
 //   - "Casos por edad": INTERACTIVO. El usuario elige un rango de
 //     edad (clic o arrastre sobre las barras, o 3 chips de acceso
 //     rápido) y los 2 datos de abajo se recalculan en vivo.
-//   - "Porcentaje": el waffle de 100 cuadrados (sin cambios).
 //
 // CÓMO ESTÁ ORGANIZADO (de arriba a abajo):
 //   1. Guarda de entrada (si el HTML del módulo no está, no hace nada)
-//   2. Paleta/tipografía + "reduceMotion" (leído de prefers-reduced-motion)
+//   2. "reduceMotion" (leído de prefers-reduced-motion)
 //   3. Herramientas genéricas (formatNumber, pctLabel, countUp)
 //   4. Tooltip compartido (lo usan los 2 gráficos de barras)
 //   5. Los datos del gráfico (números de GLOBOCAN 2024)
@@ -37,9 +36,7 @@
 // scaleBand, y los 2 renderBarChart*) porque las animaciones nuevas
 // (arrastrar, clones "volando" de una columna a otra, una pila que se
 // arma/desarma) son mucho más simples con <div> normales + Web
-// Animations API (el.animate()) que con coordenadas SVG -- es además
-// el mismo enfoque que ya usaba el waffle de "Porcentaje" en este
-// mismo archivo. También se sacó el breakpoint que pasaba "Casos por
+// Animations API (el.animate()) que con coordenadas SVG. También se sacó el breakpoint que pasaba "Casos por
 // tipo" a barras horizontales en pantallas angostas (HORIZONTAL_
 // BREAKPOINT): la interacción de arrastrar necesita que la barra sea
 // SIEMPRE vertical, en cualquier ancho de pantalla.
@@ -66,26 +63,11 @@
   const emSrc = panel1.parentElement.querySelector('.ui-src');
 
   // ============================================================
-  // 2. PALETA, TIPOGRAFÍA Y "REDUCIR MOVIMIENTO"
+  // 2. "REDUCIR MOVIMIENTO"
   // ============================================================
-  const rootStyle = getComputedStyle(document.documentElement);
-  // cssVar('--rose-strong') -> "#ff6f9c" (leído de :root, para no
-  // repetir colores sueltos -- si algún día cambia en style.css, acá
-  // se actualiza solo).
-  const cssVar = (name) => rootStyle.getPropertyValue(name).trim();
-
-  const THEME = {
-    colors: {
-      roseStrong: cssVar('--rose-strong'),
-      text: cssVar('--text'),
-      textDim: cssVar('--text-dim'),
-    },
-  };
-
   // reduceMotion: preferencia de accesibilidad del sistema operativo
-  // ("reducir movimiento"). Se lee UNA sola vez acá (antes el waffle
-  // la leía por su cuenta, ahora la comparten los 3 gráficos) y se
-  // usa para saltear tanto las animaciones CSS (ver modulo1.css, el
+  // ("reducir movimiento"). Se lee UNA sola vez acá (la comparten
+  // los 2 gráficos) y se usa para saltear tanto las animaciones CSS (ver modulo1.css, el
   // @media al final) como las armadas a mano con requestAnimationFrame
   // / el.animate() de este archivo.
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -152,42 +134,18 @@
   document.body.appendChild(tip);
 
   function showTip(e, html) {
-    tip.classList.remove('em-tip-corner');
-    tip.style.maxWidth = ''; // (showTipCorner lo limita al ancho de la tarjeta)
     tip.innerHTML = html;
     tip.hidden = false;
     // Math.min(...): si el tooltip apareciera pegado al mouse cerca
     // del borde derecho de la pantalla, se saldría -- lo recorta para
-    // que siempre quede adentro. Usa el ancho REAL del globo (antes un
-    // 200 fijo): el del 14,9% es más ancho que el de las barras.
+    // que siempre quede adentro. Usa el ancho REAL del globo.
     const x = Math.max(8, Math.min(e.clientX + 14, window.innerWidth - tip.offsetWidth - 8));
     tip.style.left = x + window.scrollX + 'px';
     tip.style.top = e.clientY + window.scrollY - 10 + 'px';
   }
   function hideTip() {
     tip.hidden = true;
-    tip.classList.remove('em-tip-corner');
   }
-  // showTipCorner(html, box): el mismo globo, pero FIJO en la esquina
-  // inferior derecha de "box" (la tarjeta), con sus bordes derecho e
-  // inferior exactamente sobre los de la tarjeta -- en vez de seguir
-  // al cursor. Lo usa el cálculo del 14,9% (pedido de Emi: que quede
-  // fijo y encuadrado con el borde de la tarjeta). .em-tip-corner
-  // (modulo1.css) le da la misma esquina redondeada que la tarjeta.
-  function showTipCorner(html, box) {
-    tip.classList.add('em-tip-corner');
-    tip.innerHTML = html;
-    tip.hidden = false;
-    const r = box.getBoundingClientRect();
-    // Antes de medir: a la izquierda de todo (si quedó cerca del borde
-    // derecho de una vez anterior, el navegador lo angosta para que
-    // entre ahí) y nunca más ancho que la tarjeta (celular).
-    tip.style.left = '0px';
-    tip.style.maxWidth = r.width + 'px';
-    tip.style.left = r.right - tip.offsetWidth + window.scrollX + 'px';
-    tip.style.top = r.bottom - tip.offsetHeight + window.scrollY + 'px';
-  }
-
   // ============================================================
   // 5. DATOS (verificados contra el Excel de la fuente)
   // ============================================================
@@ -198,43 +156,29 @@
   // MAMA_MUJERES / CASOS_TOTALES_AMBOS_SEXOS: los 2 números del dato
   // "14,9%" de abajo. El total (139.470) es el de TODOS los cánceres en
   // Argentina 2024, hombres y mujeres, INCLUYENDO el cáncer de piel no
-  // melanoma (GLOBOCAN publica también un total que lo excluye -- por
-  // eso se aclara en la etiqueta del cálculo). El numerador es mama EN
-  // MUJERES: el cáncer de mama también ocurre en hombres, por eso la
-  // etiqueta lo dice explícitamente.
+  // melanoma (GLOBOCAN publica también un total que lo excluye). El
+  // numerador es mama EN MUJERES: el cáncer de mama también ocurre en
+  // hombres.
   const MAMA_MUJERES = 20750;
   const CASOS_TOTALES_AMBOS_SEXOS = 139470;
+  const CASOS_TOTALES_MUJERES = 69449;
 
   // chapter1Stats: los 2 datos sueltos que acompañan al gráfico
   // "Casos por tipo de cáncer" (no cambian con la interacción). El
   // segundo antes era "66,2 casos cada 100.000 mujeres" (la tasa sigue
   // estando en la etiqueta de cada barra); ahora es el peso del cáncer
-  // de mama sobre TODOS los casos de cáncer del país (pedido de Emi),
-  // con un globo que muestra el cálculo ("tip", ver
-  // renderCasosPorTipo). El % se calcula acá, no se escribe a mano.
+  // de mama sobre TODOS los casos de cáncer del país (pedido de Emi).
+  // El % se calcula acá, no se escribe a mano.
   const chapter1Stats = [
     { valor: '1°', label: 'Cáncer más frecuente en mujeres' },
     {
+      valor: pctLabel(MAMA_MUJERES / CASOS_TOTALES_MUJERES) + '%',
+      label: 'de todos los cánceres en mujeres',
+      clase: 'em-stat-pct-mujeres',
+    },
+    {
       valor: pctLabel(MAMA_MUJERES / CASOS_TOTALES_AMBOS_SEXOS) + '%',
       label: 'de todos los casos de cáncer (hombres y mujeres)',
-      tip:
-        '<strong>¿De dónde sale el ' +
-        pctLabel(MAMA_MUJERES / CASOS_TOTALES_AMBOS_SEXOS) +
-        '%?</strong>' +
-        '<div><span>Cáncer de mama en mujeres</span><span>' +
-        formatNumber(MAMA_MUJERES) +
-        '</span></div>' +
-        '<div><span>Total de casos de cáncer (hombres y mujeres)</span><span>' +
-        formatNumber(CASOS_TOTALES_AMBOS_SEXOS) +
-        '</span></div>' +
-        '<div><span>' +
-        formatNumber(MAMA_MUJERES) +
-        ' ÷ ' +
-        formatNumber(CASOS_TOTALES_AMBOS_SEXOS) +
-        '</span><span>' +
-        pctLabel(MAMA_MUJERES / CASOS_TOTALES_AMBOS_SEXOS) +
-        '%</span></div>' +
-        '<p class="em-tip-note">El total incluye el cáncer de piel no melanoma.</p>',
     },
   ];
 
@@ -275,56 +219,6 @@
       { categoria: '45-59', valor: 6213, desde: 45, hasta: 59 },
       { categoria: '60-74', valor: 6278, desde: 60, hasta: 74 },
       { categoria: '75 o más', valor: 3726, desde: 75, hasta: null },
-    ],
-    porcentaje: [
-      {
-        key: 'mama',
-        categoria: 'Mama',
-        porcentaje: 29.9,
-        sq: 30,
-        casos: 20750,
-        text: 'son de mama',
-      },
-      {
-        key: 'crc',
-        categoria: 'Colorrectal',
-        porcentaje: 11.1,
-        sq: 11,
-        casos: 7698,
-        text: 'son colorrectales',
-      },
-      {
-        key: 'cu',
-        categoria: 'Cuello uterino',
-        porcentaje: 6.7,
-        sq: 7,
-        casos: 4679,
-        text: 'son de cuello uterino',
-      },
-      {
-        key: 'pul',
-        categoria: 'Pulmón',
-        porcentaje: 6.4,
-        sq: 6,
-        casos: 4469,
-        text: 'son de pulmón',
-      },
-      {
-        key: 'tir',
-        categoria: 'Tiroides',
-        porcentaje: 4.9,
-        sq: 5,
-        casos: 3370,
-        text: 'son de tiroides',
-      },
-      {
-        key: 'otr',
-        categoria: 'Otros',
-        porcentaje: 41.0,
-        sq: 41,
-        casos: 28483,
-        text: 'corresponden a otros tipos de cáncer',
-      },
     ],
   };
 
@@ -566,17 +460,6 @@
   // ============================================================
   // 6. RENDERIZADO DE GRÁFICOS
   // ============================================================
-
-  // renderSubtitle(container, subtitle): el párrafo de bajada
-  // ("Casos nuevos estimados en mujeres...") arriba de cada gráfico,
-  // con la clase compartida .ui-sub (mismo tamaño que el módulo 3).
-  function renderSubtitle(container, subtitle) {
-    if (!subtitle) return;
-    const el = document.createElement('p');
-    el.className = 'ui-sub';
-    el.textContent = subtitle;
-    container.appendChild(el);
-  }
 
   // renderInlineStats(container, stats): la fila de "datos sueltos"
   // al pie de un gráfico (ej. "66,2 casos cada 100.000..."). "stats"
@@ -927,7 +810,7 @@
       'em-tipo-result-stats em-reveal-fade' + (tipoState.revealed ? ' em-shown' : '');
     chapter1Stats.forEach(function (s) {
       const item = document.createElement('div');
-      item.className = 'em-stat';
+      item.className = 'em-stat' + (s.clase ? ' ' + s.clase : '');
       item.innerHTML =
         '<div class="em-stat-value">' +
         s.valor +
@@ -935,34 +818,6 @@
         '<div class="em-stat-label">' +
         s.label +
         '</div>';
-      // Dato con "tip" (el 14,9%): muestra el cálculo en el mismo globo
-      // que usan las barras, FIJO en la esquina inferior derecha de la
-      // tarjeta (showTipCorner, pedido de Emi). Se abre al pasar el
-      // cursor por el dato, al enfocarlo con el teclado (Tab) o al
-      // tocarlo (celular, donde no hay "pasar el cursor"). Antes tenía
-      // al lado un ícono ⓘ: se sacó (pedido de Emi), así que ahora el
-      // dato entero es el que se toca/enfoca.
-      if (s.tip) {
-        const card = panel1.parentElement; // .em-card, el padre de #em-chart-panel
-        const open = function () {
-          showTipCorner(s.tip, card);
-        };
-        item.classList.add('em-stat-tip');
-        item.tabIndex = 0;
-        item.setAttribute('role', 'button');
-        item.setAttribute('aria-label', s.valor + ' ' + s.label + '. Ver cómo se calcula');
-        item.addEventListener('pointerenter', function (e) {
-          if (e.pointerType === 'mouse') open();
-        });
-        item.addEventListener('pointerleave', function (e) {
-          if (e.pointerType === 'mouse') hideTip();
-        });
-        item.addEventListener('focus', open);
-        // Tocar en cualquier otro lado saca el foco del dato (blur) y el
-        // globo se cierra.
-        item.addEventListener('blur', hideTip);
-        item.addEventListener('click', open);
-      }
       statsCol.appendChild(item);
     });
     resultRow.appendChild(statsCol);
@@ -972,16 +827,15 @@
     // ("Casos nuevos estimados...") + "Fuente", en la misma fila
     // (pedido de Emi). "Fuente" es el elemento COMPARTIDO de siempre
     // (.ui-src, ver index.html) -- se mueve para acá adentro; "Casos
-    // por edad" usa esta misma fila (.em-foot, ver renderCasosPorEdad);
-    // "Porcentaje" no se toca, sigue con su propia bajada arriba.
+    // por edad" usa esta misma fila (.em-foot, ver renderCasosPorEdad).
     const footRow = document.createElement('div');
     footRow.className = 'em-foot';
     const footSub = document.createElement('p');
     // "em-foot-sub-lg": el tamaño de esta bajada ahora tiene que
     // igualar al nuevo tamaño (agrandado) de los datos fijos -- ver
     // .em-tipo-result-stats .em-stat-label en modulo1.css (pedido de
-    // Emi). Clase propia, solo para esta pestaña: "Casos por edad" y
-    // "Porcentaje" siguen con el tamaño de .ui-sub de siempre.
+    // Emi). Clase propia, solo para esta pestaña: "Casos por edad"
+    // sigue con el tamaño de .ui-sub de siempre.
     footSub.className = 'ui-sub em-foot-sub-lg';
     footSub.textContent = 'Casos nuevos estimados en mujeres, por tipo de cáncer. Argentina, 2024.';
     footRow.appendChild(footSub);
@@ -1692,7 +1546,7 @@
         d.hasta == null
           ? 'a partir de los ' + d.desde + ' años'
           : 'entre los ' + d.desde + ' y ' + d.hasta + ' años';
-      // Siempre "X de cada 100" (igual que el waffle de "% del total")
+      // Siempre "X de cada 100"
       selPctEl.textContent = Math.round(share * 100) + ' de cada 100';
       selTxtEl.textContent = 'casos ocurren ' + rango + '.';
       selDiaEl.textContent = String(Math.round(d.valor / 365));
@@ -1712,158 +1566,9 @@
     paint(); // estado inicial (o el que haya quedado de un render anterior)
   }
 
-  const WAFFLE_GRAYS = ['#f4e7e5', '#d8b8b5', '#b9898a', '#805e62', '#493b3d'];
-
-  function colorForWaffle(d, index) {
-    return d.key === 'mama'
-      ? THEME.colors.roseStrong
-      : WAFFLE_GRAYS[(index - 1) % WAFFLE_GRAYS.length];
-  }
-
-  function renderWaffleChart(container, data, opts) {
-    opts = opts || {};
-    const subtitle = opts.subtitle || null;
-
-    container.innerHTML = '';
-    renderSubtitle(container, subtitle);
-
-    const prompt = document.createElement('div');
-    prompt.className = 'em-prompt em-prompt-pct';
-    prompt.innerHTML =
-      '<span class="em-prompt-dot" aria-hidden="true"></span>Tocá un cuadrado para ver qué tipo de cáncer es: cada uno es 1 de cada 100 casos.';
-    container.appendChild(prompt);
-
-    const body = document.createElement('div');
-    body.className = 'em-waffle-body';
-
-    const grid = document.createElement('div');
-    grid.className = 'em-waffle-grid';
-    grid.setAttribute('role', 'img');
-    grid.setAttribute(
-      'aria-label',
-      'Gráfico de 100 cuadrados: ' + data[0].sq + ' corresponden a cáncer de mama',
-    );
-
-    const info = document.createElement('div');
-    info.className = 'em-waffle-info';
-
-    const headline = document.createElement('p');
-    headline.className = 'em-waffle-headline';
-    const hlText = document.createElement('p');
-    hlText.className = 'em-waffle-hltext';
-    const hlMeta = document.createElement('p');
-    hlMeta.className = 'em-waffle-hlmeta';
-
-    info.appendChild(headline);
-    info.appendChild(hlText);
-    info.appendChild(hlMeta);
-
-    const fit = document.createElement('div'); // .em-waffle-fit: la caja que le dice a la grilla cuánto lugar hay.
-    fit.className = 'em-waffle-fit';
-    fit.appendChild(grid);
-    body.appendChild(fit);
-    body.appendChild(info);
-    container.appendChild(body);
-
-    // Pie de la tarjeta: igual que "Casos por tipo" y "Casos por edad",
-    // bajada + "Fuente" en la misma fila (.em-foot).
-    const footRow = document.createElement('div');
-    footRow.className = 'em-foot';
-    const footSub = document.createElement('p');
-    footSub.className = 'ui-sub';
-    footSub.textContent =
-      'Distribución de casos de todos los cánceres en mujeres. Argentina, 2024.';
-    footRow.appendChild(footSub);
-    footRow.appendChild(emSrc);
-    container.appendChild(footRow);
-
-    const squares = []; // referencia a cada <div> cuadradito, para poder tocarlos después
-    let pinned = null; // qué categoría quedó "clavada" por un click (null = ninguna)
-    let lastKey = null; // qué categoría se mostró la última vez (para no re-animar al pasar de cuadrado a cuadrado DENTRO de la misma categoría)
-
-    function animarEntradaInfo() {
-      if (reduceMotion) return;
-      info.classList.remove('em-fade-in');
-      void info.offsetWidth;
-      info.classList.add('em-fade-in');
-    }
-
-    function updateHeadline(d) {
-      //deja en blanco si d es null, no hay un valor activo
-      if (!d) {
-        headline.textContent = '';
-        hlText.textContent = '';
-        hlMeta.textContent = '';
-        lastKey = null;
-        return;
-      }
-      // Solo anima si la categoría CAMBIÓ -- moverse entre varios
-      // cuadrados de la MISMA categoría (todos del mismo color) no
-      // tiene que reiniciar la animación una y otra vez.
-      const isNewCategory = d.key !== lastKey;
-      headline.textContent = d.headline || d.sq + ' de cada 100';
-      headline.style.color = d.key === 'mama' ? THEME.colors.roseStrong : THEME.colors.text;
-      hlText.textContent = d.text;
-      // toFixed(1) -> siempre 1 decimal (ej "29.9"); .replace('.',',')
-      // -> formato argentino ("29,9"). Orden pedido: casos, total,
-      // porcentaje al final (antes el % iba pegado a los casos, en
-      // el medio -- "20.750 casos (29,9%) de un total de 69.449").
-      const pctLbl = d.porcentaje.toFixed(1).replace('.', ',');
-      hlMeta.textContent = formatNumber(d.casos) + ' casos de un total de 69.449 (' + pctLbl + '%)';
-      if (isNewCategory) animarEntradaInfo();
-      lastKey = d.key;
-    }
-
-    function setActive(key, pin) {
-      // Un clic SIEMPRE deja elegida esa categoría: queda fija hasta que
-      // se hace clic en otra (pedido de Emi).
-      if (pin) key = pinned = key;
-      if (key === null && pinned) key = pinned; // si hay algo clavado, no lo pierde al sacar el mouse
-      const d = data.filter(function (x) {
-        return x.key === key;
-      })[0];
-      grid.classList.toggle('is-focused', !!d); // baja la opacidad general de la grilla
-      squares.forEach(function (sq) {
-        sq.classList.toggle('is-active', !!d && sq.dataset.k === key);
-      });
-      updateHeadline(d);
-    }
-
-    data.forEach(function (d, i) {
-      const color = colorForWaffle(d, i);
-      for (let s = 0; s < d.sq; s++) {
-        const sq = document.createElement('div');
-        sq.className = 'em-waffle-sq';
-        sq.style.background = color;
-        sq.dataset.k = d.key;
-        // Pasar el cursor no hace nada (ni por la grilla ni por fuera):
-        // solo el clic elige o cambia la categoría (pedido de Emi).
-        sq.addEventListener('click', function () {
-          setActive(d.key, true);
-        });
-        grid.appendChild(sq);
-        squares.push(sq);
-      }
-    });
-
-    squares.forEach(function (sq, i) {
-      if (reduceMotion) {
-        sq.classList.add('is-in');
-        return;
-      }
-      setTimeout(
-        function () {
-          sq.classList.add('is-in');
-        },
-        200 + i * 14,
-      );
-    });
-  }
-
   const TITULOS = {
     casosPorTipo: '¿Cuántos casos de cáncer de mama hay por año?',
     casosPorEdad: '¿Cuántos casos de cáncer de mama hay por edad?',
-    porcentaje: '¿Qué porcentaje representa el cáncer de mama en mujeres?',
   };
   const cardTitle = panel1.parentElement.querySelector('.ui-card-title');
 
@@ -1873,9 +1578,6 @@
     },
     casosPorEdad: function (container) {
       renderCasosPorEdad(container);
-    },
-    porcentaje: function (container) {
-      renderWaffleChart(container, chapter1Data.porcentaje);
     },
   };
 
