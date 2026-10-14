@@ -39,9 +39,23 @@ function startIntroVideo() {
   introVideo.classList.add('visible');
 }
 
+// Devuelve el video a su estado inicial: oculto, quieto en el frame 0 y listo
+// para dispararse de nuevo a los 22 s. Pasa cuando el audio se reinicia o se
+// lleva hacia atrás (antes del segundo 22).
+function resetIntroVideo() {
+  introVideoStarted = false;
+  introVideo.classList.remove('visible'); // se desvanece (el fade dura 1,6 s)
+  setTimeout(() => {
+    if (introVideoStarted) return; // si ya se volvió a disparar, no tocarlo
+    introVideo.pause();
+    introVideo.currentTime = 0;
+  }, 1700);
+}
+
 // 'timeupdate' se dispara varias veces por segundo mientras suena el audio
 audio.addEventListener('timeupdate', () => {
   if (audio.currentTime >= INTRO_VIDEO_START) startIntroVideo();
+  else if (introVideoStarted) resetIntroVideo(); // el audio volvió antes del seg. 22
 });
 
 // ---------- Audio + botón con doble rol ----------
@@ -162,7 +176,7 @@ const pRestart = document.getElementById('pRestart');
 const pMute = document.getElementById('pMute');
 const pCC = document.getElementById('pCC');
 const introCaption = document.getElementById('introCaption');
-let captionsOn = false; // los subtítulos arrancan apagados: hay que activarlos con CC
+let captionsOn = true; // los subtítulos arrancan activados: con CC se pueden apagar
 if (CAPTIONS.length === 0) pCC.hidden = true;
 
 function fmtTime(s) {
@@ -359,3 +373,9 @@ document.querySelectorAll('.ui-tab').forEach(function (btn) {
     document.getElementById(btn.getAttribute('aria-controls')).classList.add('active');
   });
 });
+
+// ---------- Volver a la presentación ----------
+// Mismo criterio que "Volver a comenzar" del módulo 3: recargar la página
+// deja la intro, el audio y los videos como al inicio.
+const navBack = document.getElementById('navBack');
+if (navBack) navBack.addEventListener('click', () => location.reload());

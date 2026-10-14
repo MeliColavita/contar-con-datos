@@ -236,7 +236,7 @@ body {
   pointer-events: none; /* solo el botón recibe clicks */
   animation: introReveal 0.6s ease 2s both;
 }
-/* Mensaje de volumen: sutil, en el mismo tono apagado que el resto */
+/* Mensaje de volumen: rosa suave que titila, hasta que arranca el audio */
 .intro-volume {
   position: absolute;
   bottom: calc(100% + 1.2rem);
@@ -246,11 +246,34 @@ body {
   margin: 0;
   font-size: clamp(0.85rem, 1.5vw, 1rem);
   letter-spacing: 0.08em;
-  color: var(--text-dim);
+  color: var(--rose);
   text-align: center;
+  animation: volumenTitila 2s ease-in-out infinite;
   transition:
     opacity 0.5s ease,
     visibility 0.5s ease;
+}
+@keyframes volumenTitila {
+  0%,
+  100% {
+    opacity: 0.35;
+    text-shadow: none;
+  }
+  50% {
+    opacity: 1;
+    text-shadow: 0 0 18px rgba(255, 111, 156, 0.45);
+  }
+}
+#intro.started .intro-volume,
+#intro.ended .intro-volume {
+  animation: none;
+  opacity: 0;
+  visibility: hidden;
+}
+@media (prefers-reduced-motion: reduce) {
+  .intro-volume {
+    animation: none;
+  }
 }
 #intro.started .intro-volume,
 #intro.ended .intro-volume {
@@ -463,7 +486,7 @@ body {
 #intro .skip-btn {
   position: absolute;
   right: 3vw;
-  top: 3vh;
+  bottom: 3vh;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.25);
   color: var(--text);
@@ -734,6 +757,42 @@ body {
   width: 100%;
   height: 100vh; /* respaldo para navegadores viejos */
   height: clamp(300px, calc(100dvh - 44px), 760px);
+
+  /* Difumina el borde del video: se desvanece hacia transparente en los 4 lados.
+     --video-feather controla cuánto (más alto = más difuminado). */
+  --video-feather: 20%;
+  -webkit-mask-image:
+    linear-gradient(
+      to right,
+      transparent,
+      #000 var(--video-feather),
+      #000 calc(100% - var(--video-feather)),
+      transparent
+    ),
+    linear-gradient(
+      to bottom,
+      transparent,
+      #000 var(--video-feather),
+      #000 calc(100% - var(--video-feather)),
+      transparent
+    );
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(
+      to right,
+      transparent,
+      #000 var(--video-feather),
+      #000 calc(100% - var(--video-feather)),
+      transparent
+    ),
+    linear-gradient(
+      to bottom,
+      transparent,
+      #000 var(--video-feather),
+      #000 calc(100% - var(--video-feather)),
+      transparent
+    );
+  mask-composite: intersect;
 }
 /* object-fit:cover queda como resguardo (por si algún video no es
      EXACTAMENTE 9:16) -- con .chapter-media ya en esa misma
@@ -754,6 +813,7 @@ body {
         poco por encima de la mitad, donde está la llama. */
   transform: scale(var(--video-zoom, 1.3));
   transform-origin: 50% 45%;
+  filter: brightness(1.3); /* brillo de los videos: 1 = original, más alto = más claro */
 }
 .chapter-video.active {
   opacity: 1;
@@ -815,6 +875,74 @@ body {
 .nav-item:not(.active):hover {
   border-color: rgba(255, 255, 255, 0.25);
   color: var(--text);
+}
+
+/* "Volver a la presentación": discreto, debajo de los 3 capítulos */
+.nav-back {
+  font: inherit;
+  font-size: 0.76rem;
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 9px 10px;
+  text-align: center;
+  cursor: pointer;
+  color: var(--text-dim);
+  transition: all 0.25s;
+}
+.nav-back:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+  color: var(--text);
+}
+.nav-back:focus-visible {
+  outline: 2px solid var(--rose-strong);
+  outline-offset: 3px;
+}
+/* Cuando termina el módulo 3, "Volver a la presentación" se enciende: fondo claro, letras oscuras y pulso de luz */
+.nav-back.nav-back--glow {
+  background: var(--text);
+  color: var(--bg);
+  border-color: var(--text);
+  font-weight: 600;
+  animation: navBackGlow 2.2s ease-in-out infinite;
+}
+@keyframes navBackGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 26px rgba(255, 255, 255, 0.75);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-back.nav-back--glow {
+    animation: none;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
+  }
+}
+.nav-back.nav-back--glow:hover {
+  background: var(--text);
+  color: var(--bg);
+}
+@keyframes navBackGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 rgba(255, 255, 255, 0);
+  }
+  50% {
+    box-shadow:
+      0 0 22px rgba(255, 255, 255, 0.55),
+      inset 0 0 10px rgba(255, 255, 255, 0.12);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-back.nav-back--glow {
+    animation: none;
+    box-shadow: 0 0 18px rgba(255, 255, 255, 0.5);
+  }
 }
 
 .chapter {
@@ -1311,6 +1439,10 @@ body {
   .nav-item .num {
     margin-bottom: 4px;
   }
+  .nav-back {
+    flex: 0 0 100%;
+    order: 5;
+  }
 }
 @media (max-width: 600px) {
   .layout {
@@ -1336,6 +1468,7 @@ body {
 @media (hover: none) {
   /* pantallas táctiles: botones de al menos 44px */
   .nav-item,
+  .nav-back,
   .ui-tab,
   .ui-seg button,
   .audio-btn {
