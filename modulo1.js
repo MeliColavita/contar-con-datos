@@ -345,6 +345,216 @@
   // estado "afuera", el usuario perdería su respuesta adivinada o el
   // rango de edad elegido apenas mira otra pestaña y vuelve.
   let tipoState = { revealed: false, guess: null, merged: false };
+
+  // ------------------------------------------------------------
+  // Animación de ENTRADA de "Casos por tipo" (pedido de Emi): el mismo
+  // movimiento que el lazo de puntos del módulo 3 (ver entrada()/
+  // armarLazo() en modulo3.js), pero con los elementos de ESTE gráfico:
+  // los guiones del borde punteado de la barra de Mama arrancan sueltos
+  // y vuelan, con el mismo resorte, hasta armar el contorno, como si se
+  // dibujara (ver armarBarraConGuiones). Se hace UNA SOLA VEZ: la primera
+  // vez que la pestaña se ve de verdad (intro cerrada y capítulo 1 en
+  // pantalla). Ni al volver de otra pestaña, ni con "Probar de nuevo",
+  // ni en ningún otro momento.
+  //   tipoIntroHecha     -> ya se hizo (o no hace falta: "reducir
+  //                         movimiento")
+  //   tipoIntroPendiente -> la función que la arranca, guardada por
+  //                         setupDrag() hasta que la pestaña sea visible
+  let tipoIntroHecha = reduceMotion;
+  let tipoIntroPendiente = null;
+  const introEl = document.getElementById('intro');
+  const chapterEl = root.closest('.chapter');
+  function tipoVisible() {
+    return (
+      (!introEl || introEl.classList.contains('hidden')) &&
+      (!chapterEl || chapterEl.classList.contains('active'))
+    );
+  }
+  function revisarIntroTipo() {
+    if (tipoIntroHecha || !tipoIntroPendiente || !tipoVisible()) return;
+    const arrancar = tipoIntroPendiente;
+    tipoIntroPendiente = null;
+    tipoIntroHecha = true;
+    arrancar();
+  }
+
+  // armarBarraConGuiones(host, barra, ocultar): arma la barra punteada
+  // de Mama con SUS PROPIOS guiones (pedido de Emi: con los elementos de
+  // este gráfico, no con los puntitos del módulo 3). Cada guión del borde
+  // punteado sale desde la BASE de la barra y sube -- con el mismo
+  // resorte que el lazo del módulo 3 (K=90, C=14) -- hasta su lugar en
+  // el contorno, girando hasta quedar alineado con él. El contorno tiene
+  // las mismas esquinas redondeadas que las barras (como las de "Casos
+  // por edad") y se completa en el orden de un trazo: sube por la
+  // izquierda, dobla, cruza arriba, dobla, baja por la derecha y cierra
+  // abajo, como si el borde se dibujara. Mientras tanto, los elementos de "ocultar" (la zona de
+  // arrastre con la barra real, el "?") quedan invisibles; al terminar,
+  // los guiones dibujados se desvanecen justo cuando aparece la barra
+  // real encima, con su relleno, su manija y el "?".
+  function armarBarraConGuiones(host, barra, ocultar) {
+    const hr = host.getBoundingClientRect();
+    const br = barra.getBoundingClientRect();
+    const W = hr.width;
+    const H = hr.height;
+    if (!W || !H || !br.width || !br.height) return;
+    const dpr = window.devicePixelRatio || 1;
+    const canvas = document.createElement('canvas');
+    canvas.className = 'em-intro-puntos';
+    canvas.width = Math.round(W * dpr);
+    canvas.height = Math.round(H * dpr);
+    host.appendChild(canvas);
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    // Guiones del contorno: mismo trazo que el borde de .em-guess-bar
+    // (2px, rosa fuerte) y las MISMAS esquinas redondeadas que todas las
+    // barras del módulo (7px arriba, 3px abajo -- como las de "Casos por
+    // edad"). El contorno se recorre como un trazo: sube por la
+    // izquierda, dobla la esquina, cruza arriba, dobla y baja por la
+    // derecha, y cierra por abajo.
+    const LARGO = 6; // largo de cada guión (px)
+    const PASO = 10; // guión + espacio
+    const RA = 7; // radio de las esquinas de arriba
+    const RB = 3; // radio de las esquinas de abajo
+    const x0 = br.left - hr.left + 1;
+    const y0 = br.top - hr.top + 1;
+    const x1 = br.right - hr.left - 1;
+    const y1 = br.bottom - hr.top - 1;
+    // Tramos del contorno, en el orden del trazo. Cada uno sabe su largo
+    // y devuelve el punto y la dirección a una distancia "d" de su inicio.
+    function recta(xa, ya, xb, yb) {
+      const L = Math.hypot(xb - xa, yb - ya);
+      const ang = Math.atan2(yb - ya, xb - xa);
+      return {
+        L: L,
+        en: function (d) {
+          return { x: xa + ((xb - xa) * d) / L, y: ya + ((yb - ya) * d) / L, ang: ang };
+        },
+      };
+    }
+    function arco(cx, cy, r, a0, a1) {
+      return {
+        L: Math.abs(a1 - a0) * r,
+        en: function (d) {
+          const a = a0 + (a1 - a0) * (d / (Math.abs(a1 - a0) * r));
+          return { x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r, ang: a + Math.PI / 2 };
+        },
+      };
+    }
+    const tramos = [
+      recta(x0, y1 - RB, x0, y0 + RA), // izquierda, subiendo
+      arco(x0 + RA, y0 + RA, RA, Math.PI, Math.PI * 1.5), // esquina arriba-izq.
+      recta(x0 + RA, y0, x1 - RA, y0), // arriba
+      arco(x1 - RA, y0 + RA, RA, Math.PI * 1.5, Math.PI * 2), // esquina arriba-der.
+      recta(x1, y0 + RA, x1, y1 - RB), // derecha, bajando
+      arco(x1 - RB, y1 - RB, RB, 0, Math.PI * 0.5), // esquina abajo-der.
+      recta(x1 - RB, y1, x0 + RB, y1), // abajo
+      arco(x0 + RB, y1 - RB, RB, Math.PI * 0.5, Math.PI), // esquina abajo-izq.
+    ];
+    const total = tramos.reduce(function (acc, t) {
+      return acc + t.L;
+    }, 0);
+    const n = Math.max(8, Math.round(total / PASO));
+    const guiones = [];
+    for (let k = 0; k < n; k++) {
+      let d = ((k + 0.5) * total) / n;
+      let i = 0;
+      while (i < tramos.length - 1 && d > tramos[i].L) {
+        d -= tramos[i].L;
+        i++;
+      }
+      const p = tramos[i].en(d);
+      guiones.push({ tx: p.x, ty: p.y, tang: p.ang });
+    }
+    // Salida: los guiones aparecen desde la BASE de la barra (abajo,
+    // repartidos un poco a los costados) y suben a su lugar en el orden
+    // del trazo -- como si el contorno se dibujara de abajo hacia arriba.
+    // Mismo escalonado que armarLazo() del módulo 3, un poco más largo.
+    const cx = (x0 + x1) / 2;
+    const anchoSalida = (x1 - x0) * 0.9;
+    const t0 = performance.now();
+    guiones.forEach(function (g, orden) {
+      g.x = cx + (Math.random() - 0.5) * anchoSalida;
+      g.y = y1 + 4 + Math.random() * 10;
+      g.ang = Math.random() * Math.PI;
+      g.vx = 0;
+      g.vy = 0;
+      g.va = 0;
+      g.a = 0;
+      g.at = t0 + (orden / guiones.length) * 650 + Math.random() * 80;
+    });
+    const DURACION = 1400; // tiempo hasta que la barra real toma el relevo (ms)
+    const COL = '255,111,156'; // --rose-strong
+
+    ocultar.forEach(function (el) {
+      el.style.opacity = '0';
+    });
+    let ultimo = t0;
+    let terminando = false;
+    (function tick(t) {
+      if (!canvas.isConnected) return; // se cambió de pestaña: se corta
+      const dt = Math.min(0.033, (t - ultimo) / 1000 || 0.016);
+      ultimo = t;
+      const e = 1 - Math.exp(-dt * 7);
+      ctx.clearRect(0, 0, W, H);
+      ctx.lineCap = 'butt';
+      for (let i = 0; i < guiones.length; i++) {
+        const g = guiones[i];
+        const activo = t >= g.at;
+        if (activo) {
+          // resorte hacia su lugar y su ángulo en el contorno
+          g.vx += ((g.tx - g.x) * 90 - g.vx * 14) * dt;
+          g.vy += ((g.ty - g.y) * 90 - g.vy * 14) * dt;
+          // el ángulo va por el camino más corto (un guión es igual girado 180°)
+          let da = (g.tang - g.ang) % Math.PI;
+          if (da > Math.PI / 2) da -= Math.PI;
+          if (da < -Math.PI / 2) da += Math.PI;
+          g.va += (da * 90 - g.va * 14) * dt;
+        }
+        g.x += g.vx * dt;
+        g.y += g.vy * dt;
+        g.ang += g.va * dt;
+        g.a += ((activo ? 1 : 0) - g.a) * e;
+        const ux = (Math.cos(g.ang) * LARGO) / 2;
+        const uy = (Math.sin(g.ang) * LARGO) / 2;
+        ctx.beginPath();
+        ctx.moveTo(g.x - ux, g.y - uy);
+        ctx.lineTo(g.x + ux, g.y + uy);
+        ctx.strokeStyle = 'rgba(' + COL + ',' + (g.a * 0.15).toFixed(3) + ')'; // resplandor suave
+        ctx.lineWidth = 6;
+        ctx.stroke();
+        ctx.strokeStyle = 'rgba(' + COL + ',' + g.a.toFixed(3) + ')'; // el guión
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+      if (!terminando && t - t0 >= DURACION) {
+        // El contorno ya está armado: la barra real toma el relevo SIN
+        // corte (pedido de Emi: "siento que se corta"), en pasos que se
+        // encadenan -- todo con animaciones CSS, ver "ENTRADA SIN CORTE"
+        // en modulo1.css:
+        //   1) los guiones dibujados se desvanecen MIENTRAS el borde real
+        //      se enciende encima (nunca queda un momento sin barra);
+        //   2) el relleno sube desde la base, como si la barra se llenara;
+        //   3) la manija aparece con un rebote chico;
+        //   4) el "?" aparece al final, también con un rebote suave.
+        // Los elementos se muestran ya (opacity) porque cada uno arranca
+        // invisible por su propia animación.
+        terminando = true;
+        canvas.classList.add('em-intro-fin');
+        ocultar.forEach(function (el) {
+          el.style.opacity = '';
+          el.classList.add('em-intro-entrada');
+        });
+        setTimeout(function () {
+          canvas.remove();
+          ocultar.forEach(function (el) {
+            el.classList.remove('em-intro-entrada');
+          });
+        }, 1200);
+      }
+      requestAnimationFrame(tick);
+    })(t0);
+  }
   // edadState: "Casos por edad" arranca con las 5 barras parejas, grises
   // y sin número (ver renderCasosPorEdad).
   //   sel      -> índice de la barra elegida (rosa), o null si todavía
@@ -496,12 +706,19 @@
     prompt.className =
       'em-prompt em-prompt-tipo em-reveal-fade' + (tipoState.revealed ? '' : ' em-shown');
     prompt.innerHTML =
-      '<span class="em-prompt-dot" aria-hidden="true"></span>¿Cuántos casos de cancer de mama creés que hay? Arrastrá la barra para adivinar.';
+      '<span class="em-prompt-dot" aria-hidden="true"></span>¿Cuántos casos de cáncer de mama creés que hay?<br>Arrastrá la barra para adivinar.'; // en 2 renglones (pedido de Emi): en uno solo quedaba muy larga
     top.appendChild(prompt);
 
     const feedback = document.createElement('div');
     feedback.className = 'em-feedback em-reveal-fade' + (tipoState.revealed ? ' em-shown' : '');
     top.appendChild(feedback);
+    // setFeedback(html): escribe el mensaje de resultado envuelto en un
+    // <span>, así .em-feedback (modulo1.css) puede bajarlo al fondo de su
+    // caja como UN bloque de texto -- si el texto y los <b> fueran hijos
+    // directos de un flex, cada pedazo quedaría en su propio renglón.
+    function setFeedback(html) {
+      feedback.innerHTML = '<span>' + html + '</span>';
+    }
 
     container.appendChild(top);
 
@@ -545,9 +762,12 @@
           '</div>'
         : '<div class="em-val">' + (showReal ? formatNumber(d.valor) : '') + '</div>';
       const barStyle = 'height:' + pct + '%'; // 0% hasta revelar (Mama: la maneja setupDrag; las otras 4 están ocultas)
-      // El nombre de Mama se ve siempre (igual que antes); el de las
-      // otras 4 solo aparece junto con sus datos, al revelar.
-      const lblText = showReal || isMama ? d.categoria : '';
+      // El nombre de Mama se ve siempre; el de las otras 4 solo aparece
+      // junto con sus datos, al revelar. Mientras se adivina, la barra
+      // de Mama dice "Cáncer de mama" (sola en el gráfico, el nombre
+      // completo se entiende mejor); al revelar pasa a "Mama", como el
+      // resto de las barras (pedido de Emi -- ver reveal()).
+      const lblText = isMama ? (showReal ? d.categoria : 'Cáncer de mama') : showReal ? d.categoria : '';
       // .em-plot: el área de dibujo de la barra (todo lo de la columna
       // MENOS la etiqueta). El % de alto de cada barra se calcula
       // contra ESTA caja, no contra la columna entera -- antes número +
@@ -799,6 +1019,7 @@
       // hace que se vea DESLIZARSE hasta ahí en vez de saltar (misma
       // técnica FLIP que ya usa "¿Y si sumamos los otros 4?").
       const others = cols.slice(1);
+      mama.querySelector('.em-lbl').textContent = data[0].categoria; // "Cáncer de mama" -> "Mama"
       const mamaX0 = mama.getBoundingClientRect().left;
       data.slice(1).forEach(function (d, idx) {
         const col = others[idx];
@@ -914,7 +1135,7 @@
       }
       // Ya no agrega "Eso es N diagnósticos por día" al final (pedido
       // de Emi: sacarlo de la respuesta variable).
-      feedback.innerHTML = msg;
+      setFeedback(msg);
     }
 
     // setupDrag(): arma la zona de arrastre sobre la columna de Mama
@@ -1024,11 +1245,13 @@
         placeVal(px);
       }
       // showQ(): estado inicial (todavía no arrastró). La barra punteada
-      // arranca en el 30% del gráfico, pero nunca menos de 50px (si no,
+      // arranca en el 42% del gráfico, pero nunca menos de 60px (si no,
       // en una pantalla baja el "?" quedaría diminuto) ni más del 80%.
       function showQ() {
         const h = zone.clientHeight;
-        const startPx = Math.min(h * 0.8, Math.max(h * 0.3, 50));
+        // Arranca en el 42% del gráfico (antes 30%: Emi la pidió un poco
+        // más alta), nunca menos de 60px ni más del 80%.
+        const startPx = Math.min(h * 0.8, Math.max(h * 0.42, 60));
         setFromPx(startPx);
         valEl.classList.remove('em-val-live');
         valEl.classList.add('em-val-q'); // vuelve a mostrarse "?" -- re-agrega la clase que setFromPx sacó
@@ -1036,7 +1259,20 @@
         handle.setAttribute('aria-valuetext', 'Sin estimación todavía');
         placeQ(startPx);
       }
-      requestAnimationFrame(showQ);
+      requestAnimationFrame(function () {
+        showQ();
+        // La PRIMERA vez que se ve la pestaña, la barra punteada se arma
+        // con sus propios guiones (armarBarraConGuiones, más arriba). Si
+        // todavía no se
+        // ve (intro abierta, otro capítulo), queda pendiente hasta que se
+        // vea -- ver revisarIntroTipo().
+        if (!tipoIntroHecha) {
+          tipoIntroPendiente = function () {
+            armarBarraConGuiones(chart, gb, [zone, valEl]);
+          };
+          revisarIntroTipo();
+        }
+      });
       // Si cambia el alto del gráfico ANTES de arrastrar (zoom, ventana
       // más chica/grande), se vuelve a acomodar la barra punteada y el
       // "?" para el tamaño nuevo. Se desconecta apenas se empieza a
@@ -1234,14 +1470,15 @@
         } else {
           sumValEl.textContent = formatNumber(otherTotal);
         }
-        feedback.innerHTML =
+        setFeedback(
           // El total de los otros 4 va en blanco (.em-fb-neutral) y solo
           // el de mama en rosa
-          'Los otros 4 suman <b class="em-fb-neutral">' +
-          formatNumber(otherTotal) +
-          '</b> casos: menos que los <b>' +
-          formatNumber(real) +
-          '</b> de mama.';
+          'Los otros 4 cánceres suman <b class="em-fb-neutral">' +
+            formatNumber(otherTotal) +
+            '</b> casos: menos que los <b>' +
+            formatNumber(real) +
+            '</b> de mama.',
+        );
         btnSum.textContent = 'Ver por separado';
       } else {
         const x0 = mama.getBoundingClientRect().left;
@@ -1289,7 +1526,7 @@
           });
           slide(mama, x0 - mama.getBoundingClientRect().left);
         }
-        feedback.innerHTML = 'Tocá <b>' + SUM_LABEL + '</b> para compararlos con Mama.';
+        setFeedback('Tocá <b>' + SUM_LABEL + '</b> para compararlos con Mama.');
         btnSum.textContent = SUM_LABEL;
       }
       btnSum.disabled = false;
@@ -1681,4 +1918,13 @@
   });
 
   render1(); // primer dibujo, apenas carga la página
+
+  // La animación de entrada de "Casos por tipo" espera a que la pestaña
+  // se vea de verdad: se revisa cada vez que cambia la clase de la intro
+  // (se cierra con .hidden) o del capítulo 1 (se activa con .active).
+  if (window.MutationObserver) {
+    const mo = new MutationObserver(revisarIntroTipo);
+    if (introEl) mo.observe(introEl, { attributes: true, attributeFilter: ['class'] });
+    if (chapterEl) mo.observe(chapterEl, { attributes: true, attributeFilter: ['class'] });
+  }
 })();
