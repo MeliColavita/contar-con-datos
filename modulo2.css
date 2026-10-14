@@ -99,13 +99,8 @@
 }
 
 /* Pregunta/título de la tarjeta ("¿Con qué herramientas..."). */
-.br-title {
-  font-family: var(--br-serif);
-  font-weight: 500;
-  font-size: 2rem;
-  margin: 0 0 var(--ui-gap-titulo); /* antes 6px fijo: mismo espacio título → pestañas que el módulo 1 (variable compartida, ver "MEDIDAS COMPARTIDAS" en style.css) */
-  color: var(--br-text);
-}
+/* (Ya no hay estilo propio: el título usa la clase compartida .ui-card-title de
+   style.css, igual que los módulos 1 y 3: mismo tamaño, tipografía y espacio.) */
 /* Bajada corta debajo del título y arriba de las pestañas. min-height
    reserva 2 líneas y media de alto SIEMPRE, aunque el texto real sea
    más corto -- así la tarjeta no "salta" de tamaño al pasar de una
@@ -662,22 +657,26 @@
    initYearTab() en modulo2.js). */
 .br-tabs {
   display: flex;
-  gap: 10px;
+  gap: 6px; /* igual que .em-tabs del módulo 1 */
   margin-bottom: var(
     --ui-gap-titulo
   ); /* antes 24px: mismo espacio que título → pestañas (variable compartida, ver style.css) */
 }
+/* Mismas medidas que .em-tab (módulo 1): para que las pestañas se vean
+   iguales en los dos módulos. */
 .br-tab-btn {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--br-panel-border);
   color: var(--br-text-dim);
   font-family: var(--br-sans);
-  font-size: 0.85rem;
-  font-weight: 500;
-  padding: 10px 22px;
-  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 30px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s;
+  white-space: nowrap;
+  text-align: center;
 }
 .br-tab-btn:hover {
   color: var(--br-text);
@@ -688,9 +687,8 @@
    el atributo aria-selected que usa .ui-tab). */
 .br-tab-btn.active {
   background: var(--br-rose-strong);
-  color: #160f1b;
+  color: #1a0510;
   border-color: var(--br-rose-strong);
-  font-weight: 600;
   box-shadow: 0 6px 18px rgba(255, 111, 156, 0.35);
 }
 
@@ -701,8 +699,8 @@
   /* fila / columna: en "Por provincia" la instrucción rosa no entra al
      lado de los botones y baja al renglón de abajo -- ese salto de
      renglón usa el mismo espacio compartido que título → pestañas
-     (antes 10px). Entre botones, en el mismo renglón, sigue 10px. */
-  gap: var(--ui-gap-titulo) 10px;
+     (antes 10px). Entre botones, en el mismo renglón, 6px (como el módulo 1). */
+  gap: var(--ui-gap-titulo) 6px;
 }
 .br-widget .br-tabs .em-prompt {
   display: inline-flex;
@@ -755,12 +753,6 @@
    la tarjeta ocupaba su tamaño de siempre. Si ese resto se achica acá
    también, el mapa puede quedarse con un poco más de margen todavía. */
 @media (max-height: 760px) {
-  .br-title {
-    font-size: 1.5rem;
-    /* (antes margin-bottom:4px acá) el espacio título → pestañas en
-       pantallas bajas ya lo achica la variable compartida
-       --ui-gap-titulo (10px, ver style.css), igual en los 3 módulos */
-  }
   .br-subhead {
     margin-bottom: 12px;
     min-height: 0;
@@ -923,4 +915,58 @@
 /* Subtarjeta / columnas → pie (descripción + "Fuente"), las 2 pestañas */
 .br-src-row {
   margin-top: var(--ui-gap-titulo);
+}
+
+/* "Por año": el bloque de datos de abajo (población, muertes, promedio por
+   día) está oculto hasta que el cursor entra al gráfico. Se usa opacity +
+   visibility (no display:none) para que el espacio no salte al aparecer.
+   modulo2.js le saca la clase "br-vacio" en revealAnio(). */
+.br-stats,
+#brPanelAnio .br-axis-note {
+  transition: opacity 0.6s ease 0.5s;
+}
+.br-stats.br-vacio,
+#brPanelAnio .br-axis-note.br-vacio {
+  opacity: 0;
+  visibility: hidden;
+  transition: none;
+}
+
+/* "Por año": mientras el gráfico está vacío, baja la mitad del espacio libre
+   de abajo (modulo2.js calcula --br-bajar). Al hacer el reveal pierde
+   "br-chart-bajo" y sube a su lugar con esta transición. */
+.br-chart-wrap {
+  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.br-chart-wrap.br-chart-bajo {
+  transform: translateY(var(--br-bajar, 0px));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .br-chart-wrap,
+  .br-stats,
+  #brPanelAnio .br-axis-note {
+    transition: none;
+  }
+}
+
+/* "Por año": el título de la subtarjeta ("La mortalidad ... bajó casi un 10% en
+   20 años") se oculta hasta el reveal y aparece con un fundido. Mientras el
+   gráfico está vacío, la pista rosa sube a su lugar (modulo2.js calcula
+   --br-sube). La pista conserva esa posición después: ya está invisible. */
+#brPanelAnio .br-panel h2 {
+  transition: opacity 0.6s ease 0.4s;
+}
+#brPanelAnio .br-panel h2.br-vacio {
+  opacity: 0;
+  visibility: hidden;
+  transition: none;
+}
+#brPanelAnio .br-panel .em-prompt.br-prompt-sube {
+  transform: translateY(calc(var(--br-sube, 0px) * -1));
+}
+@media (prefers-reduced-motion: reduce) {
+  #brPanelAnio .br-panel h2 {
+    transition: none;
+  }
 }
