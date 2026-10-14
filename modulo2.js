@@ -531,16 +531,31 @@
 
     // Fuente: un solo botón, el texto cambia según la pestaña.
     const srcBox = document.getElementById('brSrc');
-    const srcText = document.getElementById('brSrcText');
-    const SRC_ANIO =
-      'Muertes: microdatos DEIS 2005–2024. Población femenina: proyecciones INDEC ' +
-      '(2005–2009: INDEC-CELADE 1950–2015; 2010–2024: INDEC 2010–2040).' +
-      ' Tasa bruta (no ajustada por edad). Las proyecciones de población cambian de fuente en 2010, lo que puede afectar levemente la comparación entre 2009 y 2010.';
-    const SRC_PROV =
-      'Microdatos DEIS, defunciones por año 2005–2024. Buenos Aires incluye CABA. ' +
-      'Límites provinciales: IGN 2019 (vía Trase Atlas), proyección transversal de Mercator. ' +
-      'Cada punto representa 20 muertes por cáncer de mama, distribuidos aleatoriamente ' +
-      'dentro del territorio de cada provincia (no marcan ubicaciones reales).';
+    const FUENTE_DEIS = {
+      // Lo que muestra "Fuente" en cada pestaña (lo arma uiFuente, en script.js).
+      autor: 'DEIS (2026)',
+      etiqueta: 'Muertes por cáncer, año a año',
+      url: 'https://www.argentina.gob.ar/salud/deis/datos/defunciones',
+    };
+    const SRC_ANIO = [
+      FUENTE_DEIS,
+      {
+        autor: 'DEIS (2022)',
+        etiqueta: 'Estadísticas vitales 2020',
+        url: 'https://www.argentina.gob.ar/sites/default/files/serie5numero64_web.pdf',
+      },
+      {
+        autor: 'INDEC (2004)',
+        etiqueta: 'Población femenina 2005-2009',
+        url: 'https://biblioteca.indec.gob.ar/bases/minde/4si20_30.pdf',
+      },
+      {
+        autor: 'INDEC (2013)',
+        etiqueta: 'Población femenina 2010-2024',
+        url: 'https://www.indec.gob.ar/ftp/cuadros/publicaciones/proyeccionesyestimaciones_nac_2010_2040.pdf',
+      },
+    ];
+    const SRC_PROV = [FUENTE_DEIS];
     const srcRow = document.querySelector('.br-src-row');
 
     const SUB_ANIO = 'Muertes por cáncer de mama cada 100.000 mujeres. Argentina, 2005–2024.';
@@ -565,10 +580,9 @@
     //    que el usuario haya abierto a mano con un click.
     let notaAnioActual = null;
 
-    function setFuente(texto) {
+    function setFuente(fuentes) {
       notaAnioActual = null; // al cambiar de pestaña, cualquier nota queda descartada
-      srcText.textContent = texto;
-      srcBox.removeAttribute('open'); // al cambiar de pestaña se cierra el desplegable
+      uiFuente(srcBox, fuentes); // también cierra el desplegable
     }
 
     // Si el año tiene nota, la guarda y pide redibujar el gráfico (la dibuja el
@@ -1357,6 +1371,7 @@
     // mapa y su gráfico apenas carga la página.
     initYearTab();
     srcSub.textContent = SUB_ANIO;
+    setFuente(SRC_ANIO);
     // El capítulo 2 está oculto al cargar la página, así que Chart.js puede
     // haber medido el canvas en 0px: lo re-medimos cuando se hace visible.
     document.querySelector('.nav-item[data-target="2"]').addEventListener('click', () => {

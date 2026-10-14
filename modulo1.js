@@ -1565,6 +1565,24 @@
 
     paint(); // estado inicial (o el que haya quedado de un render anterior)
   }
+  // FUENTES: lo que muestra "Fuente" en cada pestaña (lo arma uiFuente,
+  // en script.js).
+  const FUENTES = {
+    casosPorTipo: [
+      {
+        autor: 'GLOBOCAN (2026)',
+        etiqueta: 'Casos por tipo de cáncer',
+        url: 'https://gco.iarc.who.int/media/globocan/factsheets/populations/32-argentina-fact-sheet.pdf',
+      },
+    ],
+    casosPorEdad: [
+      {
+        autor: 'GLOBOCAN (2026b)',
+        etiqueta: 'Casos por edad',
+        url: 'https://gco.iarc.who.int/today/en/dataviz/pie?mode=cancer&cancers=20&types=0&sexes=2&populations=32&age_start=3&age_end=5&group_populations=1&multiple_populations=0',
+      },
+    ],
+  };
 
   const TITULOS = {
     casosPorTipo: '¿Cuántos casos de cáncer de mama hay por año?',
@@ -1595,6 +1613,7 @@
       panel1.parentElement.appendChild(emSrc);
     }
     if (cardTitle && TITULOS[activeKey]) cardTitle.textContent = TITULOS[activeKey];
+    if (FUENTES[activeKey]) uiFuente(emSrc, FUENTES[activeKey]);
     const renderFn = chartRenderers[activeKey];
     if (renderFn) renderFn(panel1);
   }

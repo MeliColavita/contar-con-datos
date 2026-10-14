@@ -1360,6 +1360,22 @@ body {
   line-height: 1.35;
   z-index: 20; /* por encima de la grilla y del resto del panel */
 }
+/* Fuentes armadas con funcionuiFuente (script.js): cada una en su renglón, con la etiqueta como link*/
+.ui-src-item,
+.ui-src-nota {
+  display: block;
+}
+.ui-src-item + .ui-src-item {
+  margin-top: 4px;
+}
+.ui-src-nota {
+  margin-top: 6px;
+  font-style: italic;
+}
+.ui-src p a {
+  color: var(--rose-strong);
+  text-decoration: underline;
+}
 /* Triangulito que apunta hacia la etiqueta, como un globo de diálogo */
 .ui-src p::after {
   content: '';
