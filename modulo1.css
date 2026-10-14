@@ -1103,6 +1103,26 @@
 }
 .em-tipo-result-stats .em-stat-pct-mujeres + .em-stat {
   grid-column: 2;
+  grid-row: 2;
+}
+/* Título del bloque de datos fijos ("El cáncer de mama es:"): ocupa
+   las 2 columnas, así "1°..." y el % quedan en el renglón de abajo. */
+.em-tipo-result-stats .em-stats-lead {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: baseline;
+  font-family: var(--sans);
+  font-size: 0.9rem;
+  color: var(--text-dim);
+}
+.em-tipo-result-stats .em-stat-pct-mujeres {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: baseline;
+}
+.em-tipo-result-stats .em-stat-primero {
+  grid-column: 1;
+  grid-row: 2;
 }
 /* El tamaño de letra de estos 2 datos se agranda un poco (pedido de
    Emi) -- SCOPEADO acá, a propósito: .em-stat-value/.em-stat-label son
