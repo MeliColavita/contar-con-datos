@@ -39,7 +39,7 @@
        script.js lo pone en el frame 0 y recién ahí lo hace play() a los
        10s, junto con el fade-in, para que arranque siempre desde el
        principio en el mismo momento en que se hace visible. -->
-      <video id="introVideo" class="bg-video" muted loop playsinline>
+      <video id="introVideo" class="bg-video" muted playsinline>
         <source src="00_INTRO_FINAL.mp4" type="video/mp4" />
       </video>
 
@@ -139,7 +139,7 @@
                 class="pbtn pbtn-cc"
                 id="pCC"
                 type="button"
-                aria-pressed="false"
+                aria-pressed="true"
                 aria-label="Subtítulos"
               >
                 <svg class="i-cc" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
@@ -619,11 +619,6 @@
                     ></span>
                   </p>
                 </div>
-                <div id="me-reinicio" class="me-reinicio" hidden>
-                  <button id="me-reiniciar" class="me-btn me-reiniciar" type="button">
-                    Volver a comenzar
-                  </button>
-                </div>
                 <details class="ui-src">
                   <summary>Fuente</summary>
                   <p>
@@ -695,6 +690,9 @@
           </button>
           <button type="button" class="nav-item" data-target="3">
             <span class="num">3</span><span class="label">El futuro</span>
+          </button>
+          <button type="button" class="nav-back" id="navBack">
+            <span aria-hidden="true">←</span> Volver a la presentación
           </button>
         </nav>
       </div>

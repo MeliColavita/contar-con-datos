@@ -874,7 +874,7 @@
   text-shadow: 0 0 22px rgba(255, 111, 156, 0.45);
 }
 .me-card .me-cierre.on .dot {
-  animation: dotPop 1.1s ease forwards;
+  animation: dotPop 3.3s ease forwards;
 }
 .me-card .me-cierre.on .dot:nth-child(1) {
   animation-delay: calc(var(--d) + 0s);
@@ -1001,7 +1001,9 @@
 /* Gráfico (+ "Cada punto es un mamógrafo", que va junto al gráfico) →
    botón "... una última cosa" → "Fuente" */
 .me-card > .me-final {
-  margin-top: var(--ui-gap-titulo); /* el cuerpo (.me-body, flex:1) ya empuja el botón al fondo de la tarjeta */
+  margin-top: var(
+    --ui-gap-titulo
+  ); /* el cuerpo (.me-body, flex:1) ya empuja el botón al fondo de la tarjeta */
 }
 .me-card > .ui-src {
   margin-top: var(--ui-gap-titulo);
