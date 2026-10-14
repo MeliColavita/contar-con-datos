@@ -13530,6 +13530,12 @@
       anioProgress = 0,
       anioRaf = null;
 
+    // Animación de la cuadrícula (0 = nada, 1 = completa). Se arma cada vez
+    // que se entra al capítulo o a la pestaña "Por año", ANTES de los datos.
+    let anioGrid = 0,
+      anioGridRaf = null,
+      anioGridTimer = null;
+
     // buildYearMap(): dibuja el segundo mapa (el "plano", todo del
     // mismo color -- ver .br-province-plain en modulo2.css) que sirve
     // de fondo decorativo detrás del texto grande (.br-map-overlay).
@@ -13586,6 +13592,13 @@
     function revealAnio() {
       if (anioRevealed || !scatterChart) return;
       anioRevealed = true;
+      document
+        .querySelectorAll(
+          '#brPanelAnio .br-stats, #brPanelAnio .br-axis-note, #brPanelAnio .br-panel h2',
+        )
+        .forEach((el) => el.classList.remove('br-vacio'));
+      const cont = document.getElementById('brAnioScatter').parentElement;
+      cont.classList.remove('br-chart-bajo'); // el gráfico sube a su lugar (con transición en el CSS)
       const pista = document.getElementById('brAnioPrompt');
       if (pista) pista.classList.add('br-prompt-gone');
       document.getElementById('brStatDia').textContent = PROMEDIO_DIA.toLocaleString('es-AR', {
@@ -13599,7 +13612,7 @@
         scatterChart.draw();
         return;
       }
-      const DURACION = 1600; // ms
+      const DURACION = 1200; // ms
       const t0 = performance.now();
       const paso = (ahora) => {
         const t = Math.min(1, (ahora - t0) / DURACION);
@@ -13619,8 +13632,77 @@
       ['brStatPob', 'brStatMama', 'brStatDia'].forEach((id) => {
         document.getElementById(id).textContent = '—';
       });
+      // nota del eje y bloque de datos: ocultos hasta el reveal
+      document
+        .querySelectorAll(
+          '#brPanelAnio .br-stats, #brPanelAnio .br-axis-note, #brPanelAnio .br-panel h2',
+        )
+        .forEach((el) => el.classList.add('br-vacio'));
+      fijarDesplazamientoAnio();
       ocultarNotaAnio();
+      iniciarGridAnio();
+    }
+
+    // fijarDesplazamientoAnio(): acomoda el estado VACÍO de "Por año".
+    //  1) La pista rosa sube y ocupa el lugar del título "La mortalidad ... bajó casi un
+    //     10%" (que está oculto hasta el reveal), así no queda un hueco arriba.
+    //  2) El gráfico baja hasta quedar centrado entre la pista y el final de la tarjeta.
+    // Al hacer el reveal el gráfico pierde "br-chart-bajo" y sube a su lugar solo
+    // (transición en el CSS). Todo se aplica SIN transición, para que no se vea el
+    // viaje cada vez que se vuelve a la pestaña. Las medidas usan offsetTop/offsetHeight
+    // (ignoran transform), así que se pueden recalcular aunque ya esté desplazado.
+    function fijarDesplazamientoAnio() {
+      const cont = document.getElementById('brAnioScatter').parentElement;
+      const titulo = document.querySelector('#brPanelAnio .br-panel h2');
+      const pista = document.getElementById('brAnioPrompt');
+      const nota = document.querySelector('#brPanelAnio .br-axis-note');
+      const datos = document.querySelector('#brPanelAnio .br-stats');
+      if (!cont || !titulo || !pista || !nota || !datos) return;
+
+      const sube = Math.max(0, pista.offsetTop - titulo.offsetTop);
+      const arriba = pista.offsetTop + pista.offsetHeight - sube; // borde inferior de la pista ya subida
+      const abajo = Math.max(
+        nota.offsetTop + nota.offsetHeight,
+        datos.offsetTop + datos.offsetHeight,
+      );
+      const centrado = arriba + (abajo - arriba - cont.offsetHeight) / 2;
+      const baja = Math.max(0, Math.round(centrado - cont.offsetTop));
+
+      cont.classList.add('br-chart-wrap');
+      cont.style.transition = 'none';
+      cont.style.setProperty('--br-bajar', baja + 'px');
+      cont.classList.add('br-chart-bajo');
+      pista.style.setProperty('--br-sube', sube + 'px');
+      pista.classList.add('br-prompt-sube');
+      void cont.offsetWidth; // aplica el cambio sin transición
+      cont.style.transition = '';
+    }
+
+    // iniciarGridAnio(): arma la cuadrícula desde cero con animación.
+    // Espera un instante para que el capítulo ya esté visible y medido.
+    function iniciarGridAnio() {
+      clearTimeout(anioGridTimer);
+      if (anioGridRaf) cancelAnimationFrame(anioGridRaf);
+      anioGridRaf = null;
+      anioGrid = 0;
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        anioGrid = 1;
+        if (scatterChart) scatterChart.draw();
+        return;
+      }
       if (scatterChart) scatterChart.draw();
+      anioGridTimer = setTimeout(() => {
+        if (!anioRevealed) fijarDesplazamientoAnio();
+        const DURACION = 1000; // ms
+        const t0 = performance.now();
+        const paso = (ahora) => {
+          const t = Math.min(1, (ahora - t0) / DURACION);
+          anioGrid = t;
+          if (scatterChart) scatterChart.draw();
+          anioGridRaf = t < 1 ? requestAnimationFrame(paso) : null;
+        };
+        anioGridRaf = requestAnimationFrame(paso);
+      }, 150);
     }
 
     // buildScatter()
@@ -13749,6 +13831,41 @@
         },
       };
 
+      // Dibuja la cuadrícula a mano para poder animarla: las líneas horizontales
+      // crecen de izquierda a derecha y las verticales de abajo hacia arriba,
+      // una detrás de otra. (Chart.js la tiene desactivada: grid.display = false.)
+      const cuadriculaPlugin = {
+        id: 'cuadricula',
+        beforeDraw(chart) {
+          if (anioGrid <= 0) return;
+          const { left, right, top, bottom } = chart.chartArea;
+          const { x, y } = chart.scales;
+          const c = chart.ctx;
+          const SOLAPE = 0.55; // cuánto del tiempo se reparte escalonando las líneas
+          const ease = (t) => 1 - Math.pow(1 - Math.min(1, Math.max(0, t)), 3);
+          const local = (i, n) =>
+            ease((anioGrid - (i / Math.max(1, n - 1)) * SOLAPE) / (1 - SOLAPE));
+          const hs = y.ticks.map((t) => Math.round(y.getPixelForValue(t.value)) + 0.5);
+          const vs = x.ticks.map((t) => Math.round(x.getPixelForValue(t.value)) + 0.5);
+          c.save();
+          c.strokeStyle = 'rgba(255,255,255,0.06)';
+          c.lineWidth = 1;
+          hs.forEach((py, i) => {
+            c.beginPath();
+            c.moveTo(left, py);
+            c.lineTo(left + (right - left) * local(i, hs.length), py);
+            c.stroke();
+          });
+          vs.forEach((px, i) => {
+            c.beginPath();
+            c.moveTo(px, bottom);
+            c.lineTo(px, bottom - (bottom - top) * local(i, vs.length));
+            c.stroke();
+          });
+          c.restore();
+        },
+      };
+
       // Recorta el dibujo de la serie según anioProgress: 0 = nada, 1 = todo.
       // Va PRIMERO en la lista de plugins para que también recorte la tendencia.
       const revelarPlugin = {
@@ -13773,6 +13890,7 @@
       scatterChart = new Chart(ctx, {
         type: 'scatter',
         plugins: [
+          cuadriculaPlugin,
           revelarPlugin,
           lineaVerticalPlugin,
           tendenciaPlugin,
@@ -13842,24 +13960,24 @@
               min: 2004,
               max: 2025,
               ticks: {
-                color: '#a99aa6',
+                color: () => `rgba(169,154,166,${Math.max(0, (anioGrid - 0.3) / 0.7)})`, // los números de los ejes aparecen con la cuadrícula
                 stepSize: 1,
                 autoSkip: false,
                 maxRotation: 0, // horizontales
                 minRotation: 0,
                 callback: (v) => ([2005, 2010, 2015, 2020, 2025].includes(v) ? v : ''),
               },
-              grid: { color: 'rgba(255,255,255,0.06)' },
+              grid: { display: false }, // la dibuja cuadriculaPlugin
             },
             y: {
               min: 24,
               max: 27.5,
               ticks: {
-                color: '#a99aa6',
+                color: () => `rgba(169,154,166,${Math.max(0, (anioGrid - 0.3) / 0.7)})`, // los números de los ejes aparecen con la cuadrícula
                 stepSize: 0.5,
                 callback: (v) => v.toLocaleString('es-AR', { minimumFractionDigits: 1 }),
               },
-              grid: { color: 'rgba(255,255,255,0.06)' },
+              grid: { display: false }, // la dibuja cuadriculaPlugin
             },
           },
           onHover: (evt, els) => {
@@ -13943,6 +14061,9 @@
       buildScatter();
       selectYear(currentYear);
       resetAnio(); // arranca vacío hasta que el cursor entre al gráfico
+      window.addEventListener('resize', () => {
+        if (!anioRevealed) fijarDesplazamientoAnio();
+      });
     }
 
     // "Por año" es la pestaña que se ve al entrar al módulo: armamos su
