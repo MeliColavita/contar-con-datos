@@ -970,3 +970,31 @@
     transition: none;
   }
 }
+
+/* ============ SLIDER DE AÑO ("Por provincia") ============ */
+.br-year-ctl {
+  margin-top: 14px;
+}
+.br-year-lbl {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.85rem;
+  color: var(--br-text-dim);
+}
+.br-year-lbl b {
+  font-family: var(--br-serif);
+  font-weight: 500;
+  font-size: 1.25rem;
+  color: var(--br-rose);
+}
+.br-year-ctl input[type='range'] {
+  width: 100%;
+  accent-color: var(--br-rose-strong);
+  cursor: pointer;
+}
+.br-year-ticks {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--br-text-dim);
+}

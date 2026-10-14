@@ -358,6 +358,21 @@
                               <canvas id="brProvinceChart"></canvas>
                             </div>
                             <p class="br-chart-pct" id="brChartPct"></p>
+
+                            <div class="br-year-ctl">
+                              <label class="br-year-lbl" for="brProvYear">
+                                Año: <b id="brProvYearLbl">2024</b>
+                              </label>
+                              <input
+                                type="range"
+                                id="brProvYear"
+                                min="2005"
+                                max="2024"
+                                step="1"
+                                value="2024"
+                              />
+                              <div class="br-year-ticks"><span>2005</span><span>2024</span></div>
+                            </div>
                           </div>
                         </div>
 
@@ -697,6 +712,8 @@
     <script src="script.js"></script>
     <script src="modulo1.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <script src="mapa_provincias.js"></script>
+    <script src="provincias_por_anio.js"></script>
     <script src="modulo2.js"></script>
     <script src="buscador-datos.js"></script>
     <script src="modulo3.js"></script>
