@@ -782,7 +782,12 @@
       // sumamos los otros 4?" titila para invitar al paso siguiente; al
       // tocarlo deja de titilar (ver el click de btnSum, más abajo):
       // "Ver por separado" no titila y los 2 botones quedan iguales.
-      if (doAnimate) btnSum.classList.add('em-btn-blink');
+      if (doAnimate) {
+        btnSum.classList.add('em-btn-blink');
+        // Mientras titila, "Probar de nuevo" va con el borde apagado (gris)
+        // para que se note bien cuál es el paso siguiente (pedido de Emi).
+        btnReset.classList.add('em-btn-quiet');
+      }
       actions.classList.add('em-shown');
       axisNote.classList.add('em-shown');
       statsCol.classList.add('em-shown');
@@ -1296,6 +1301,7 @@
       // de titilar (ver reveal()) -- "Ver por separado" ya NO titila
       // (pedido de Emi).
       btnSum.classList.remove('em-btn-blink');
+      btnReset.classList.remove('em-btn-quiet'); // desde acá los 2 botones con el borde rosa
       tipoState.merged = !tipoState.merged;
       applyMergeState(true);
     });

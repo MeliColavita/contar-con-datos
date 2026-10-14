@@ -833,6 +833,13 @@
 .em-btn.em-btn-blink{
   animation:em-confirm-blink 2.4s ease-in-out infinite;
 }
+/* "Probar de nuevo" mientras titila "¿Y si sumamos los otros 4?": borde
+   apagado (gris), para que no compita con el botón que titila (pedido
+   de Emi). modulo1.js saca la clase al tocar "¿Y si sumamos...?": desde
+   "Ver por separado" los 2 botones tienen el borde rosa. */
+.em-btn.em-btn-quiet{
+  border-color:var(--panel-border);
+}
 
 /* La nota chica al pie de "Casos por edad" (antes ".em-note", definida
    acá) ahora es ".ui-note", compartida en style.css -- módulo 3 la
