@@ -105,7 +105,7 @@ body {
   justify-content: flex-end;
   padding-bottom: 3vh;
   overflow: hidden;
-  background: #07050a;
+  background: #000;
   transition:
     opacity 1.1s ease,
     visibility 1.1s ease;
