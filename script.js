@@ -379,3 +379,29 @@ document.querySelectorAll('.ui-tab').forEach(function (btn) {
 // deja la intro, el audio y los videos como al inicio.
 const navBack = document.getElementById('navBack');
 if (navBack) navBack.addEventListener('click', () => location.reload());
+
+// ---------- Fuente con links (compartido) ---------- la usan los tres modulos
+//   fuentes: [{ autor, etiqueta, url }]
+function uiFuente(details, fuentes, nota) {
+  const p = details.querySelector('p');
+  p.textContent = '';
+  fuentes.forEach(function (f) {
+    const linea = document.createElement('span');
+    linea.className = 'ui-src-item';
+    linea.append(f.autor + '. ');
+    const a = document.createElement('a');
+    a.href = f.url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.textContent = f.etiqueta;
+    linea.appendChild(a);
+    p.appendChild(linea);
+  });
+  if (nota) {
+    const n = document.createElement('span');
+    n.className = 'ui-src-nota';
+    n.textContent = nota;
+    p.appendChild(n);
+  }
+  details.removeAttribute('open'); // al cambiar de pestaña se cierra
+}
