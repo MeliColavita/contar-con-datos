@@ -166,7 +166,7 @@
   font-family: var(--br-serif);
   font-weight: 600;
   font-size: clamp(1rem, 15cqw, 2.8rem);
-  color: #160f1b; /* bordó bien oscuro: contraste sobre el rosa fuerte del mapa debajo */
+  color: var(--panel); /* mismo tono que el panel del sitio */
   text-shadow: 0 0 20px rgba(255, 255, 255, 0.55); /* resplandor blanco para que no se pierda contra el rosa */
 }
 .br-overlay-pct {
@@ -368,11 +368,12 @@
    (para alinearse con las pestañas "Por provincia / Por año") y llega
    hasta el borde inferior de la fila. */
 #brPanelProvincia .br-map-inner {
-  --br-map-lift: 79px; /* cuánto sube respecto al grid (antes -62px) */
+  --br-map-lift: 0px; /* 0 = el mapa arranca debajo de la pista rosa (antes 42px, y la tapaba) */
   --br-legend-h: -3px; /* alto reservado para la leyenda */
+  --br-map-drop: 12px; /* cuánto baja del borde inferior de la grilla (usa el espacio libre antes del pie) */
   position: absolute;
   top: calc(-1 * var(--br-map-lift));
-  bottom: 0;
+  bottom: calc(-1 * var(--br-map-drop));
   left: 0;
   right: 0;
   display: flex;
@@ -511,13 +512,13 @@
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
   border: 1px solid var(--br-panel-border);
   border-radius: 14px;
-  padding: 20px 20px 18px;
+  padding: 14px 20px 12px;
 }
 .br-panel h2 {
   font-family: var(--br-serif);
   font-weight: 500;
-  font-size: 1.35rem;
-  margin: 0 0 4px;
+  font-size: 1.25rem;
+  margin: 0 0 2px;
   color: var(--br-text);
 }
 .br-panel .br-sub {
@@ -536,7 +537,7 @@
    AL gráfico. Solo en esta pestaña (#brPanelAnio): "Por provincia" ya
    tiene su propio recorte, parecido pero no igual, más arriba. */
 #brPanelAnio .br-panel {
-  padding: 12px 20px 10px;
+  padding: 10px 20px 8px;
 }
 #brPanelAnio .br-panel h2 {
   margin-bottom: 2px;
@@ -575,11 +576,11 @@
   position: relative;
   display: flex;
   justify-content: flex-end;
-  margin: 2px 0 0;
+  margin: 0;
 }
 .br-info-btn {
-  width: 26px;
-  height: 26px;
+  width: 22px;
+  height: 22px;
   padding: 0;
   border-radius: 50%;
   border: 1px solid var(--br-panel-border);
@@ -629,13 +630,13 @@
 .br-day-num {
   font-family: var(--br-serif);
   font-weight: 500;
-  font-size: 2.6rem;
+  font-size: 2.2rem;
   line-height: 1;
-  color: var(--br-rose);
+  color: var(--br-rose-strong);
   text-shadow: 0 0 18px var(--br-rose-glow);
 }
 .br-day-lbl {
-  margin-top: 4px;
+  margin-top: 2px;
   font-size: 0.9rem;
   color: var(--br-text);
 }
@@ -829,16 +830,16 @@
 
 .br-src-sub {
   margin: 0;
-  max-width: 560px;
+  max-width: 720px;
   font-size: var(
     --ui-fs-pie
   ); /* antes 0.78rem: mismo tamaño que el pie del módulo 1 (variable compartida, ver style.css). Sirve para "Por año" y "Por provincia": es el mismo elemento, modulo2.js solo le cambia el texto */
-  line-height: 1.4;
+  line-height: 1.28;
   color: var(--br-text-dim);
 }
 
 .br-chart-pct {
-  margin: 8px 0 0;
+  margin: 2px 0 0;
   text-align: center;
   font-size: 0.85rem;
   line-height: 1.3;
@@ -848,11 +849,11 @@
   display: block; /* el número queda en su propia línea, arriba del texto */
   font-family: var(--br-serif);
   font-weight: 500;
-  font-size: 2.6rem;
+  font-size: 1.8rem;
   line-height: 1;
-  color: var(--br-rose);
+  color: var(--br-rose-strong);
   text-shadow: 0 0 18px var(--br-rose-glow);
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 /* ============ DOS COLUMNAS DE DATOS ("Por año") ============
@@ -887,20 +888,18 @@
 /* Número en rosa (mismo rosa que .br-day-num) */
 .br-stat-num {
   font-family: var(--br-serif);
-  font-weight: 500;
+  font-weight: 600;
   font-size: 1.4rem;
-  line-height: 1.1;
-  color: var(--br-rose);
+  line-height: 1;
+  color: var(--br-rose-strong);
   text-shadow: 0 0 14px var(--br-rose-glow);
   flex: none;
 }
 
 .br-stat-lbl {
   margin-top: 0; /* antes 2px: ya no va debajo del número */
-  font-size: calc(
-    0.78rem + 1px
-  ); /* antes 0.78rem: +1px pedido por Emi (solo el texto, el número rosa queda igual) */
-  line-height: 1.25;
+  font-size: calc(0.8rem + 1px);
+  line-height: 1.3;
   color: var(--br-text-dim);
 }
 
@@ -948,10 +947,10 @@
    que van JUNTOS -- pedido de Emi, el subtítulo conserva su margen de
    2px de más arriba) → gráfico (+ leyenda) → datos de abajo */
 #brPanelAnio .br-panel .em-prompt {
-  margin-bottom: var(--ui-gap-titulo);
+  margin-bottom: 12px;
 }
 .br-stats {
-  margin-top: var(--ui-gap-titulo);
+  margin-top: 12px;
 }
 /* Subtarjeta / columnas → pie (descripción + "Fuente"), las 2 pestañas */
 .br-src-row {
@@ -1014,11 +1013,11 @@
 
 /* ============ SLIDER DE AÑO ("Por provincia") ============ */
 .br-year-ctl {
-  margin-top: 14px;
+  margin-top: 6px;
 }
 .br-year-lbl {
   display: block;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   font-size: 0.85rem;
   color: var(--br-text-dim);
 }
@@ -1026,7 +1025,7 @@
   font-family: var(--br-serif);
   font-weight: 500;
   font-size: 1.25rem;
-  color: var(--br-rose);
+  color: var(--br-rose-strong);
 }
 .br-year-ctl input[type='range'] {
   width: 100%;
