@@ -626,9 +626,6 @@
         '</span></div>' +
         '<div><span>Por día</span><span>' +
         Math.round(d.valor / 365) +
-        '</span></div>' +
-        '<div><span>Tasa ajustada</span><span>' +
-        d.tasa.toLocaleString('es-AR') +
         '</span></div>'
       );
     }
@@ -1640,14 +1637,17 @@
       });
       tab.classList.add('active');
       tab.setAttribute('aria-selected', 'true');
-      activeKey = tab.dataset.chart;
-      if (activeKey === 'casosPorTipo') {
-        tipoState = { revealed: false, guess: null, merged: false };
-      } else if (activeKey === 'casosPorEdad') {
-        edadState = { sel: null, revealed: [] }; // arranca de cero: 5 barras parejas sin tocar
-      }
-      render1();
-      animarEntrada();
+      // La fuente desaparece y recién ahí se cambia el gráfico
+      uiFuenteSalir(emSrc, function () {
+        activeKey = tab.dataset.chart;
+        if (activeKey === 'casosPorTipo') {
+          tipoState = { revealed: false, guess: null, merged: false };
+        } else if (activeKey === 'casosPorEdad') {
+          edadState = { sel: null, revealed: [] }; // arranca de cero: 5 barras parejas sin tocar
+        }
+        render1();
+        animarEntrada();
+      });
     });
   });
 

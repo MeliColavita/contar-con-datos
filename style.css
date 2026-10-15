@@ -1295,6 +1295,21 @@ body {
   margin-top: 4px;
   text-align: right;
 }
+/* Salida compartida de la "Fuente": la etiqueta se aclara, sube y se
+   desenfoca (mismo efecto que usa el módulo 3 en .me-cierre-on). La
+   dispara uiFuenteSalir() en script.js. */
+.ui-src {
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s ease,
+    filter 0.35s ease;
+}
+.ui-src.ui-src-out {
+  opacity: 0;
+  transform: translateY(-10px);
+  filter: blur(4px);
+  pointer-events: none;
+}
 
 /* El <summary> es la "etiqueta" clickeable. Le sacamos la flechita
      que pone el navegador por default (::marker / ::-webkit-details-marker)

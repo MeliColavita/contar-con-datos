@@ -292,44 +292,48 @@ function fadeVolume(target, ms = 1500) {
 // chapters: las 3 secciones .chapter (cada una con su video de fondo y título)
 navItems.forEach((item) => {
   item.addEventListener('click', () => {
-    // Desactiva todos los nav-items, todos los capítulos y todos los videos...
-    navItems.forEach((n) => n.classList.remove('active'));
-    chapters.forEach((c) => c.classList.remove('active'));
-    chapterVideos.forEach((v) => v.classList.remove('active'));
+    const actual = document.querySelector('.chapter.active');
+    const fuentesQueSalen = actual ? actual.querySelectorAll('.ui-src') : [];
+    uiFuenteSalir(fuentesQueSalen, () => {
+      // Desactiva todos los nav-items, todos los capítulos y todos los videos...
+      navItems.forEach((n) => n.classList.remove('active'));
+      chapters.forEach((c) => c.classList.remove('active'));
+      chapterVideos.forEach((v) => v.classList.remove('active'));
 
-    // ...y activa solo el nav-item clickeado, el capítulo correspondiente,
-    // y el video de esa misma vela, usando data-target (1, 2 o 3) para
-    // armar el id "chapter-X" (capítulo) y para matchear data-chapter (video)
-    item.classList.add('active');
-    const target = item.dataset.target;
-    const chapter = document.getElementById('chapter-' + target);
-    chapter.classList.add('active');
+      // ...y activa solo el nav-item clickeado, el capítulo correspondiente,
+      // y el video de esa misma vela, usando data-target (1, 2 o 3) para
+      // armar el id "chapter-X" (capítulo) y para matchear data-chapter (video)
+      item.classList.add('active');
+      const target = item.dataset.target;
+      const chapter = document.getElementById('chapter-' + target);
+      chapter.classList.add('active');
 
-    const video = document.querySelector('.chapter-video[data-chapter="' + target + '"]');
-    if (video) {
-      video.classList.add('active');
-      video.currentTime = 0; // reinicia el video al frame 0 cada vez que se muestra
-      video
-        .play()
-        .catch((err) => console.warn('No se pudo reproducir el video del capítulo:', err)); // arranca recién ahora, al entrar al módulo
-    }
+      const video = document.querySelector('.chapter-video[data-chapter="' + target + '"]');
+      if (video) {
+        video.classList.add('active');
+        video.currentTime = 0; // reinicia el video al frame 0 cada vez que se muestra
+        video
+          .play()
+          .catch((err) => console.warn('No se pudo reproducir el video del capítulo:', err)); // arranca recién ahora, al entrar al módulo
+      }
 
-    // Pausa los videos que quedaron ocultos (ahorra CPU/batería;
-    // sin esto, los 3 videos quedan reproduciéndose todo el tiempo aunque
-    // no se vean, que es justo lo que hacía que no arrancaran de cero).
-    chapterVideos.forEach((v) => {
-      if (v !== video) v.pause();
-    });
+      // Pausa los videos que quedaron ocultos (ahorra CPU/batería;
+      // sin esto, los 3 videos quedan reproduciéndose todo el tiempo aunque
+      // no se vean, que es justo lo que hacía que no arrancaran de cero).
+      chapterVideos.forEach((v) => {
+        if (v !== video) v.pause();
+      });
 
-    // Reinicia la animación de los puntitos rosa alrededor del título.
-    // Sin este truco, la animación CSS (dotPop) solo correría la primera vez:
-    // al volver a agregar la clase .active, el navegador no la "re-dispara"
-    // porque, para el motor de CSS, la animación ya había corrido antes.
-    const dots = chapter.querySelectorAll('.dot');
-    dots.forEach((dot) => {
-      dot.style.animation = 'none'; // saca la animación
-      void dot.offsetWidth; // fuerza un reflow (lee una propiedad de layout)
-      dot.style.animation = ''; // se la devuelve: ahora arranca desde cero
+      // Reinicia la animación de los puntitos rosa alrededor del título.
+      // Sin este truco, la animación CSS (dotPop) solo correría la primera vez:
+      // al volver a agregar la clase .active, el navegador no la "re-dispara"
+      // porque, para el motor de CSS, la animación ya había corrido antes.
+      const dots = chapter.querySelectorAll('.dot');
+      dots.forEach((dot) => {
+        dot.style.animation = 'none'; // saca la animación
+        void dot.offsetWidth; // fuerza un reflow (lee una propiedad de layout)
+        dot.style.animation = ''; // se la devuelve: ahora arranca desde cero
+      });
     });
   });
 });
@@ -405,3 +409,44 @@ function uiFuente(details, fuentes, nota) {
   }
   details.removeAttribute('open'); // al cambiar de pestaña se cierra
 }
+
+// ---------- Salida de la Fuente (compartido) ---------- la usan los tres modulos
+// Hace desaparecer una o varias etiquetas "Fuente" (un elemento o una lista)
+// y, cuando termina, ejecuta alAcabar (cambiar de pestaña, de módulo...).
+// Con "reducir movimiento" ejecuta alAcabar directo, sin esperar.
+function uiFuenteSalir(fuentes, alAcabar) {
+  const lista = fuentes && fuentes.nodeType ? [fuentes] : Array.from(fuentes || []);
+  // Si el desplegable estaba abierto, se cierra enseguida (también con teclado).
+  lista.forEach(function (f) {
+    f.removeAttribute('open');
+  });
+  if (!lista.length || matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    if (alAcabar) alAcabar();
+    return;
+  }
+  lista.forEach(function (f) {
+    f.classList.add('ui-src-out');
+  });
+  setTimeout(function () {
+    if (alAcabar) alAcabar();
+    lista.forEach(function (f) {
+      f.classList.remove('ui-src-out');
+    });
+  }, 350);
+}
+
+// ---------- "Fuente" abierta: se cierra al tocar otra cosa (compartido) ----------
+// Si el desplegable está abierto y el usuario toca cualquier otro lugar (otra
+// pestaña, el gráfico, el mapa, el menú de módulos...) o aprieta Escape, se cierra.
+// Tocar la propia etiqueta o el texto abierto no lo cierra.
+document.addEventListener('pointerdown', function (e) {
+  document.querySelectorAll('.ui-src[open]').forEach(function (d) {
+    if (!d.contains(e.target)) d.removeAttribute('open');
+  });
+});
+document.addEventListener('keydown', function (e) {
+  if (e.key !== 'Escape') return;
+  document.querySelectorAll('.ui-src[open]').forEach(function (d) {
+    d.removeAttribute('open');
+  });
+});

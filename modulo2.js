@@ -411,14 +411,14 @@
           {
             label: ['Todos los', ' cánceres'],
             data: [0],
-            backgroundColor: '#f4c9a8',
+            backgroundColor: 'rgba(169, 154, 166, 0.55)',
             borderRadius: 4,
             barThickness: 70,
           },
           {
             label: ['Cáncer de', ' mama'],
             data: [0],
-            backgroundColor: '#8b3a55',
+            backgroundColor: '#ff6f9c',
             borderRadius: 4,
             barThickness: 70,
           },
@@ -660,7 +660,9 @@
       }
       srcSub.textContent = SUB_PROV;
       if (brTitle) brTitle.textContent = TITLE_PROV;
-      setFuente(SRC_PROV);
+      uiFuenteSalir(srcBox, function () {
+        setFuente(SRC_PROV);
+      });
     });
     tabAnio.addEventListener('click', () => {
       tabAnio.classList.add('active');
@@ -681,7 +683,9 @@
       resetAnio();
       srcSub.textContent = SUB_ANIO;
       if (brTitle) brTitle.textContent = TITLE_ANIO;
-      setFuente(SRC_ANIO);
+      uiFuenteSalir(srcBox, function () {
+        setFuente(SRC_ANIO);
+      });
     });
 
     // YEAR_DATA: un dato por año (2005-2024) para el gráfico de
@@ -953,10 +957,10 @@
       anioGrid = 0;
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
         anioGrid = 1;
-        if (scatterChart) scatterChart.draw();
+        if (scatterChart) scatterChart.update('none');
         return;
       }
-      if (scatterChart) scatterChart.draw();
+      if (scatterChart) scatterChart.update('none');
       anioGridTimer = setTimeout(() => {
         if (!anioRevealed) fijarDesplazamientoAnio();
         const DURACION = 1000; // ms
@@ -964,7 +968,7 @@
         const paso = (ahora) => {
           const t = Math.min(1, (ahora - t0) / DURACION);
           anioGrid = t;
-          if (scatterChart) scatterChart.draw();
+          if (scatterChart) scatterChart.update('none');
           anioGridRaf = t < 1 ? requestAnimationFrame(paso) : null;
         };
         anioGridRaf = requestAnimationFrame(paso);
@@ -1035,7 +1039,7 @@
       // Zona de cada nota, dentro de la franja de abajo (izquierda del gráfico).
       //   xMax = hasta qué año llega el texto por la derecha
       //   yTop = hasta qué valor llega por arriba (el piso es siempre 24)
-      // Si un año no está acá, usa la zona por defecto: hasta su propio año, hasta 25.
+      // Si un año no está acá, usa la zona por defecto: hasta su propio año, hasta 25,5.
       const ZONA_NOTA = {
         2020: { xMax: 2013, yTop: 25.5 },
       };
@@ -1050,7 +1054,7 @@
 
           const zona = ZONA_NOTA[notaAnioActual] || {
             xMax: Math.min(notaAnioActual, 2019),
-            yTop: 25,
+            yTop: 25.5,
           };
           const margen = 8;
           const izq = chartArea.left + margen;
@@ -1064,12 +1068,12 @@
           c.save();
 
           // parte el texto en renglones que entren en el ancho disponible
-          const envolver = (txt) => {
+          const envolver = (txt, ancho) => {
             const lineas = [];
             let actual = '';
             txt.split(' ').forEach((p) => {
               const prueba = actual ? actual + ' ' + p : p;
-              if (c.measureText(prueba).width > maxW && actual) {
+              if (c.measureText(prueba).width > ancho && actual) {
                 lineas.push(actual);
                 actual = p;
               } else actual = prueba;
@@ -1078,15 +1082,25 @@
             return lineas;
           };
 
-          // arranca en 11px y achica hasta 8px si no entra en el alto disponible
+          // Máximo 3 renglones: se busca el ancho MÁS ANGOSTO con el que el texto entra
+          // en 3, así la nota queda pegada a la izquierda y el tooltip no la tapa.
+          // Arranca en 11px y achica hasta 8px si no entra en el alto disponible.
+          const MAX_LINEAS = 3;
           let size = 11,
             lineas = [],
             lineH = 0;
           for (; size >= 8; size--) {
             c.font = `italic ${size}px Inter, system-ui, sans-serif`;
-            lineas = envolver(texto);
             lineH = size * 1.25;
-            if (lineas.length * lineH <= maxH) break;
+            lineas = envolver(texto, maxW);
+            for (let w = 90; w < maxW; w += 6) {
+              const prueba = envolver(texto, w);
+              if (prueba.length <= MAX_LINEAS) {
+                lineas = prueba;
+                break;
+              }
+            }
+            if (lineas.length <= MAX_LINEAS && lineas.length * lineH <= maxH) break;
           }
           c.fillStyle = 'rgba(242,233,238,0.85)';
           c.textAlign = 'left';
@@ -1414,7 +1428,7 @@
     // El capítulo 2 está oculto al cargar la página, así que Chart.js puede
     // haber medido el canvas en 0px: lo re-medimos cuando se hace visible.
     document.querySelector('.nav-item[data-target="2"]').addEventListener('click', () => {
-      setTimeout(() => resizeChart('brAnioScatter'), 50);
+      setTimeout(() => resizeChart('brAnioScatter'), 450);
     });
 
     // Pista rosa: reaparece cada vez que se entra de nuevo al capítulo 2.
